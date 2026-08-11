@@ -1,0 +1,21 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+.cache/
+
+# Secrets. Cloudflare build vars and Worker secrets are set in the dashboard.
+.env*
+!.env.example
+
+# Cloudflare / OpenNext build output
+.open-next/
+.wrangler/
+
+*.tsbuildinfo
+next-env.d.ts
+*-debug.log*
+logs/
+*.log
+.DS_Store

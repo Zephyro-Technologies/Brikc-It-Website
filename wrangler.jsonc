@@ -1,0 +1,65 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "brikc-it",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-08-11",
+  // nodejs_compat is required by the OpenNext adapter.
+  // global_fetch_strictly_public makes fetches to your own domain go out through
+  // the internet rather than looping back inside the worker.
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+
+  "observability": {
+    "enabled": true
+  },
+
+  // ── ISR cache ───────────────────────────────────────────────────────────
+  // Create the bucket first:  Cloudflare dashboard → R2 → Create bucket
+  "r2_buckets": [
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "brikc-it-cache"
+    }
+  ],
+
+  // ── Tag cache: what revalidatePath() writes to ──────────────────────────
+  // Create the database first:  Cloudflare dashboard → D1 → Create database
+  // then paste its ID below. The adapter creates its own tables on first use.
+  "d1_databases": [
+    {
+      "binding": "NEXT_TAG_CACHE_D1",
+      "database_name": "brikc-it-tags",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+    }
+  ],
+
+  // ── Revalidation queue ──────────────────────────────────────────────────
+  // Created automatically on deploy by the migration below — nothing to set up.
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "NEXT_CACHE_DO_QUEUE",
+        "class_name": "DOQueueHandler"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["DOQueueHandler"]
+    }
+  ],
+
+  // The worker calls itself to run queued revalidations. The service name must
+  // match "name" above.
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "brikc-it"
+    }
+  ]
+}
