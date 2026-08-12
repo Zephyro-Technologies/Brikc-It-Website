@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "brikc-it",
+  "name": "brikc-it-website",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-08-11",
   // nodejs_compat is required by the OpenNext adapter.
@@ -62,7 +62,7 @@
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "brikc-it"
+      "service": "brikc-it-website"
     }
   ]
 }
