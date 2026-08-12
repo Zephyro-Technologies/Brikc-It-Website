@@ -7,31 +7,33 @@ Do the storefront first — the admin needs its URL.
 
 ---
 
-## 1. Resources it binds to
+## 1. Resources it binds to — all provisioned
 
-| Resource | Name | Status |
+Nothing left to create. Every binding already exists on the account:
+
+| Resource | Name / id | Purpose |
 | --- | --- | --- |
-| D1 database | `brikc-it-tags` | **done** — `3001ea28-a4bd-43fa-bb33-49c86236d887`, APAC primary, already in `wrangler.jsonc` |
-| Tag-cache table | `revalidations` | **done** — created and round-trip tested |
-| Durable Object queue | `DOQueueHandler` | nothing to do — created on first deploy by the `migrations` block |
-| R2 bucket | `brikc-it-cache` | **you need to do this** — see below |
+| KV namespace | `NEXT_INC_CACHE_KV` — `6dc2397d2a74484297392bf2086284f0` | holds prerendered pages (ISR cache) |
+| D1 database | `brikc-it-tags` — `3001ea28-a4bd-43fa-bb33-49c86236d887`, APAC primary | tag cache, what `revalidatePath()` writes to |
+| Tag-cache table | `revalidations` | created, indexed, round-trip tested |
+| Durable Object | `DOQueueHandler` | revalidation queue — created on first deploy by the `migrations` block |
 
-### R2 — the one outstanding item
+### Why KV and not R2
 
-R2 is not enabled on the account. The API refuses with
-`Please enable R2 through the Cloudflare Dashboard [code: 10042]`, and that
-switch can only be flipped in the dashboard.
+R2 can't be enabled without a card on file. KV is included on the Workers free
+plan and needs no payment method, so the ISR cache uses KV instead.
 
-1. Cloudflare dashboard → **R2** → enable it (Cloudflare asks for a card on
-   file even though the free tier covers far more than this cache will use).
-2. Create a bucket named exactly **`brikc-it-cache`**, or from this folder:
+The trade: KV is **eventually consistent**. A revalidated page can take up to
+about a minute to appear in every region, rather than being immediate
+everywhere. For a catalogue that changes a few times a day that's a fair price,
+and the regional cache in front keeps repeat reads local regardless.
 
-   ```bash
-   npx wrangler r2 bucket create brikc-it-cache
-   ```
+Moving to R2 later is a two-line change in `open-next.config.ts` plus swapping
+the `kv_namespaces` block for `r2_buckets` in `wrangler.jsonc`.
 
-**The deploy will fail until this bucket exists** — `wrangler` validates every
-binding, and `NEXT_INC_CACHE_R2_BUCKET` points at it.
+The Durable Object queue is also free: it uses the **SQLite** storage backend
+(`new_sqlite_classes`), which is available on the Workers Free plan with no
+charge for storage.
 
 ## 2. Tag-cache table — already done
 
@@ -76,7 +78,7 @@ Workers & Pages → **Create** → **Import a repository** → pick the repo.
 > to trigger the first build.
 
 **Use `opennextjs-cloudflare deploy`, not `wrangler deploy`.** The adapter's
-deploy step also uploads the prerendered pages into the R2 cache. Plain
+deploy step also uploads the prerendered pages into the KV cache. Plain
 `wrangler deploy` ships the worker without seeding that cache.
 
 ## 5. Environment variables

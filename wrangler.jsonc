@@ -18,11 +18,13 @@
   },
 
   // ── ISR cache ───────────────────────────────────────────────────────────
-  // Create the bucket first:  Cloudflare dashboard → R2 → Create bucket
-  "r2_buckets": [
+  // Workers KV rather than R2: R2 can't be enabled without a card on file, and
+  // KV is included on the free plan. KV is eventually consistent, so a
+  // revalidated page can take up to about a minute to reach every region.
+  "kv_namespaces": [
     {
-      "binding": "NEXT_INC_CACHE_R2_BUCKET",
-      "bucket_name": "brikc-it-cache"
+      "binding": "NEXT_INC_CACHE_KV",
+      "id": "6dc2397d2a74484297392bf2086284f0"
     }
   ],
 

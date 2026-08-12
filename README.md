@@ -63,8 +63,8 @@ Two per-product flags control availability, and the UI honours both:
 - `/shop` is server-rendered so the grid ships as real HTML for any `?cat=`
   value; filtering and sorting after that stay client-side and instant.
 - Saving in the admin calls `POST /api/revalidate`, which rebuilds just the pages
-  that changed. On Cloudflare that needs an R2 bucket, a D1 tag cache and a
-  Durable Object queue — see [DEPLOYMENT.md](DEPLOYMENT.md).
+  that changed. On Cloudflare that needs a KV namespace, a D1 tag cache and a
+  Durable Object queue — all provisioned; see [DEPLOYMENT.md](DEPLOYMENT.md).
 - Images use plain `<img>` tags rather than `next/image`, which keeps layout and
   loading behaviour simple and predictable.
 
