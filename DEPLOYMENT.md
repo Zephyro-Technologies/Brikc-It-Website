@@ -7,49 +7,55 @@ Do the storefront first — the admin needs its URL.
 
 ---
 
-## 1. Create the two resources it binds to
+## 1. Resources it binds to
 
-In the Cloudflare dashboard:
-
-| Resource | Where | Name |
+| Resource | Name | Status |
 | --- | --- | --- |
-| R2 bucket | R2 → Create bucket | `brikc-it-cache` |
-| D1 database | Storage & Databases → D1 → Create | `brikc-it-tags` |
+| D1 database | `brikc-it-tags` | **done** — `3001ea28-a4bd-43fa-bb33-49c86236d887`, APAC primary, already in `wrangler.jsonc` |
+| Tag-cache table | `revalidations` | **done** — created and round-trip tested |
+| Durable Object queue | `DOQueueHandler` | nothing to do — created on first deploy by the `migrations` block |
+| R2 bucket | `brikc-it-cache` | **you need to do this** — see below |
 
-Copy the D1 **database ID** and paste it into `wrangler.jsonc`, replacing
-`REPLACE_WITH_D1_DATABASE_ID`. Commit that change — the build reads it.
+### R2 — the one outstanding item
 
-> The Durable Object queue needs no setup. It's created on first deploy by the
-> `migrations` block already in `wrangler.jsonc`.
+R2 is not enabled on the account. The API refuses with
+`Please enable R2 through the Cloudflare Dashboard [code: 10042]`, and that
+switch can only be flipped in the dashboard.
 
-## 2. Create the tag-cache table
+1. Cloudflare dashboard → **R2** → enable it (Cloudflare asks for a card on
+   file even though the free tier covers far more than this cache will use).
+2. Create a bucket named exactly **`brikc-it-cache`**, or from this folder:
 
-**Skip this and on-demand revalidation fails silently** — saves in the admin
-report success and the shop never changes. The adapter reads and writes this
-table but doesn't create it, and swallows the error when it's missing.
+   ```bash
+   npx wrangler r2 bucket create brikc-it-cache
+   ```
 
-```bash
-npx wrangler d1 execute brikc-it-tags --remote --file=./d1/tag-cache-schema.sql
-```
+**The deploy will fail until this bucket exists** — `wrangler` validates every
+binding, and `NEXT_INC_CACHE_R2_BUCKET` points at it.
 
-Verify:
+## 2. Tag-cache table — already done
+
+Recorded here because it's the step whose absence is invisible: the adapter
+reads and writes `revalidations` but never creates it, and swallows the error,
+so a missing table means the admin reports a successful save and the shop
+silently never updates.
+
+It's created, indexed, and verified. To re-check at any point:
 
 ```bash
 npx wrangler d1 execute brikc-it-tags --remote --command="SELECT name FROM sqlite_master WHERE type='table'"
 ```
 
-You should see `revalidations`.
-
-## 3. Push to GitHub
+You should see `revalidations`. To rebuild it from scratch:
 
 ```bash
-git add .
-git commit -m "Storefront on Supabase, ready for Cloudflare"
-git remote add origin git@github.com:<you>/brikc-it.git
-git push -u origin main
+npx wrangler d1 execute brikc-it-tags --remote --file=./d1/tag-cache-schema.sql
 ```
 
-`.env.local` is gitignored — secrets go in the dashboard, not the repo.
+## 3. GitHub — already done
+
+The repo is `Zephyro-Technologies/Brikc-It-Website`, branch `master`, pushed and
+in sync. `.env.local` is gitignored — secrets go in the dashboard, not the repo.
 
 ## 4. Create the Worker from the repo
 
@@ -60,6 +66,14 @@ Workers & Pages → **Create** → **Import a repository** → pick the repo.
 | Project name | `brikc-it` (must match `name` in `wrangler.jsonc`) |
 | Build command | `npm run cf:build` |
 | Deploy command | `npx opennextjs-cloudflare deploy` |
+| Root directory | `/` |
+| Production branch | `master` |
+
+> If that form loops back on you the way the admin's did, it's because a Worker
+> of that name already exists. Don't fight it — open the existing Worker and use
+> **Settings → Build → Connect to Git** instead. Note also that Workers Builds
+> only starts on a *new* push, so after connecting you may need one more commit
+> to trigger the first build.
 
 **Use `opennextjs-cloudflare deploy`, not `wrangler deploy`.** The adapter's
 deploy step also uploads the prerendered pages into the R2 cache. Plain
