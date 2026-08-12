@@ -27,13 +27,14 @@
   ],
 
   // ── Tag cache: what revalidatePath() writes to ──────────────────────────
-  // Create the database first:  Cloudflare dashboard → D1 → Create database
-  // then paste its ID below. The adapter creates its own tables on first use.
+  // Created in APAC (closest primary to Pakistan — this is read on cached page
+  // hits, so its latency shows up in TTFB). The `revalidations` table it needs
+  // is NOT created automatically; see d1/tag-cache-schema.sql.
   "d1_databases": [
     {
       "binding": "NEXT_TAG_CACHE_D1",
       "database_name": "brikc-it-tags",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+      "database_id": "3001ea28-a4bd-43fa-bb33-49c86236d887"
     }
   ],
 
