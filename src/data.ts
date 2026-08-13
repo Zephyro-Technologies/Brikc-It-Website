@@ -10,6 +10,8 @@ export type Category = "F1" | "Cars" | "Bikes" | "Collector"
 
 export type FormatKey = "built" | "boxed" | "framed"
 
+export const FORMAT_KEYS: FormatKey[] = ["boxed", "built", "framed"]
+
 export const FORMAT_LABELS: Record<FormatKey, string> = {
   built: "Built",
   boxed: "Boxed",
@@ -21,8 +23,12 @@ export type Product = {
   name: string
   team: string
   category: Category
-  /** Base (boxed) price in PKR. Built and framed add an uplift from settings. */
-  price: number
+  /**
+   * What each format costs, in PKR. Every format is priced on its own — there
+   * is no base price and no uplift. A format this build isn't sold in sits at
+   * zero and is never shown.
+   */
+  prices: Record<FormatKey, number>
   scale: string
   pieces: number
   edition: string
@@ -55,10 +61,17 @@ export type FaqItem = {
 }
 
 export type Settings = {
-  /** Added on top of a product's base price. Boxed is always zero. */
-  uplift: Record<FormatKey, number>
   leadTimes: { standard: string; framed: string }
   instagram: string
+}
+
+/**
+ * The lowest price this build can be had for, across the formats it is
+ * actually sold in — what "from" means on a card or in a sort.
+ */
+export function fromPrice(product: Product): number {
+  const sold = FORMAT_KEYS.filter((f) => product.formats[f]).map((f) => product.prices[f])
+  return sold.length ? Math.min(...sold) : product.prices.boxed
 }
 
 export type WalletAccount = { title: string; number: string }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import ProductDetailView from "../../../components/ProductDetailView"
-import { getProduct, getProductSlugs, getProducts, getSettings } from "../../../lib/shop"
+import { getProduct, getProductSlugs, getProducts } from "../../../lib/shop"
 
 export async function generateStaticParams() {
   return (await getProductSlugs()).map((slug) => ({ slug }))
@@ -23,9 +23,9 @@ export async function generateMetadata({
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const [product, all, settings] = await Promise.all([getProduct(slug), getProducts(), getSettings()])
+  const [product, all] = await Promise.all([getProduct(slug), getProducts()])
 
-  if (!product) return <ProductDetailView product={undefined} suggestions={[]} settings={settings} />
+  if (!product) return <ProductDetailView product={undefined} suggestions={[]} />
 
   // Same category first, then anything else, up to four.
   const related = all.filter((p) => p.slug !== slug && p.category === product.category).slice(0, 4)
@@ -34,6 +34,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     .slice(0, Math.max(0, 4 - related.length))
 
   return (
-    <ProductDetailView product={product} suggestions={[...related, ...fill]} settings={settings} />
+    <ProductDetailView product={product} suggestions={[...related, ...fill]} />
   )
 }

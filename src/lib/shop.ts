@@ -18,7 +18,8 @@ import type {
  */
 
 const PRODUCT_SELECT = `
-  slug, name, team, category, price, scale, pieces, edition, blurb, description,
+  slug, name, team, category, price_boxed, price_built, price_framed,
+  scale, pieces, edition, blurb, description,
   sells_boxed, sells_built, sells_framed, featured, in_stock,
   product_images ( url, sort )
 `
@@ -28,7 +29,9 @@ type ProductRow = {
   name: string
   team: string
   category: Category
-  price: number
+  price_boxed: number
+  price_built: number
+  price_framed: number
   scale: string
   pieces: number
   edition: string
@@ -48,7 +51,7 @@ function toProduct(row: ProductRow): Product {
     name: row.name,
     team: row.team,
     category: row.category,
-    price: row.price,
+    prices: { boxed: row.price_boxed, built: row.price_built, framed: row.price_framed },
     scale: row.scale,
     pieces: row.pieces,
     edition: row.edition,
@@ -112,19 +115,13 @@ export async function getFaqs(): Promise<FaqItem[]> {
 export async function getSettings(): Promise<Settings> {
   const res = await supabase()
     .from("settings")
-    .select("uplift_built, uplift_framed, lead_time_standard, lead_time_framed, instagram")
+    .select("lead_time_standard, lead_time_framed, instagram")
     .limit(1)
     .maybeSingle()
   if (res.error) throw new Error(`Supabase: failed to load settings — ${res.error.message}`)
   if (!res.data) throw new Error("Supabase: the settings row is missing — has the seed been applied?")
 
-  const uplift: Record<FormatKey, number> = {
-    boxed: 0,
-    built: res.data.uplift_built,
-    framed: res.data.uplift_framed,
-  }
   return {
-    uplift,
     leadTimes: { standard: res.data.lead_time_standard, framed: res.data.lead_time_framed },
     instagram: res.data.instagram,
   }

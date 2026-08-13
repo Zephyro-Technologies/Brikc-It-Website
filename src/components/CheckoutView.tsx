@@ -48,7 +48,7 @@ export default function CheckoutView({
   instagram: string
 }) {
   const router = useRouter()
-  const { lines, clear, uplift } = useCart()
+  const { lines, clear } = useCart()
 
   const [form, setForm] = useState({
     name: "",
@@ -82,10 +82,10 @@ export default function CheckoutView({
           : !product.formats[l.format]
             ? `no longer sold ${FORMAT_LABELS[l.format].toLowerCase()}`
             : null
-      const unitPrice = product ? product.price + (uplift[l.format] ?? 0) : l.unitPrice
+      const unitPrice = product ? product.prices[l.format] : l.unitPrice
       return { ...l, unitPrice, unavailable, changed: !unavailable && unitPrice !== l.unitPrice }
     })
-  }, [lines, products, uplift])
+  }, [lines, products])
 
   const blocked = priced.filter((l) => l.unavailable)
   const repriced = priced.filter((l) => l.changed)

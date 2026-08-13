@@ -43,14 +43,14 @@ npm run start   # serve the production build
 
 ## Catalogue rules
 
-Prices are **PKR**. A product's `price` is what a **boxed** set costs; built and framed
-add a fixed amount from `FORMAT_UPLIFT`:
+Prices are **PKR**. Each build carries its own price for each of the three formats —
+`price_boxed`, `price_built`, `price_framed` — all typed in the admin. Nothing is
+derived: a framed F1 car and a framed collector trio cost what they cost.
 
-```
-boxed  = price
-built  = price + 25,000
-framed = price + 68,000
-```
+Cards and sorting use `fromPrice()`, the cheapest format actually on sale, so a build
+that isn't sold boxed never advertises a boxed price. A format that is on sale must
+have a price above zero; a check constraint on the table enforces that, not just the
+form.
 
 Two per-product flags control availability, and the UI honours both:
 
@@ -73,7 +73,7 @@ instead, so the shop can never take money it has nowhere to receive.
 
 The total is never taken from the browser. `/api/orders` forwards only slug,
 format and quantity to the `place_order` function in Postgres, which reprices
-every line from `products.price` and the settings uplifts, checks stock and
+every line from the product's own per-format price, checks stock and
 format availability, and returns the reference and total. `anon` has no insert
 privilege on `orders` at all — only EXECUTE on that one function.
 

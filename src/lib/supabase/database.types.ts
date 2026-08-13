@@ -334,6 +334,9 @@ export type Database = {
           name: string
           pieces: number
           price: number
+          price_boxed: number
+          price_built: number
+          price_framed: number
           scale: string
           sells_boxed: boolean
           sells_built: boolean
@@ -353,7 +356,10 @@ export type Database = {
           in_stock?: boolean
           name: string
           pieces?: number
-          price: number
+          price?: number
+          price_boxed: number
+          price_built: number
+          price_framed: number
           scale: string
           sells_boxed?: boolean
           sells_built?: boolean
@@ -374,6 +380,9 @@ export type Database = {
           name?: string
           pieces?: number
           price?: number
+          price_boxed?: number
+          price_built?: number
+          price_framed?: number
           scale?: string
           sells_boxed?: boolean
           sells_built?: boolean

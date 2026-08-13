@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import type { Category, Product } from "../data"
+import { fromPrice, type Category, type Product } from "../data"
 import { ProductCard } from "./ProductCard"
 
 const CATS: (Category | "All")[] = ["All", "F1", "Cars", "Bikes", "Collector"]
@@ -28,8 +28,8 @@ export default function ShopView({ products: all }: { products: Product[] }) {
   const products = useMemo(() => {
     let list = active === "All" ? all : all.filter((p) => p.category === active)
     list = [...list]
-    if (sort === "price-asc") list.sort((a, b) => a.price - b.price)
-    else if (sort === "price-desc") list.sort((a, b) => b.price - a.price)
+    if (sort === "price-asc") list.sort((a, b) => fromPrice(a) - fromPrice(b))
+    else if (sort === "price-desc") list.sort((a, b) => fromPrice(b) - fromPrice(a))
     else list.sort((a, b) => Number(!!b.featured) - Number(!!a.featured))
     return list
   }, [active, sort, all])

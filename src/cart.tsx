@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
-import type { FormatKey, Product, Settings } from "./data"
+import type { FormatKey, Product } from "./data"
 
 export type CartLine = {
   key: string
@@ -24,18 +24,15 @@ type CartCtx = {
   remove: (key: string) => void
   setQty: (key: string, qty: number) => void
   clear: () => void
-  /** What a format adds to a base price. Comes from settings, not a constant. */
-  uplift: Record<FormatKey, number>
 }
 
 const Ctx = createContext<CartCtx | null>(null)
 
 const STORAGE_KEY = "brikc.cart.v1"
 
-export function CartProvider({ children, settings }: { children: ReactNode; settings: Settings }) {
+export function CartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([])
   const [open, setOpen] = useState(false)
-  const uplift = settings.uplift
 
   // Starts empty and fills in after mount rather than reading storage during
   // render: the server has no localStorage, and a cart that differs between the
@@ -65,7 +62,7 @@ export function CartProvider({ children, settings }: { children: ReactNode; sett
 
   const add: CartCtx["add"] = (product, format, qty = 1) => {
     const key = `${product.slug}-${format}`
-    const unitPrice = product.price + (uplift[format] ?? 0)
+    const unitPrice = product.prices[format]
     setLines((prev) => {
       const existing = prev.find((l) => l.key === key)
       if (existing) {
@@ -98,9 +95,9 @@ export function CartProvider({ children, settings }: { children: ReactNode; sett
   const value = useMemo<CartCtx>(() => {
     const count = lines.reduce((n, l) => n + l.qty, 0)
     const subtotal = lines.reduce((n, l) => n + l.qty * l.unitPrice, 0)
-    return { lines, count, subtotal, open, setOpen, add, remove, setQty, clear, uplift }
+    return { lines, count, subtotal, open, setOpen, add, remove, setQty, clear }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lines, open, uplift])
+  }, [lines, open])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

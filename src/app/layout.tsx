@@ -14,14 +14,14 @@ export const metadata: Metadata = {
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  // Format pricing is a store setting now, and the cart needs it to price a
-  // line the moment something is added — so it is fetched once, up here.
+  // Only the footer's Instagram handle needs this now — prices live on the
+  // product, so the cart no longer depends on any store setting.
   const settings = await getSettings()
 
   return (
     <html lang="en">
       <body>
-        <CartProvider settings={settings}>
+        <CartProvider>
           <Suspense fallback={null}>
             <ScrollToTop />
           </Suspense>

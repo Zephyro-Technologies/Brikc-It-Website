@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import type { Product } from "../data"
+import { fromPrice, type Product } from "../data"
 import { money } from "../cart"
 
 export function ProductCard({ product }: { product: Product }) {
@@ -42,7 +42,7 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="mt-auto flex items-center justify-between pt-5">
           <span className="ff-display text-lg font-extrabold">
             <span className="text-sm text-zinc-500">from </span>
-            {money(product.price)}
+            {money(fromPrice(product))}
           </span>
           <span className="ff-mono text-[11px] tracking-widest text-zinc-300 uppercase transition-colors group-hover:text-white">
             View →

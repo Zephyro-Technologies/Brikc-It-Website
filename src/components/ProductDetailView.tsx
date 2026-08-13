@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Check, ShoppingBag, Truck, ShieldCheck, ChevronLeft } from "lucide-react"
-import { FORMAT_LABELS, type FormatKey, type Product, type Settings } from "../data"
+import { FORMAT_LABELS, type FormatKey, type Product } from "../data"
 import { useCart, money } from "../cart"
 import { ProductCard } from "./ProductCard"
 
@@ -17,11 +17,9 @@ const FORMAT_DESC: Record<FormatKey, string> = {
 export default function ProductDetailView({
   product,
   suggestions,
-  settings,
 }: {
   product: Product | undefined
   suggestions: Product[]
-  settings: Settings
 }) {
   const [format, setFormat] = useState<FormatKey>("framed")
   const [activeImg, setActiveImg] = useState(0)
@@ -44,7 +42,7 @@ export default function ProductDetailView({
   // be left over from a product that did sell the format this one doesn't.
   const available = FORMAT_ORDER.filter((f) => product.formats[f])
   const activeFormat = available.includes(format) ? format : available[0]
-  const price = product.price + settings.uplift[activeFormat]
+  const price = product.prices[activeFormat]
 
   const onAdd = () => {
     if (!product.inStock) return
@@ -135,7 +133,7 @@ export default function ProductDetailView({
                       {on && <Check className="h-4 w-4 text-[#ff6b4a]" />}
                     </div>
                     <span className="ff-mono text-[11px] tracking-wider text-zinc-500">
-                      {settings.uplift[f] === 0 ? "included" : `+${money(settings.uplift[f])}`}
+                      {money(product.prices[f])}
                     </span>
                   </button>
                 )
