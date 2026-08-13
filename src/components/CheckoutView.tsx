@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { AlertTriangle, ArrowLeft, Loader2, ShoppingBag } from "lucide-react"
+import { AlertTriangle, ArrowLeft, ChevronDown, Loader2, ShoppingBag } from "lucide-react"
 import { useCart, money } from "../cart"
 import { FORMAT_LABELS, cityQualifies, type DeliveryOption, type Product, type ShippingMethod } from "../data"
 import { CONFIRMATION_KEY } from "../lib/checkout"
+import { OTHER_CITY, PROVINCES, citiesIn } from "../lib/pakistan"
 
 const FIELD =
   "w-full rounded-md border border-white/15 bg-[#101012] px-3 py-2.5 text-zinc-100 outline-none " +
@@ -37,6 +38,50 @@ function Field({
   )
 }
 
+function SelectField({
+  label,
+  id,
+  value,
+  onChange,
+  children,
+  hint,
+  disabled,
+  required,
+}: {
+  label: string
+  id: string
+  value: string
+  onChange: (v: string) => void
+  children: React.ReactNode
+  hint?: string
+  disabled?: boolean
+  required?: boolean
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="ff-mono mb-1.5 block text-[11px] tracking-widest text-zinc-500 uppercase">
+        {label}
+      </label>
+      <div className="relative">
+        <select
+          id={id}
+          value={value}
+          disabled={disabled}
+          required={required}
+          onChange={(e) => onChange(e.target.value)}
+          // appearance-none drops the native arrow, so one is drawn below —
+          // without it the control reads as a text box that won't accept typing.
+          className={`${FIELD} appearance-none pr-10 disabled:cursor-not-allowed`}
+        >
+          {children}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+      </div>
+      {hint && <p className="mt-1 text-xs text-zinc-600">{hint}</p>}
+    </div>
+  )
+}
+
 export default function CheckoutView({
   products,
   ordersOpen,
@@ -59,9 +104,14 @@ export default function CheckoutView({
     line1: "",
     line2: "",
     city: "",
+    /** Only used when city is the "not listed" sentinel. */
+    cityOther: "",
     province: "",
     postcode: "",
   })
+
+  /** What actually gets sent and matched against delivery coverage. */
+  const city = form.city === OTHER_CITY ? form.cityOther.trim() : form.city
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }))
 
   const [method, setMethod] = useState<ShippingMethod>("standard")
@@ -73,8 +123,8 @@ export default function CheckoutView({
    * delivery that can't happen — the database would reject it anyway.
    */
   const eligible = useMemo(
-    () => delivery.filter((o) => cityQualifies(o, form.city)),
-    [delivery, form.city],
+    () => delivery.filter((o) => cityQualifies(o, city)),
+    [delivery, city],
   )
   const chosen = eligible.find((o) => o.id === method) ?? eligible[0] ?? delivery[0]
   const shipping = chosen?.fee ?? 0
@@ -123,7 +173,7 @@ export default function CheckoutView({
           address: {
             line1: form.line1,
             line2: form.line2,
-            city: form.city,
+            city,
             province: form.province,
             postcode: form.postcode,
           },
@@ -224,8 +274,56 @@ export default function CheckoutView({
               <div className="sm:col-span-2">
                 <Field label="Apartment, suite, landmark" id="line2" value={form.line2} onChange={set("line2")} autoComplete="address-line2" maxLength={200} hint="Optional." />
               </div>
-              <Field label="City" id="city" value={form.city} onChange={set("city")} required autoComplete="address-level2" maxLength={80} />
-              <Field label="Province" id="province" value={form.province} onChange={set("province")} autoComplete="address-level1" maxLength={80} />
+              <SelectField
+                label="Province"
+                id="province"
+                required
+                value={form.province}
+                onChange={(v) =>
+                  // A city from the old province would be nonsense under the new one.
+                  setForm((f) => ({ ...f, province: v, city: "", cityOther: "" }))
+                }
+              >
+                <option value="">Choose a province…</option>
+                {PROVINCES.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </SelectField>
+
+              <SelectField
+                label="City"
+                id="city"
+                required
+                value={form.city}
+                disabled={!form.province}
+                onChange={set("city")}
+                hint={form.province ? undefined : "Pick a province first."}
+              >
+                <option value="">{form.province ? "Choose a city…" : "—"}</option>
+                {citiesIn(form.province).map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+                {form.province && <option value={OTHER_CITY}>My town isn&apos;t listed</option>}
+              </SelectField>
+
+              {form.city === OTHER_CITY && (
+                <div className="sm:col-span-2">
+                  <Field
+                    label="Which town?"
+                    id="cityOther"
+                    value={form.cityOther}
+                    onChange={set("cityOther")}
+                    required
+                    maxLength={80}
+                    hint="We&rsquo;ll check the courier reaches it before dispatch."
+                  />
+                </div>
+              )}
+
               <Field label="Postcode" id="postcode" value={form.postcode} onChange={set("postcode")} autoComplete="postal-code" maxLength={20} />
             </div>
           </section>
@@ -234,7 +332,7 @@ export default function CheckoutView({
             <h2 className="ff-display text-lg font-extrabold">How it gets to you</h2>
             <div className="mt-4 space-y-3">
               {delivery.map((o) => {
-                const ok = cityQualifies(o, form.city)
+                const ok = cityQualifies(o, city)
                 const on = chosen?.id === o.id
                 return (
                   <label
@@ -262,9 +360,9 @@ export default function CheckoutView({
                       <span className="mt-1 block text-sm text-zinc-400">{o.detail}</span>
                       {!ok && (
                         <span className="ff-mono mt-1.5 block text-[11px] tracking-wider text-amber-400/80 uppercase">
-                          {form.city.trim()
-                            ? `Not available in ${form.city.trim()}`
-                            : "Enter your city to see if this is available"}
+                          {city
+                            ? `Not available in ${city}`
+                            : "Choose your city to see if this is available"}
                         </span>
                       )}
                       {ok && o.link && (
