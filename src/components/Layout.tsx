@@ -18,6 +18,7 @@ function Instagram({ className = "" }: { className?: string }) {
 const logo = "/brand/logo.png"
 import { useCart, money } from "../cart"
 import { FORMAT_LABELS } from "../data"
+import { POLICIES } from "../lib/legal"
 
 const NAV = [
   { label: "Shop", to: "/shop" },
@@ -212,7 +213,7 @@ export function Footer({ instagram = "@brikc.it" }: { instagram?: string }) {
     <footer className="relative overflow-hidden border-t border-white/10">
       <div className="absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-[#e63329]/20 blur-[120px]" />
       <div className="relative mx-auto max-w-7xl px-5 py-20">
-        <div className="grid gap-10 md:grid-cols-[2fr_1fr_1fr]">
+        <div className="grid gap-10 md:grid-cols-[1.8fr_1fr_1.3fr_1fr]">
           <div>
             <Logo className="h-11 w-auto" />
             <p className="mt-4 max-w-xs text-zinc-400">
@@ -226,6 +227,18 @@ export function Footer({ instagram = "@brikc.it" }: { instagram?: string }) {
                 <li key={c}>
                   <Link href={`/shop?cat=${c}`} className="hover:text-white">
                     {c}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="ff-mono mb-4 text-[11px] tracking-widest text-zinc-500 uppercase">Legal</p>
+            <ul className="space-y-2 text-zinc-400">
+              {POLICIES.map((p) => (
+                <li key={p.href}>
+                  <Link href={p.href} className="hover:text-white">
+                    {p.label}
                   </Link>
                 </li>
               ))}
