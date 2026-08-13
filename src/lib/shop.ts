@@ -1,4 +1,5 @@
 import { supabase } from "./supabase/client"
+import { normaliseWhatsapp } from "./checkout"
 import type {
   Category,
   FaqItem,
@@ -148,7 +149,7 @@ export async function getPaymentDetails(): Promise<PaymentDetails> {
   if (!res.data) throw new Error("Supabase: the settings row is missing — has the seed been applied?")
 
   return {
-    whatsapp: res.data.whatsapp.replace(/\D/g, ""),
+    whatsapp: normaliseWhatsapp(res.data.whatsapp),
     bank: {
       name: res.data.bank_name,
       title: res.data.bank_account_title,

@@ -162,7 +162,7 @@ export default function OrderConfirmation({ payment }: { payment: PaymentDetails
         <p className="ff-mono mb-3 text-[11px] tracking-widest text-zinc-500 uppercase">What happens next</p>
         <ol className="space-y-2 text-sm text-zinc-400">
           <li>1. You transfer the amount and send us the receipt.</li>
-          <li>2. We check it against the order and confirm by email.</li>
+          <li>2. We check it against the order and confirm on WhatsApp.</li>
           <li>3. Your build starts, and we send tracking once it ships.</li>
         </ol>
       </div>
