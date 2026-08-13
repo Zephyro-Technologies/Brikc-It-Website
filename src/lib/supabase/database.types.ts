@@ -235,6 +235,7 @@ export type Database = {
           ship_postcode: string
           ship_province: string
           shipping: number
+          shipping_method: Database["public"]["Enums"]["shipping_method"]
           source: Database["public"]["Enums"]["order_source"]
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number
@@ -257,6 +258,7 @@ export type Database = {
           ship_postcode?: string
           ship_province?: string
           shipping?: number
+          shipping_method?: Database["public"]["Enums"]["shipping_method"]
           source?: Database["public"]["Enums"]["order_source"]
           status?: Database["public"]["Enums"]["order_status"]
           subtotal: number
@@ -279,6 +281,7 @@ export type Database = {
           ship_postcode?: string
           ship_province?: string
           shipping?: number
+          shipping_method?: Database["public"]["Enums"]["shipping_method"]
           source?: Database["public"]["Enums"]["order_source"]
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number
@@ -333,7 +336,6 @@ export type Database = {
           in_stock: boolean
           name: string
           pieces: number
-          price: number
           price_boxed: number
           price_built: number
           price_framed: number
@@ -356,7 +358,6 @@ export type Database = {
           in_stock?: boolean
           name: string
           pieces?: number
-          price?: number
           price_boxed: number
           price_built: number
           price_framed: number
@@ -379,7 +380,6 @@ export type Database = {
           in_stock?: boolean
           name?: string
           pieces?: number
-          price?: number
           price_boxed?: number
           price_built?: number
           price_framed?: number
@@ -437,9 +437,10 @@ export type Database = {
           lead_time_framed: string
           lead_time_standard: string
           store_name: string
+          teamhq_cities: string
+          teamhq_fee: number
+          teamhq_instagram: string
           updated_at: string
-          uplift_built: number
-          uplift_framed: number
           whatsapp: string
         }
         Insert: {
@@ -458,9 +459,10 @@ export type Database = {
           lead_time_framed?: string
           lead_time_standard?: string
           store_name?: string
+          teamhq_cities?: string
+          teamhq_fee?: number
+          teamhq_instagram?: string
           updated_at?: string
-          uplift_built?: number
-          uplift_framed?: number
           whatsapp?: string
         }
         Update: {
@@ -479,9 +481,10 @@ export type Database = {
           lead_time_framed?: string
           lead_time_standard?: string
           store_name?: string
+          teamhq_cities?: string
+          teamhq_fee?: number
+          teamhq_instagram?: string
           updated_at?: string
-          uplift_built?: number
-          uplift_framed?: number
           whatsapp?: string
         }
         Relationships: []
@@ -514,6 +517,7 @@ export type Database = {
           p_phone: string
           p_postcode: string
           p_province: string
+          p_shipping_method?: string
         }
         Returns: Json
       }
@@ -530,6 +534,7 @@ export type Database = {
         | "cancelled"
         | "refunded"
       product_category: "F1" | "Cars" | "Bikes" | "Collector"
+      shipping_method: "standard" | "teamhq"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -672,6 +677,7 @@ export const Constants = {
         "refunded",
       ],
       product_category: ["F1", "Cars", "Bikes", "Collector"],
+      shipping_method: ["standard", "teamhq"],
     },
   },
 } as const

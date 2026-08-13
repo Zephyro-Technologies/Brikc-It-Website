@@ -104,6 +104,11 @@ export default function OrderConfirmation({ payment }: { payment: PaymentDetails
         <div className="bg-[#101012] px-5 py-4">
           <p className="ff-mono text-[10px] tracking-widest text-zinc-500 uppercase">Amount to transfer</p>
           <p className="ff-display mt-1 text-2xl font-extrabold">{money(order.total)}</p>
+          {order.shipping > 0 && (
+            <p className="mt-1 text-xs text-zinc-500">
+              Includes {money(order.shipping)} for {order.deliveryLabel.toLowerCase()}
+            </p>
+          )}
         </div>
       </div>
 
@@ -163,7 +168,12 @@ export default function OrderConfirmation({ payment }: { payment: PaymentDetails
         <ol className="space-y-2 text-sm text-zinc-400">
           <li>1. You transfer the amount and send us the receipt.</li>
           <li>2. We check it against the order and confirm on WhatsApp.</li>
-          <li>3. Your build starts, and we send tracking once it ships.</li>
+          <li>
+            3. Your build starts.{" "}
+            {order.shipping > 0
+              ? "We arrange a time with you and bring it round in person."
+              : "We send tracking once it ships."}
+          </li>
         </ol>
       </div>
 

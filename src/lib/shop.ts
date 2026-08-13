@@ -2,6 +2,7 @@ import { supabase } from "./supabase/client"
 import { normaliseWhatsapp } from "./checkout"
 import type {
   Category,
+  DeliveryOption,
   FaqItem,
   FormatKey,
   PaymentDetails,
@@ -125,6 +126,48 @@ export async function getSettings(): Promise<Settings> {
     leadTimes: { standard: res.data.lead_time_standard, framed: res.data.lead_time_framed },
     instagram: res.data.instagram,
   }
+}
+
+/**
+ * What delivery choices the shopper gets. Standard is always there and always
+ * free; hand delivery only appears when it has been configured with somewhere
+ * to deliver to.
+ */
+export async function getDeliveryOptions(): Promise<DeliveryOption[]> {
+  const res = await supabase()
+    .from("settings")
+    .select("teamhq_fee, teamhq_cities, teamhq_instagram")
+    .limit(1)
+    .maybeSingle()
+  if (res.error) throw new Error(`Supabase: failed to load delivery options — ${res.error.message}`)
+
+  const options: DeliveryOption[] = [
+    {
+      id: "standard",
+      label: "Standard delivery",
+      detail: "Tracked courier, anywhere in Pakistan.",
+      fee: 0,
+      cities: [],
+    },
+  ]
+
+  const cities = (res.data?.teamhq_cities ?? "")
+    .split(",")
+    .map((c) => c.trim())
+    .filter(Boolean)
+
+  if (cities.length > 0) {
+    options.push({
+      id: "teamhq",
+      label: "Hand delivery by TEAM HQ",
+      detail: `Brought to your door in person. ${cities.join(" and ")} only.`,
+      fee: res.data?.teamhq_fee ?? 0,
+      cities,
+      link: res.data?.teamhq_instagram || undefined,
+    })
+  }
+
+  return options
 }
 
 /**

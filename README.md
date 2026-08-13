@@ -77,8 +77,14 @@ every line from the product's own per-format price, checks stock and
 format availability, and returns the reference and total. `anon` has no insert
 privilege on `orders` at all — only EXECUTE on that one function.
 
-Delivery is free nationwide, so the total is the subtotal. That is one line in
-the migration if it ever changes.
+Two delivery options. Standard courier is free and always offered. Hand delivery
+by TEAM HQ costs extra and only appears for shoppers whose city matches the towns
+set in **Settings → Delivery** — clearing those towns withdraws it entirely.
+
+Which option is legitimate, and what it costs, is decided by `place_order`, not
+the browser: picking hand delivery for a city outside the covered towns is
+rejected with a message naming the towns that are. Cities are compared on letters
+alone, so "islamabad.", "Islamabad" and "Islamabad Capital Territory" all count.
 
 ## Rendering
 

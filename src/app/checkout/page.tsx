@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import CheckoutView from "../../components/CheckoutView"
 import { canCheckout } from "../../data"
-import { getPaymentDetails, getProducts, getSettings } from "../../lib/shop"
+import { getDeliveryOptions, getPaymentDetails, getProducts, getSettings } from "../../lib/shop"
 
 export const metadata: Metadata = {
   title: "Checkout — brikc.it",
@@ -15,10 +15,11 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic"
 
 export default async function CheckoutPage() {
-  const [products, payment, settings] = await Promise.all([
+  const [products, payment, settings, delivery] = await Promise.all([
     getProducts(),
     getPaymentDetails(),
     getSettings(),
+    getDeliveryOptions(),
   ])
 
   return (
@@ -26,6 +27,7 @@ export default async function CheckoutPage() {
       products={products}
       ordersOpen={canCheckout(payment)}
       instagram={settings.instagram}
+      delivery={delivery}
     />
   )
 }

@@ -74,6 +74,36 @@ export function fromPrice(product: Product): number {
   return sold.length ? Math.min(...sold) : product.prices.boxed
 }
 
+export type ShippingMethod = "standard" | "teamhq"
+
+export type DeliveryOption = {
+  id: ShippingMethod
+  label: string
+  detail: string
+  /** Added to the order total. Zero for standard. */
+  fee: number
+  /** Towns this option reaches. Empty means everywhere. */
+  cities: string[]
+  /** Who does the delivering, if it isn't us. */
+  link?: string
+}
+
+/**
+ * Cities are typed by hand, so compare on letters alone — "islamabad.",
+ * "Islamabad" and "Islamabad Capital Territory" all have to count as the same
+ * place. Mirrors private.city_qualifies() in the database, which is what
+ * actually decides; this copy only drives the UI.
+ */
+export function cityQualifies(option: DeliveryOption, city: string): boolean {
+  if (option.cities.length === 0) return true
+  const typed = city.toLowerCase().replace(/[^a-z]/g, "")
+  if (!typed) return false
+  return option.cities.some((c) => {
+    const want = c.toLowerCase().replace(/[^a-z]/g, "")
+    return want.length > 0 && typed.includes(want)
+  })
+}
+
 export type WalletAccount = { title: string; number: string }
 
 /**

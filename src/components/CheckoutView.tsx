@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { AlertTriangle, ArrowLeft, Loader2, ShoppingBag } from "lucide-react"
 import { useCart, money } from "../cart"
-import { FORMAT_LABELS, type Product } from "../data"
+import { FORMAT_LABELS, cityQualifies, type DeliveryOption, type Product, type ShippingMethod } from "../data"
 import { CONFIRMATION_KEY } from "../lib/checkout"
 
 const FIELD =
@@ -41,11 +41,13 @@ export default function CheckoutView({
   products,
   ordersOpen,
   instagram,
+  delivery,
 }: {
   products: Product[]
   /** False when no payment details are set — see canCheckout(). */
   ordersOpen: boolean
   instagram: string
+  delivery: DeliveryOption[]
 }) {
   const router = useRouter()
   const { lines, clear } = useCart()
@@ -61,6 +63,21 @@ export default function CheckoutView({
     postcode: "",
   })
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }))
+
+  const [method, setMethod] = useState<ShippingMethod>("standard")
+
+  /**
+   * Hand delivery only reaches certain towns, so the choice depends on the
+   * address as it is being typed. If a shopper picks it and then changes city,
+   * the selection has to fall back rather than quietly overcharging them for a
+   * delivery that can't happen — the database would reject it anyway.
+   */
+  const eligible = useMemo(
+    () => delivery.filter((o) => cityQualifies(o, form.city)),
+    [delivery, form.city],
+  )
+  const chosen = eligible.find((o) => o.id === method) ?? eligible[0] ?? delivery[0]
+  const shipping = chosen?.fee ?? 0
 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -89,7 +106,8 @@ export default function CheckoutView({
 
   const blocked = priced.filter((l) => l.unavailable)
   const repriced = priced.filter((l) => l.changed)
-  const total = priced.reduce((n, l) => (l.unavailable ? n : n + l.unitPrice * l.qty), 0)
+  const subtotal = priced.reduce((n, l) => (l.unavailable ? n : n + l.unitPrice * l.qty), 0)
+  const total = subtotal + shipping
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -110,9 +128,15 @@ export default function CheckoutView({
             postcode: form.postcode,
           },
           lines: priced.map((l) => ({ slug: l.slug, format: l.format, qty: l.qty })),
+          shippingMethod: chosen?.id ?? "standard",
         }),
       })
-      const body = (await res.json()) as { number?: string; total?: number; error?: string }
+      const body = (await res.json()) as {
+        number?: string
+        total?: number
+        shipping?: number
+        error?: string
+      }
       if (!res.ok || !body.number) {
         setError(body.error ?? "We couldn't place that order.")
         return
@@ -123,7 +147,13 @@ export default function CheckoutView({
       // other people's.
       sessionStorage.setItem(
         CONFIRMATION_KEY,
-        JSON.stringify({ number: body.number, total: body.total ?? total, name: form.name }),
+        JSON.stringify({
+          number: body.number,
+          total: body.total ?? total,
+          name: form.name,
+          shipping: body.shipping ?? shipping,
+          deliveryLabel: chosen?.label ?? "Standard delivery",
+        }),
       )
       clear()
       router.push("/checkout/confirmation")
@@ -200,6 +230,61 @@ export default function CheckoutView({
             </div>
           </section>
 
+          <section>
+            <h2 className="ff-display text-lg font-extrabold">How it gets to you</h2>
+            <div className="mt-4 space-y-3">
+              {delivery.map((o) => {
+                const ok = cityQualifies(o, form.city)
+                const on = chosen?.id === o.id
+                return (
+                  <label
+                    key={o.id}
+                    className={`flex items-start gap-3 rounded-xl border p-4 transition-colors ${
+                      on ? "border-[#e63329] bg-[#140b0a]" : "border-white/10"
+                    } ${ok ? "cursor-pointer hover:border-white/30" : "cursor-not-allowed opacity-45"}`}
+                  >
+                    <input
+                      type="radio"
+                      name="delivery"
+                      value={o.id}
+                      checked={on}
+                      disabled={!ok}
+                      onChange={() => setMethod(o.id)}
+                      className="mt-1 h-4 w-4 shrink-0 accent-[#e63329]"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-wrap items-baseline justify-between gap-x-3">
+                        <span className="ff-display font-bold">{o.label}</span>
+                        <span className="ff-display font-bold">
+                          {o.fee > 0 ? money(o.fee) : "Free"}
+                        </span>
+                      </span>
+                      <span className="mt-1 block text-sm text-zinc-400">{o.detail}</span>
+                      {!ok && (
+                        <span className="ff-mono mt-1.5 block text-[11px] tracking-wider text-amber-400/80 uppercase">
+                          {form.city.trim()
+                            ? `Not available in ${form.city.trim()}`
+                            : "Enter your city to see if this is available"}
+                        </span>
+                      )}
+                      {ok && o.link && (
+                        <a
+                          href={o.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="mt-1.5 inline-block text-xs text-[#ff6b4a] underline-offset-4 hover:underline"
+                        >
+                          Who&rsquo;s delivering &rarr;
+                        </a>
+                      )}
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
+          </section>
+
           <section className="rounded-xl border border-white/10 bg-[#101012] p-5">
             <h2 className="ff-display text-lg font-extrabold">How you&rsquo;ll pay</h2>
             <p className="mt-2 leading-relaxed text-zinc-400">
@@ -244,9 +329,9 @@ export default function CheckoutView({
           )}
 
           <div className="space-y-2 border-t border-white/10 pt-4">
-            <div className="flex items-center justify-between text-sm text-zinc-400">
-              <span>Delivery</span>
-              <span className="text-zinc-300">Free, nationwide</span>
+            <div className="flex items-center justify-between gap-3 text-sm text-zinc-400">
+              <span className="min-w-0 truncate">{chosen?.label ?? "Delivery"}</span>
+              <span className="shrink-0 text-zinc-300">{shipping > 0 ? money(shipping) : "Free"}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="ff-display font-bold">Total</span>

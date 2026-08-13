@@ -54,6 +54,9 @@ export async function POST(request: Request) {
     p_province: str(address.province),
     p_postcode: str(address.postcode),
     p_lines: lines,
+    // Which method is legitimate, and what it costs, is decided in the
+    // database — this only carries the choice across.
+    p_shipping_method: str(body.shippingMethod) || "standard",
   })
 
   if (error) {
@@ -69,11 +72,15 @@ export async function POST(request: Request) {
     )
   }
 
-  const result = data as { number?: string; total?: number } | null
+  const result = data as { number?: string; total?: number; shipping?: number } | null
   if (!result?.number) {
     console.error("place_order returned nothing usable", data)
     return NextResponse.json({ error: "We couldn't place that order." }, { status: 500 })
   }
 
-  return NextResponse.json({ number: result.number, total: result.total ?? 0 })
+  return NextResponse.json({
+    number: result.number,
+    total: result.total ?? 0,
+    shipping: result.shipping ?? 0,
+  })
 }

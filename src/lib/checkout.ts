@@ -18,6 +18,9 @@ export type PlacedOrder = {
   number: string
   total: number
   name: string
+  /** What delivery cost, and what it was called. Zero for standard. */
+  shipping: number
+  deliveryLabel: string
 }
 
 /**
