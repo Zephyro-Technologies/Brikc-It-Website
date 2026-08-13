@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.15"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       admins: {
@@ -388,40 +413,67 @@ export type Database = {
       }
       settings: {
         Row: {
+          bank_account_number: string
+          bank_account_title: string
+          bank_iban: string
+          bank_name: string
           contact_email: string
           currency: string
+          easypaisa_number: string
+          easypaisa_title: string
           id: boolean
           instagram: string
+          jazzcash_number: string
+          jazzcash_title: string
           lead_time_framed: string
           lead_time_standard: string
           store_name: string
           updated_at: string
           uplift_built: number
           uplift_framed: number
+          whatsapp: string
         }
         Insert: {
+          bank_account_number?: string
+          bank_account_title?: string
+          bank_iban?: string
+          bank_name?: string
           contact_email?: string
           currency?: string
+          easypaisa_number?: string
+          easypaisa_title?: string
           id?: boolean
           instagram?: string
+          jazzcash_number?: string
+          jazzcash_title?: string
           lead_time_framed?: string
           lead_time_standard?: string
           store_name?: string
           updated_at?: string
           uplift_built?: number
           uplift_framed?: number
+          whatsapp?: string
         }
         Update: {
+          bank_account_number?: string
+          bank_account_title?: string
+          bank_iban?: string
+          bank_name?: string
           contact_email?: string
           currency?: string
+          easypaisa_number?: string
+          easypaisa_title?: string
           id?: boolean
           instagram?: string
+          jazzcash_number?: string
+          jazzcash_title?: string
           lead_time_framed?: string
           lead_time_standard?: string
           store_name?: string
           updated_at?: string
           uplift_built?: number
           uplift_framed?: number
+          whatsapp?: string
         }
         Relationships: []
       }
@@ -442,7 +494,20 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      place_order: {
+        Args: {
+          p_city: string
+          p_email: string
+          p_line1: string
+          p_line2: string
+          p_lines: Json
+          p_name: string
+          p_phone: string
+          p_postcode: string
+          p_province: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       format_key: "boxed" | "built" | "framed"
@@ -581,6 +646,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       format_key: ["boxed", "built", "framed"],

@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
 import type { FormatKey, Product, Settings } from "./data"
 
 export type CartLine = {
@@ -30,10 +30,38 @@ type CartCtx = {
 
 const Ctx = createContext<CartCtx | null>(null)
 
+const STORAGE_KEY = "brikc.cart.v1"
+
 export function CartProvider({ children, settings }: { children: ReactNode; settings: Settings }) {
   const [lines, setLines] = useState<CartLine[]>([])
   const [open, setOpen] = useState(false)
   const uplift = settings.uplift
+
+  // Starts empty and fills in after mount rather than reading storage during
+  // render: the server has no localStorage, and a cart that differs between the
+  // two would be a hydration mismatch.
+  const [restored, setRestored] = useState(false)
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved)
+        if (Array.isArray(parsed)) setLines(parsed as CartLine[])
+      }
+    } catch {
+      // Corrupt or unavailable storage isn't worth breaking the shop over.
+    }
+    setRestored(true)
+  }, [])
+
+  useEffect(() => {
+    if (!restored) return // don't let the initial empty state clobber a saved cart
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lines))
+    } catch {
+      // Private browsing, quota, etc. The cart still works for this visit.
+    }
+  }, [lines, restored])
 
   const add: CartCtx["add"] = (product, format, qty = 1) => {
     const key = `${product.slug}-${format}`

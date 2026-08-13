@@ -190,14 +190,15 @@ export function CartDrawer() {
                 <span className="ff-display text-xl font-extrabold">{money(subtotal)}</span>
               </div>
               <p className="ff-mono mb-4 text-[11px] tracking-wider text-zinc-500">
-                Shipping &amp; taxes calculated at checkout
+                Free delivery nationwide
               </p>
-              <button
-                onClick={() => alert("This is a front-end demo — payment isn't wired up yet.")}
-                className="w-full rounded-full bg-[#e63329] py-3.5 ff-display font-bold text-white transition-transform hover:scale-[1.02] led-glow-soft"
+              <Link
+                href="/checkout"
+                onClick={() => setOpen(false)}
+                className="block w-full rounded-full bg-[#e63329] py-3.5 text-center ff-display font-bold text-white transition-transform hover:scale-[1.02] led-glow-soft"
               >
                 Checkout
-              </button>
+              </Link>
             </div>
           </>
         )}

@@ -61,6 +61,32 @@ export type Settings = {
   instagram: string
 }
 
+export type WalletAccount = { title: string; number: string }
+
+/**
+ * How a shopper pays. Read only by the checkout, so it is fetched there rather
+ * than on every page with the rest of the settings.
+ */
+export type PaymentDetails = {
+  /** Digits with country code, ready for a wa.me link. Empty if unset. */
+  whatsapp: string
+  bank: { name: string; title: string; number: string; iban: string }
+  jazzcash: WalletAccount
+  easypaisa: WalletAccount
+}
+
+/**
+ * Checkout needs somewhere to send the money and somewhere to send the proof.
+ * Missing either, the shop takes no orders — better than collecting an address
+ * and then having nothing to tell the customer.
+ */
+export function canCheckout(p: PaymentDetails): boolean {
+  const hasAccount = Boolean(
+    (p.bank.title && (p.bank.number || p.bank.iban)) || p.jazzcash.number || p.easypaisa.number,
+  )
+  return p.whatsapp.length >= 10 && hasAccount
+}
+
 /* ── Copy that stays in code ─────────────────────────────────────────────── */
 
 export const FORMATS = [

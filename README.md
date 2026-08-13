@@ -34,8 +34,11 @@ npm run start   # serve the production build
 | `src/app/shop/page.tsx` + `src/components/ShopView.tsx` | Catalogue with category filter and sort |
 | `src/app/shop/[slug]/page.tsx` + `src/components/ProductDetailView.tsx` | Product page |
 | `src/app/[...notfound]/page.tsx`, `src/app/not-found.tsx` | Unknown URLs fall back to home |
+| `src/app/checkout/page.tsx` + `src/components/CheckoutView.tsx` | Checkout form |
+| `src/app/checkout/confirmation/page.tsx` | Transfer details and the WhatsApp hand-off |
+| `src/app/api/orders/route.ts` | Takes the order — hands straight to `place_order` in Postgres |
 | `src/data.ts` | The catalogue |
-| `src/cart.tsx` | Cart context and `money()` |
+| `src/cart.tsx` | Cart context, `money()`, localStorage persistence |
 | `src/app/globals.css` | Brand tokens, fonts, LED glow, marquee/flicker keyframes |
 
 ## Catalogue rules
@@ -55,6 +58,27 @@ Two per-product flags control availability, and the UI honours both:
   offers the enabled ones (Podium Trio is built or framed only, never boxed).
 - `inStock` — false shows a "Sold out" badge on the card, a sold-out label on the
   product page, and disables Add to cart.
+
+## Checkout
+
+There is no payment gateway. A shopper fills in their details, the order is
+recorded as **pending payment**, and the confirmation page gives them the bank
+and wallet accounts plus a WhatsApp button — prefilled with their order number —
+to send the transfer receipt to. The admin marks the order paid once it lands.
+
+Accounts and the WhatsApp number are edited in the admin under **Settings →
+Payments**, not in code. Until both a WhatsApp number and at least one account
+are filled in, `/checkout` politely refuses orders and points at Instagram
+instead, so the shop can never take money it has nowhere to receive.
+
+The total is never taken from the browser. `/api/orders` forwards only slug,
+format and quantity to the `place_order` function in Postgres, which reprices
+every line from `products.price` and the settings uplifts, checks stock and
+format availability, and returns the reference and total. `anon` has no insert
+privilege on `orders` at all — only EXECUTE on that one function.
+
+Delivery is free nationwide, so the total is the subtotal. That is one line in
+the migration if it ever changes.
 
 ## Rendering
 

@@ -1,5 +1,14 @@
 import { supabase } from "./supabase/client"
-import type { Category, FaqItem, FormatKey, Product, Review, Settings, StoreCategory } from "../data"
+import type {
+  Category,
+  FaqItem,
+  FormatKey,
+  PaymentDetails,
+  Product,
+  Review,
+  Settings,
+  StoreCategory,
+} from "../data"
 
 /**
  * Every read the storefront makes. Rows are mapped into the shapes the
@@ -117,5 +126,36 @@ export async function getSettings(): Promise<Settings> {
     uplift,
     leadTimes: { standard: res.data.lead_time_standard, framed: res.data.lead_time_framed },
     instagram: res.data.instagram,
+  }
+}
+
+/**
+ * Kept apart from getSettings because only the checkout needs it — the root
+ * layout fetches settings on every single page and has no use for a bank
+ * account number.
+ */
+export async function getPaymentDetails(): Promise<PaymentDetails> {
+  const res = await supabase()
+    .from("settings")
+    // One literal, not a concatenation: supabase-js parses this string at the
+    // type level to work out the row shape, and only a literal survives that.
+    .select(
+      "whatsapp, bank_name, bank_account_title, bank_account_number, bank_iban, jazzcash_title, jazzcash_number, easypaisa_title, easypaisa_number",
+    )
+    .limit(1)
+    .maybeSingle()
+  if (res.error) throw new Error(`Supabase: failed to load payment details — ${res.error.message}`)
+  if (!res.data) throw new Error("Supabase: the settings row is missing — has the seed been applied?")
+
+  return {
+    whatsapp: res.data.whatsapp.replace(/\D/g, ""),
+    bank: {
+      name: res.data.bank_name,
+      title: res.data.bank_account_title,
+      number: res.data.bank_account_number,
+      iban: res.data.bank_iban,
+    },
+    jazzcash: { title: res.data.jazzcash_title, number: res.data.jazzcash_number },
+    easypaisa: { title: res.data.easypaisa_title, number: res.data.easypaisa_number },
   }
 }
