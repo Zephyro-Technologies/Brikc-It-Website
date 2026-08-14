@@ -151,6 +151,9 @@ function Categories({ categories }: { categories: StoreCategory[] }) {
 
 function Featured({ products }: { products: Product[] }) {
   const featured = products.filter((p) => p.featured).slice(0, 4)
+  // A "Featured builds" heading over an empty row looks broken rather than
+  // empty, so with nothing to show the section doesn't render at all.
+  if (featured.length === 0) return null
   return (
     <section className="mx-auto max-w-7xl px-5 py-24">
       <div className="mb-12 flex flex-wrap items-end justify-between gap-4">

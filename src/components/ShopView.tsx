@@ -39,7 +39,9 @@ export default function ShopView({ products: all }: { products: Product[] }) {
       <p className="ff-mono mb-3 text-xs tracking-[0.3em] text-[#ff6b4a] uppercase">The collection</p>
       <h1 className="ff-display text-4xl font-black tracking-tight md:text-6xl">Shop all builds</h1>
       <p className="mt-4 max-w-xl text-zinc-400">
-        Boxed, built, or framed with LED — each build sets its own options. {products.length} builds in {active === "All" ? "the range" : active}.
+        Boxed, built, or framed with LED — each build sets its own options.
+        {products.length > 0 &&
+          ` ${products.length} ${products.length === 1 ? "build" : "builds"} in ${active === "All" ? "the range" : active}.`}
       </p>
 
       <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-y border-white/10 py-4">
@@ -74,11 +76,32 @@ export default function ShopView({ products: all }: { products: Product[] }) {
         </label>
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {products.map((p) => (
-          <ProductCard key={p.slug} product={p} />
-        ))}
-      </div>
+      {products.length === 0 ? (
+        <div className="mt-8 rounded-2xl border border-white/10 bg-[#101012] px-6 py-20 text-center">
+          <p className="ff-display text-xl font-extrabold">
+            {all.length === 0 ? "Nothing here yet" : `No ${active} builds right now`}
+          </p>
+          <p className="mx-auto mt-3 max-w-sm text-zinc-400">
+            {all.length === 0
+              ? "The first builds are on their way. Follow along on Instagram and you'll see them as they land."
+              : "Everything else is still worth a look."}
+          </p>
+          {all.length > 0 && (
+            <button
+              onClick={() => setCat("All")}
+              className="mt-6 rounded-full border border-white/20 px-6 py-3 ff-display font-semibold hover:bg-white/5"
+            >
+              Show every build
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {products.map((p) => (
+            <ProductCard key={p.slug} product={p} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
