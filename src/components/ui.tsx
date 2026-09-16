@@ -91,23 +91,26 @@ export function SectionHead({
   action?: ReactNode
 }) {
   return (
-    <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-      <div className="max-w-2xl">
-        {kicker && (
-          <span
-            className={`text-xs font-bold tracking-[0.2em] uppercase ${
-              dark ? "text-[var(--primary-2)]" : "text-[var(--primary)]"
-            }`}
-          >
-            {kicker}
-          </span>
-        )}
+    <div className="mb-8">
+      {kicker && (
+        <span
+          className={`text-xs font-bold tracking-[0.2em] uppercase ${
+            dark ? "text-[var(--primary-2)]" : "text-[var(--primary)]"
+          }`}
+        >
+          {kicker}
+        </span>
+      )}
+      {/* The action sits on the title's line, not down beside the description. */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
         <h2 className="font-display text-4xl tracking-tight sm:text-5xl" style={{ fontWeight: 800 }}>
           {title}
         </h2>
-        <p className={`mt-3 text-lg ${dark ? "text-white/60" : "text-[var(--muted)]"}`}>{desc}</p>
+        {action && <div className="flex-none">{action}</div>}
       </div>
-      {action && <div className="flex-none">{action}</div>}
+      <p className={`mt-3 max-w-2xl text-lg ${dark ? "text-white/60" : "text-[var(--muted)]"}`}>
+        {desc}
+      </p>
     </div>
   )
 }

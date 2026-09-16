@@ -84,25 +84,26 @@ function BestSellers({ products }: { products: Product[] }) {
 
       <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6">
         <Reveal>
-          <div className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-            <div className="max-w-2xl">
+          <div className="mb-10">
+            {/* Action on the title's line, matching SectionHead. */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
               <h2
                 className="font-display text-4xl tracking-tight sm:text-5xl lg:text-6xl"
                 style={{ fontWeight: 800 }}
               >
                 Best Sellers
               </h2>
-              <p className="mt-3 text-lg text-white/60">
-                The builds our collectors reach for most — fan-favourite frames, built to last.
-              </p>
+              <Link
+                href="/best-sellers"
+                className="mat-btn sheen inline-flex flex-none items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[#0b0b0d] hover:bg-white/90"
+              >
+                Explore all best sellers
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
-            <Link
-              href="/best-sellers"
-              className="mat-btn sheen inline-flex flex-none items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[#0b0b0d] hover:bg-white/90"
-            >
-              Explore all best sellers
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            <p className="mt-3 max-w-2xl text-lg text-white/60">
+              The builds our collectors reach for most — fan-favourite frames, built to last.
+            </p>
           </div>
         </Reveal>
 
