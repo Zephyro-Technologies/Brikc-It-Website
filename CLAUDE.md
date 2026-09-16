@@ -59,12 +59,14 @@ price, and the screen has to agree with what the database will charge.
   the shapes in `src/data.ts`, so the components never see database column names.
 - `src/data.ts` holds the types and the pure helpers (`fromPrice`, `cityQualifies`,
   `canCheckout`). It is no longer a catalogue and no longer holds copy.
-- `src/content/` holds copy with no admin screen: `site.ts` (nav, banner, hero stats, steps,
-  promises), `displays.ts` (frame finishes) and `guides.ts` (the booklets). Editing these is a
-  code change — deliberately, because they turn over far more slowly than the catalogue.
+- `src/content/` is what is left of copy with no admin screen: `site.ts` (nav, banner, the
+  how-it-works steps) and `displays.ts` (only the three promises under the `/displays` grid).
+  The frame finishes and the booklet guides used to live here and are now admin-managed —
+  check the database before assuming a page's content is in the repo.
 - `src/lib/product-view.ts` derives every string a card shows (`subline`, `cardTag`, `specs`,
-  `isSellable`, `cheapestFormat`) from a catalogue row. The design came from a prototype whose
-  products had one price and one image; nothing invents data, it all derives.
+  `isSellable`, `cheapestFormat`, `cheapestVariant`, `displayVisual`) from a catalogue row, and
+  branches on the product's kind. The design came from a prototype whose products had one price
+  and one image; nothing invents data, it all derives.
 - `src/lib/supabase/database.types.ts` is generated from the database. The `.select()` argument
   must stay a **single string literal** — supabase-js parses it at the type level and a
   concatenation loses the row shape.
@@ -73,7 +75,20 @@ price, and the screen has to agree with what the database will charge.
 
 ### Catalogue rules
 
-Prices are PKR, and every format carries its own price (`price_boxed`, `price_built`,
+**A product has a kind, and the two are priced differently.** A `model` is a scale build priced
+by format; a `display` is a frame or desk priced by `product_variants`, one row per size or
+finish. `place_order` branches on the kind and refuses a line that sends the wrong one — a cart
+calling a desk "boxed" is a bug worth surfacing, not smoothing over.
+
+Models live at `/shop` and `/shop/<slug>`; displays live at `/displays` and `/displays/<slug>`
+and never appear in the shop grid or its category chips. `getProducts()` returns models only,
+`getDisplays()` returns displays with their variants.
+
+A display shows its photograph when it has one and its `swatch` — a CSS colour or gradient —
+when it doesn't, so a finish nobody has shot yet still reads as a material. A display with no
+priced variants renders and says it cannot be ordered, which is how every one of them arrives.
+
+Prices are PKR, and for a model every format carries its own price (`price_boxed`, `price_built`,
 `price_framed`) — nothing is derived from a base price and there is no uplift. Cards and sorts
 use `fromPrice()`, the cheapest format actually on sale, so a build not sold boxed never
 advertises a boxed price.
@@ -108,7 +123,7 @@ The placed order reaches `/checkout/confirmation` through `sessionStorage` under
 | --- | --- | --- |
 | `/`, `/shop/[slug]`, `/booklets/[id]` | prerendered | static HTML, revalidated on demand |
 | `/shop` | dynamic | awaits `searchParams` so `useSearchParams()` in `ShopView` resolves server-side and the grid ships as real HTML for any `?cat=` |
-| `/best-sellers`, `/displays`, `/booklets` | prerendered | `/displays` reads no database at all |
+| `/best-sellers`, `/displays`, `/displays/[slug]`, `/booklets` | prerendered | all read the database; a content or catalogue save has to revalidate them |
 | `/frames` | redirect | `redirect("/displays")`, so old links don't 404 |
 | `/checkout`, `/checkout/confirmation` | `force-dynamic` | a stale copy could quote an old total or an old bank account |
 | `/api/revalidate` | `force-dynamic` | — |
