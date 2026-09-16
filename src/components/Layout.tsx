@@ -36,18 +36,33 @@ function InstagramIcon({ className = "" }: { className?: string }) {
   )
 }
 
-function LogoMark({ className = "" }: { className?: string }) {
+function LogoMark({ className = "", onDark = false }: { className?: string; onDark?: boolean }) {
   return (
-    <span className={`grid place-items-center overflow-hidden rounded-2xl bg-[#0d0d0d] ${className}`}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/brand/mark.png"
-        alt="brikc.it"
-        loading="lazy"
-        style={{ backgroundColor: "#eceae7" }}
-        className="h-full w-full object-contain p-1"
-      />
-    </span>
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={onDark ? "/brand/mark-light.webp" : "/brand/mark-dark.webp"}
+      alt=""
+      aria-hidden
+      className={`w-auto object-contain ${className}`}
+    />
+  )
+}
+
+/**
+ * The full lockup, mark over wordmark.
+ *
+ * Its wordmark is a metallic grey gradient, which is handsome at size and
+ * illegible small — so the header pairs the mark with type instead, and this
+ * is used where there is room for it to be read.
+ */
+function Logo({ className = "", onDark = false }: { className?: string; onDark?: boolean }) {
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={onDark ? "/brand/logo-light.webp" : "/brand/logo-dark.webp"}
+      alt="brikc.it"
+      className={`w-auto object-contain ${className}`}
+    />
   )
 }
 
@@ -116,7 +131,7 @@ export function Nav() {
       >
         <nav className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5" aria-label="brikc.it — home">
-            <LogoMark className="h-11 w-11 shadow-[var(--shadow-1)]" />
+            <LogoMark className="h-11" />
             <span className="font-display text-xl tracking-tight" style={{ fontWeight: 800 }}>
               brikc.it
             </span>
@@ -325,10 +340,7 @@ export function Footer({ instagram = "@brikc.it" }: { instagram?: string }) {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
         <div>
           <Link href="/" className="flex items-center gap-2.5" aria-label="brikc.it — home">
-            <LogoMark className="h-10 w-10" />
-            <span className="font-display text-lg" style={{ fontWeight: 800 }}>
-              brikc.it
-            </span>
+            <Logo className="h-20" />
           </Link>
           <p className="mt-4 max-w-xs text-sm text-[var(--muted)]">
             Cars, bikes, F1 and collector builds — boxed, built, or mounted in an LED-lit frame.
