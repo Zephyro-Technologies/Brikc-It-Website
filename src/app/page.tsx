@@ -233,7 +233,7 @@ function HowItWorks() {
             <Reveal key={s.n} delay={i * 90}>
               <div className="relative h-full rounded-3xl border border-[var(--border)] bg-white p-7 shadow-[var(--shadow-1)]">
                 <span
-                  className="font-display text-5xl text-[var(--surface-2)]"
+                  className="font-display text-5xl text-[var(--primary)]"
                   style={{ fontWeight: 800 }}
                 >
                   {s.n}
