@@ -1,17 +1,14 @@
 import Link from "next/link"
-import { ArrowRight, Sparkles, ShieldCheck, Truck, type LucideIcon } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { Reveal, SectionHead, ExploreMore, ProductCard } from "../components/ui"
 import { DisplayCard } from "../components/DisplayCard"
 import { money } from "../lib/money"
 import type { Product } from "../data"
-import { getCategories, getDisplays, getGuides, getProducts, getReviews } from "../lib/shop"
+import { getCategories, getDisplays, getGuides, getProducts } from "../lib/shop"
 import { cardTag, fromPrice, productImage, subline } from "../lib/product-view"
-import { HERO_STATS, PROMISES, STEPS } from "../content/site"
-import type { Guide, Review, StoreCategory } from "../data"
+import { STEPS } from "../content/site"
+import type { Guide, StoreCategory } from "../data"
 
-// Icon names come out of content/site.ts as strings so that file can stay
-// framework-free — this is the one place they're turned into components.
-const PROMISE_ICONS: Record<string, LucideIcon> = { Truck, ShieldCheck, Sparkles }
 
 function Hero({ categories }: { categories: StoreCategory[] }) {
   return (
@@ -65,18 +62,6 @@ function Hero({ categories }: { categories: StoreCategory[] }) {
               >
                 {c.name}
               </Link>
-            ))}
-          </div>
-          <div className="mt-10 flex flex-wrap gap-x-10 gap-y-4 border-t border-[var(--border)] pt-6">
-            {HERO_STATS.map((s) => (
-              <div key={s.label}>
-                <div className="font-display text-2xl" style={{ fontWeight: 800 }}>
-                  {s.value}
-                </div>
-                <div className="text-xs font-medium tracking-wide text-[var(--muted)] uppercase">
-                  {s.label}
-                </div>
-              </div>
             ))}
           </div>
         </div>
@@ -257,33 +242,6 @@ function HowItWorks() {
   )
 }
 
-function Promises() {
-  return (
-    <section className="border-t border-[var(--border)] py-16">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 md:grid-cols-3">
-        {PROMISES.map((p, i) => {
-          const Icon = PROMISE_ICONS[p.icon]
-          return (
-            <Reveal key={p.title} delay={i * 80}>
-              <div className="flex h-full gap-4 rounded-3xl bg-white p-7 shadow-[var(--shadow-1)]">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--primary)]/10 text-[var(--primary)]">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="font-display text-lg" style={{ fontWeight: 700 }}>
-                    {p.title}
-                  </h3>
-                  <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">{p.body}</p>
-                </div>
-              </div>
-            </Reveal>
-          )
-        })}
-      </div>
-    </section>
-  )
-}
-
 /**
  * Real reviews, from the same table the admin edits.
  *
@@ -291,44 +249,6 @@ function Promises() {
  * export was dead code. Porting that faithfully would have left the shop owner
  * with a review screen whose contents appear nowhere, so the section stays.
  */
-function Reviews({ reviews }: { reviews: Review[] }) {
-  if (reviews.length === 0) return null
-
-  return (
-    <section className="border-t border-[var(--border)] bg-[var(--surface-2)] py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <Reveal>
-          <SectionHead
-            kicker="From the community"
-            title="Built to be shown off"
-            desc="What collectors say once the build is on the wall."
-          />
-        </Reveal>
-        <div className="grid gap-5 md:grid-cols-3">
-          {reviews.map((r, i) => (
-            <Reveal key={r.handle} delay={i * 80}>
-              <figure className="flex h-full flex-col rounded-3xl bg-white p-6 shadow-[var(--shadow-1)]">
-                <div className="text-[var(--primary)]">★★★★★</div>
-                <blockquote className="mt-4 flex-1 leading-relaxed text-[var(--foreground)]">
-                  &ldquo;{r.text}&rdquo;
-                </blockquote>
-                <figcaption className="mt-6 border-t border-[var(--border)] pt-4">
-                  <p className="font-display" style={{ fontWeight: 700 }}>
-                    {r.name}
-                  </p>
-                  <p className="mt-0.5 text-sm text-[var(--muted)]">
-                    {r.handle} · {r.build}
-                  </p>
-                </figcaption>
-              </figure>
-            </Reveal>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
 function BookletsPreview({ guides }: { guides: Guide[] }) {
   // A heading over an empty row reads as broken, not empty — skip the section entirely.
   if (guides.length === 0) return null
@@ -371,10 +291,9 @@ function BookletsPreview({ guides }: { guides: Guide[] }) {
 
 export default async function Home() {
   // Independent reads — fire them together rather than in series.
-  const [products, categories, reviews, displays, guides] = await Promise.all([
+  const [products, categories, displays, guides] = await Promise.all([
     getProducts(),
     getCategories(),
-    getReviews(),
     getDisplays(),
     getGuides(),
   ])
@@ -386,8 +305,6 @@ export default async function Home() {
       <ShopPreview products={products} />
       <DisplaysPreview displays={displays} />
       <HowItWorks />
-      <Promises />
-      <Reviews reviews={reviews} />
       <BookletsPreview guides={guides} />
     </>
   )

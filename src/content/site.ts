@@ -18,12 +18,6 @@ export const NAV: { label: string; to: string }[] = [
 /** The dismissible bar above the header. */
 export const BANNER = "Free delivery across Pakistan · Framed builds ship in reinforced crates"
 
-/** Hero headline stats. Kept modest and true rather than impressive. */
-export const HERO_STATS = [
-  { value: "30+", label: "Builds delivered" },
-  { value: "1:8", label: "Flagship scale" },
-  { value: "3", label: "Ways to own it" },
-]
 
 export const STEPS = [
   {
@@ -43,21 +37,3 @@ export const STEPS = [
   },
 ]
 
-/** The three-up promise row. Icon names map to lucide-react components. */
-export const PROMISES = [
-  {
-    icon: "Truck",
-    title: "Shipped safe",
-    body: "Double-boxed with custom foam. Framed builds ship in reinforced crates.",
-  },
-  {
-    icon: "ShieldCheck",
-    title: "Inspected builds",
-    body: "Every assembled model is checked brick-by-brick before it leaves.",
-  },
-  {
-    icon: "Sparkles",
-    title: "Integrated LED",
-    body: "Framed editions include a discreet, dimmable LED strip and power lead.",
-  },
-] as const
