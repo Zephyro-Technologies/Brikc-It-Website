@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { ChevronDown } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { fromPrice, type Category, type Product } from "../data"
 import { ComingSoon, ProductCard, Reveal, SectionHead } from "./ui"
@@ -63,17 +64,23 @@ export default function ShopView({ products: all }: { products: Product[] }) {
 
         <label className="flex items-center gap-2 text-sm">
           <span className="font-medium text-[var(--muted)]">Sort</span>
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortKey)}
-            className="mat-btn rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-medium text-[var(--foreground)] shadow-[var(--shadow-1)] outline-none focus:border-[var(--primary)]"
-          >
-            {SORTS.map((s) => (
-              <option key={s.key} value={s.key}>
-                {s.label}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              // appearance-none drops the native arrow, which the browser
+              // crams into whatever padding it finds; the one below sits where
+              // it is put. Same treatment as the selects on the checkout.
+              className="mat-btn w-full appearance-none rounded-full border border-[var(--border)] bg-white py-2 pr-10 pl-4 text-sm font-medium text-[var(--foreground)] shadow-[var(--shadow-1)] outline-none focus:border-[var(--primary)]"
+            >
+              {SORTS.map((s) => (
+                <option key={s.key} value={s.key}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute top-1/2 right-4 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
+          </div>
         </label>
       </div>
 
