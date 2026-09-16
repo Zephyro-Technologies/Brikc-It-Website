@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Check, Copy, MessageCircle } from "lucide-react"
-import { money } from "../cart"
+import { money } from "../lib/money"
 import type { PaymentDetails } from "../data"
 import { CONFIRMATION_KEY, receiptLink, type PlacedOrder } from "../lib/checkout"
 

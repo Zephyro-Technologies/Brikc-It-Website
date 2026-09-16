@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react"
 import { getProducts, getSettings } from "../../lib/shop"
 import { Reveal } from "../../components/ui"
 import { cardTag, fromPrice, soldFormats, subline } from "../../lib/product-view"
-import { money } from "../../cart"
+import { money } from "../../lib/money"
 import { FORMAT_LABELS } from "../../data"
 
 export const metadata: Metadata = {

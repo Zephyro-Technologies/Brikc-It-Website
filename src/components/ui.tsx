@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { ArrowRight, Check } from "lucide-react"
-import { useCart, money } from "../cart"
+import { useCart } from "../cart"
+import { money } from "../lib/money"
 import type { Product } from "../data"
 import { cardTag, cheapestFormat, fromPrice, isSellable, subline } from "../lib/product-view"
 

@@ -114,5 +114,3 @@ export function useCart() {
   return ctx
 }
 
-/** Rupees, no decimals — the store doesn't price in paisa. */
-export const money = (n: number) => `Rs ${Math.round(n).toLocaleString("en-PK")}`

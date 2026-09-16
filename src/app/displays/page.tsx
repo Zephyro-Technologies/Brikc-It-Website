@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Reveal, SectionHead } from "../../components/ui"
-import { money } from "../../cart"
+import { money } from "../../lib/money"
 import { DISPLAY_FINISHES, DISPLAY_PROMISES } from "../../content/displays"
 
 export const metadata: Metadata = {

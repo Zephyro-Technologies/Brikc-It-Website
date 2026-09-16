@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { ArrowRight, Sparkles, ShieldCheck, Truck, type LucideIcon } from "lucide-react"
 import { Reveal, SectionHead, ExploreMore, ProductCard } from "../components/ui"
-import { money } from "../cart"
+import { money } from "../lib/money"
 import type { Product } from "../data"
 import { getCategories, getProducts, getReviews } from "../lib/shop"
 import { cardTag, fromPrice, subline } from "../lib/product-view"
