@@ -12,7 +12,7 @@ export const NAV: { label: string; to: string }[] = [
   { label: "Best Sellers", to: "/best-sellers" },
   { label: "Shop", to: "/shop" },
   { label: "Displays", to: "/displays" },
-  { label: "Help", to: "/booklets" },
+  { label: "Guides", to: "/booklets" },
 ]
 
 /** The dismissible bar above the header. */
