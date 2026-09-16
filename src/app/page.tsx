@@ -143,7 +143,7 @@ function BestSellers({ products }: { products: Product[] }) {
                         className="h-56 w-full object-cover transition-transform duration-700 group-hover:scale-110"
                       />
                       {tag && (
-                        <span className="absolute top-4 left-4 rounded-full bg-[linear-gradient(135deg,#f0384a,#d31f2e)] px-3 py-1 text-xs font-bold text-white shadow-lg">
+                        <span className="absolute top-4 left-4 rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-deep))] px-3 py-1 text-xs font-bold text-white shadow-lg">
                           {tag}
                         </span>
                       )}

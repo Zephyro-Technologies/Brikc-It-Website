@@ -15,6 +15,10 @@
   --border: #e7e2dd;
   --primary: #d31f2e;
   --primary-2: #f0384a;
+  /* The dark end of a brand gradient. White text clears AA on this and on
+     --primary, so anything with text on it runs between the two. --primary-2 is
+     lighter than white text can sit on (3.91:1), so it stays decorative. */
+  --primary-deep: #b81022;
   --primary-foreground: #ffffff;
   --ring: #d31f2e;
 

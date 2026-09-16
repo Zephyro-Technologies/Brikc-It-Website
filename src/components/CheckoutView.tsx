@@ -495,7 +495,7 @@ export default function CheckoutView({
           )}
 
           {error && (
-            <p className="rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/10 p-3 text-sm text-[var(--primary)]">
+            <p className="rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/10 p-3 text-sm text-[var(--primary-deep)]">
               {error}
             </p>
           )}

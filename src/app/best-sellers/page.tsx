@@ -30,7 +30,7 @@ export default async function BestSellersPage() {
         className="absolute right-0 top-1/3 h-80 w-80 rounded-full bg-[var(--primary-2)]/20 blur-3xl float-slow"
         style={{ animationDelay: "2s" }}
       />
-      <div className="absolute inset-0 bg-[radial-gradient(120%_60%_at_50%_-10%,rgba(255,107,44,0.16),transparent)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(120%_60%_at_50%_-10%,rgba(240,56,74,0.16),transparent)]" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
         <header className="py-20 text-center sm:py-28">
@@ -86,7 +86,7 @@ export default async function BestSellersPage() {
               </p>
               <Link
                 href="/shop"
-                className="mat-btn mt-6 inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#f0384a,#d31f2e)] px-7 py-3.5 text-sm font-semibold text-white hover:brightness-105"
+                className="mat-btn mt-6 inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-deep))] px-7 py-3.5 text-sm font-semibold text-white hover:brightness-105"
               >
                 Shop all models
                 <ArrowRight className="h-4 w-4" />
@@ -116,7 +116,7 @@ export default async function BestSellersPage() {
                           />
                           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#121114] to-transparent" />
                           {tag && (
-                            <span className="absolute left-4 top-4 rounded-full bg-[linear-gradient(135deg,#f0384a,#d31f2e)] px-3.5 py-1.5 text-xs font-bold text-white shadow-lg">
+                            <span className="absolute left-4 top-4 rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-deep))] px-3.5 py-1.5 text-xs font-bold text-white shadow-lg">
                               {tag}
                             </span>
                           )}
@@ -156,7 +156,7 @@ export default async function BestSellersPage() {
                 </div>
                 <Link
                   href="/shop"
-                  className="mat-btn flex-none rounded-full bg-[linear-gradient(135deg,#f0384a,#d31f2e)] px-7 py-3.5 text-sm font-semibold text-white hover:brightness-105"
+                  className="mat-btn flex-none rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-deep))] px-7 py-3.5 text-sm font-semibold text-white hover:brightness-105"
                 >
                   Shop all models
                 </Link>
