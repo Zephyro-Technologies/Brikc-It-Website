@@ -23,16 +23,20 @@ function Copyable({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-3 px-4 py-3">
       <div className="min-w-0">
-        <p className="ff-mono text-[10px] tracking-widest text-zinc-500 uppercase">{label}</p>
-        <p className="ff-mono mt-0.5 truncate text-sm text-zinc-100">{value}</p>
+        <p className="text-[10px] font-semibold tracking-widest text-[var(--muted)] uppercase">{label}</p>
+        <p className="mt-0.5 truncate text-sm font-medium">{value}</p>
       </div>
       <button
         type="button"
         onClick={copy}
         aria-label={`Copy ${label}`}
-        className="flex shrink-0 items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1.5 text-xs text-zinc-400 transition-colors hover:text-white"
+        className={`mat-btn flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${
+          copied
+            ? "bg-emerald-100 text-emerald-700"
+            : "bg-[var(--surface-2)] text-[var(--muted)] hover:text-[var(--foreground)]"
+        }`}
       >
-        {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
         {copied ? "Copied" : "Copy"}
       </button>
     </div>
@@ -41,9 +45,11 @@ function Copyable({ label, value }: { label: string; value: string }) {
 
 function Account({ title, rows }: { title: string; rows: [string, string][] }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-white/10 bg-[#101012]">
-      <p className="ff-display border-b border-white/10 px-4 py-3 font-bold">{title}</p>
-      <div className="divide-y divide-white/10">
+    <div className="overflow-hidden rounded-3xl bg-white shadow-[var(--shadow-1)]">
+      <p className="font-display border-b border-[var(--border)] px-4 py-3" style={{ fontWeight: 700 }}>
+        {title}
+      </p>
+      <div className="divide-y divide-[var(--border)]">
         {rows.map(([label, value]) => (
           <Copyable key={label} label={label} value={value} />
         ))}
@@ -71,14 +77,16 @@ export default function OrderConfirmation({ payment }: { payment: PaymentDetails
   if (!order) {
     return (
       <div className="mx-auto max-w-2xl px-5 pt-28 pb-24 text-center md:pt-36">
-        <h1 className="ff-display text-3xl font-extrabold tracking-tight">Nothing to show here</h1>
-        <p className="mt-4 text-zinc-400">
+        <h1 className="font-display text-3xl tracking-tight" style={{ fontWeight: 800 }}>
+          Nothing to show here
+        </h1>
+        <p className="mt-4 text-[var(--muted)]">
           This page shows the payment details for an order you&rsquo;ve just placed. If you closed
           the tab before paying, message us and we&rsquo;ll send them again.
         </p>
         <Link
           href="/shop"
-          className="mt-8 inline-block rounded-full border border-white/20 px-6 py-3 ff-display font-semibold hover:bg-white/5"
+          className="mat-btn mt-8 inline-block rounded-full bg-[var(--primary)] px-6 py-3 text-sm font-semibold text-white shadow-[var(--shadow-2)] hover:brightness-105"
         >
           Back to the shop
         </Link>
@@ -91,31 +99,37 @@ export default function OrderConfirmation({ payment }: { payment: PaymentDetails
 
   return (
     <div className="mx-auto max-w-2xl px-5 pt-28 pb-24 md:pt-36">
-      <p className="ff-mono text-[11px] tracking-widest text-[#ff6b4a] uppercase">Order placed</p>
-      <h1 className="ff-display mt-3 text-4xl font-extrabold tracking-tight md:text-5xl">
+      <span className="text-xs font-bold tracking-[0.2em] text-[var(--primary)] uppercase">Order placed</span>
+      <h1 className="font-display mt-3 text-4xl tracking-tight md:text-5xl" style={{ fontWeight: 800 }}>
         Thanks{firstName ? `, ${firstName}` : ""} — one step left.
       </h1>
 
-      <div className="mt-8 grid gap-px overflow-hidden rounded-xl border border-white/10 bg-white/10 sm:grid-cols-2">
-        <div className="bg-[#101012] px-5 py-4">
-          <p className="ff-mono text-[10px] tracking-widest text-zinc-500 uppercase">Your reference</p>
-          <p className="ff-display mt-1 text-2xl font-extrabold">{order.number}</p>
+      <div className="mt-8 grid gap-px overflow-hidden rounded-3xl bg-[var(--border)] shadow-[var(--shadow-1)] sm:grid-cols-2">
+        <div className="bg-white px-5 py-4">
+          <p className="text-[10px] font-semibold tracking-widest text-[var(--muted)] uppercase">Your reference</p>
+          <p className="font-display mt-1 text-2xl" style={{ fontWeight: 800 }}>
+            {order.number}
+          </p>
         </div>
-        <div className="bg-[#101012] px-5 py-4">
-          <p className="ff-mono text-[10px] tracking-widest text-zinc-500 uppercase">Amount to transfer</p>
-          <p className="ff-display mt-1 text-2xl font-extrabold">{money(order.total)}</p>
+        <div className="bg-white px-5 py-4">
+          <p className="text-[10px] font-semibold tracking-widest text-[var(--muted)] uppercase">
+            Amount to transfer
+          </p>
+          <p className="font-display mt-1 text-2xl" style={{ fontWeight: 800 }}>
+            {money(order.total)}
+          </p>
           {order.shipping > 0 && (
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-[var(--muted)]">
               Includes {money(order.shipping)} for {order.deliveryLabel.toLowerCase()}
             </p>
           )}
         </div>
       </div>
 
-      <p className="mt-6 leading-relaxed text-zinc-400">
-        Nothing has been charged. Transfer <strong className="text-zinc-200">{money(order.total)}</strong>{" "}
+      <p className="mt-6 leading-relaxed text-[var(--muted)]">
+        Nothing has been charged. Transfer <strong className="text-[var(--foreground)]">{money(order.total)}</strong>{" "}
         to any one of the accounts below, then send us the receipt on WhatsApp with your reference{" "}
-        <strong className="text-zinc-200">{order.number}</strong>. We confirm the order as soon as the
+        <strong className="text-[var(--foreground)]">{order.number}</strong>. We confirm the order as soon as the
         transfer shows up, and that&rsquo;s when the build starts.
       </p>
 
@@ -154,18 +168,21 @@ export default function OrderConfirmation({ payment }: { payment: PaymentDetails
         href={receiptLink(whatsapp, order)}
         target="_blank"
         rel="noreferrer"
-        className="mt-8 flex w-full items-center justify-center gap-2.5 rounded-full bg-[#e63329] py-4 ff-display text-lg font-bold text-white transition-transform hover:scale-[1.02] led-glow-soft"
+        className="mat-btn font-display mt-8 flex w-full items-center justify-center gap-2.5 rounded-full bg-[var(--primary)] py-4 text-lg text-white shadow-[var(--shadow-2)] hover:brightness-105"
+        style={{ fontWeight: 700 }}
       >
         <MessageCircle className="h-5 w-5" />
         Send the receipt on WhatsApp
       </a>
-      <p className="mt-3 text-center text-xs text-zinc-600">
+      <p className="mt-3 text-center text-xs text-[var(--muted)]">
         Opens WhatsApp with your order number already written out. Attach the screenshot and send.
       </p>
 
-      <div className="mt-12 rounded-xl border border-white/10 bg-[#101012] p-5">
-        <p className="ff-mono mb-3 text-[11px] tracking-widest text-zinc-500 uppercase">What happens next</p>
-        <ol className="space-y-2 text-sm text-zinc-400">
+      <div className="mt-12 rounded-3xl bg-white p-5 shadow-[var(--shadow-1)]">
+        <p className="mb-3 text-[11px] font-semibold tracking-widest text-[var(--muted)] uppercase">
+          What happens next
+        </p>
+        <ol className="space-y-2 text-sm text-[var(--muted)]">
           <li>1. You transfer the amount and send us the receipt.</li>
           <li>2. We check it against the order and confirm on WhatsApp.</li>
           <li>
@@ -177,9 +194,8 @@ export default function OrderConfirmation({ payment }: { payment: PaymentDetails
         </ol>
       </div>
 
-      <p className="mt-8 text-center text-sm text-zinc-500">
-        Keep this reference:{" "}
-        <strong className="ff-mono text-zinc-300">{order.number}</strong>
+      <p className="mt-8 text-center text-sm text-[var(--muted)]">
+        Keep this reference: <strong className="text-[var(--foreground)]">{order.number}</strong>
       </p>
     </div>
   )

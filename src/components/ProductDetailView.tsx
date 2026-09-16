@@ -1,18 +1,23 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Check, ShoppingBag, Truck, ShieldCheck, ChevronLeft } from "lucide-react"
-import { FORMAT_LABELS, type FormatKey, type Product } from "../data"
+import { Check, Package, ShieldCheck, Truck } from "lucide-react"
 import { useCart, money } from "../cart"
-import { ProductCard } from "./ProductCard"
+import { FORMAT_LABELS, type FormatKey, type Product } from "../data"
+import { cardTag, soldFormats, specs, subline } from "../lib/product-view"
+import { ProductCard, Reveal } from "./ui"
 
-const FORMAT_ORDER: FormatKey[] = ["boxed", "built", "framed"]
-const FORMAT_DESC: Record<FormatKey, string> = {
-  boxed: "Sealed, unbuilt set — sourced and shipped safe.",
-  built: "Hand-assembled, inspected, and ready to display.",
-  framed: "Shadow-box frame with an integrated LED strip.",
-}
+/**
+ * Shop-wide promises this store actually keeps — sourced from the same facts
+ * as the banner and the homepage promise row. No UK shipping line, no counts
+ * nobody can back.
+ */
+const REASSURANCE = [
+  { icon: Truck, text: "Free courier delivery anywhere in Pakistan" },
+  { icon: ShieldCheck, text: "Inspected piece-by-piece before dispatch" },
+  { icon: Package, text: "Framed builds ship in reinforced crates" },
+]
 
 export default function ProductDetailView({
   product,
@@ -21,180 +26,219 @@ export default function ProductDetailView({
   product: Product | undefined
   suggestions: Product[]
 }) {
+  const available = product ? soldFormats(product) : []
+
+  // Falls back to the first sold format rather than trusting old state — a
+  // "framed" pick left over from another build must not stick on one that
+  // isn't sold framed.
   const [format, setFormat] = useState<FormatKey>("framed")
+  const activeFormat = available.includes(format) ? format : (available[0] ?? "boxed")
+
   const [activeImg, setActiveImg] = useState(0)
+  const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
   const { add } = useCart()
 
+  useEffect(() => {
+    if (!added) return
+    const t = window.setTimeout(() => setAdded(false), 1400)
+    return () => window.clearTimeout(t)
+  }, [added])
+
   if (!product) {
     return (
-      <div className="mx-auto max-w-3xl px-5 pt-40 pb-24 text-center">
-        <h1 className="ff-display text-3xl font-extrabold">Build not found</h1>
-        <p className="mt-3 text-zinc-400">That model isn&apos;t in the collection.</p>
-        <Link href="/shop" className="mt-6 inline-block rounded-full bg-[#e63329] px-6 py-3 ff-display font-bold text-white">
+      <div className="mx-auto max-w-2xl px-5 py-32 text-center">
+        <h1 className="font-display text-3xl" style={{ fontWeight: 800 }}>
+          Build not found
+        </h1>
+        <p className="mt-3 text-[var(--muted)]">That model isn&apos;t in the collection.</p>
+        <Link
+          href="/shop"
+          className="mat-btn mt-8 inline-flex items-center rounded-full bg-[var(--primary)] px-6 py-3 text-sm font-semibold text-white shadow-[var(--shadow-2)] hover:shadow-[var(--shadow-3)]"
+        >
           Back to shop
         </Link>
       </div>
     )
   }
 
-  // A build can have formats switched off, so never trust the raw state — it may
-  // be left over from a product that did sell the format this one doesn't.
-  const available = FORMAT_ORDER.filter((f) => product.formats[f])
-  const activeFormat = available.includes(format) ? format : available[0]
-  const price = product.prices[activeFormat]
+  const canAdd = product.inStock && available.length > 0
+  const tag = cardTag(product)
 
   const onAdd = () => {
-    if (!product.inStock) return
-    add(product, activeFormat)
+    if (!canAdd) return
+    add(product, activeFormat, qty)
     setAdded(true)
-    setTimeout(() => setAdded(false), 1600)
+    setQty(1)
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-5 pt-28 pb-24 md:pt-32">
-      <Link href="/shop" className="ff-mono inline-flex items-center gap-1 text-[11px] tracking-widest text-zinc-400 uppercase hover:text-white">
-        <ChevronLeft className="h-4 w-4" /> Back to shop
-      </Link>
+    <div className="mx-auto max-w-7xl px-5 pt-10 pb-24">
+      <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm text-[var(--muted)]">
+        <Link href="/shop" className="hover:text-[var(--foreground)]">
+          Shop
+        </Link>
+        <span>/</span>
+        <Link href={`/shop?cat=${product.category}`} className="hover:text-[var(--foreground)]">
+          {product.category}
+        </Link>
+        <span>/</span>
+        <span className="text-[var(--foreground)]">{product.name}</span>
+      </nav>
 
-      <div className="mt-6 grid gap-10 lg:grid-cols-2">
-        {/* Gallery */}
-        <div>
-          <div className="relative aspect-square overflow-hidden rounded-2xl border border-white/10 bg-zinc-900">
+      <div className="grid gap-10 lg:grid-cols-2">
+        <Reveal>
+          <div className="overflow-hidden rounded-[28px] shadow-[var(--shadow-2)]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={product.images[activeImg]}
               alt={product.name}
-              className="h-full w-full object-cover"
+              loading="lazy"
+              style={{ backgroundColor: "#eceae7" }}
+              className="aspect-square w-full object-cover"
             />
-            {activeFormat === "framed" && <div className="pointer-events-none absolute inset-0 led-glow-soft" />}
           </div>
-          <div className="mt-4 flex gap-3">
-            {product.images.map((img, i) => (
-              <button
-                key={img}
-                onClick={() => setActiveImg(i)}
-                className={`h-20 w-20 overflow-hidden rounded-lg border transition-colors ${
-                  activeImg === i ? "border-[#e63329]" : "border-white/10 hover:border-white/30"
+          {product.images.length > 1 && (
+            <div className="mt-4 flex gap-3">
+              {product.images.map((img, i) => (
+                <button
+                  key={img + i}
+                  type="button"
+                  onClick={() => setActiveImg(i)}
+                  aria-label={`Show image ${i + 1}`}
+                  className={`mat-btn h-20 w-20 overflow-hidden rounded-2xl border-2 ${
+                    activeImg === i
+                      ? "border-[var(--primary)]"
+                      : "border-transparent hover:border-[var(--border)]"
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={img}
+                    alt=""
+                    loading="lazy"
+                    style={{ backgroundColor: "#eceae7" }}
+                    className="h-full w-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </Reveal>
+
+        <Reveal delay={80}>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-[var(--surface-2)] px-3 py-1 text-xs font-semibold tracking-wider text-[var(--muted)] uppercase">
+              {product.category}
+            </span>
+            {tag && (
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-bold text-white ${
+                  product.inStock ? "bg-[var(--primary)]" : "bg-[var(--foreground)]"
                 }`}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img} alt="" className="h-full w-full object-cover" />
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Buy card */}
-        <div>
-          <p className="ff-mono text-xs tracking-[0.3em] text-[#ff6b4a] uppercase">{product.team}</p>
-          <h1 className="ff-display mt-2 text-4xl font-black tracking-tight md:text-5xl">{product.name}</h1>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            {[product.scale + " scale", `${product.pieces} pieces`, product.edition].map((s) => (
-              <span key={s} className="ff-mono rounded-full border border-white/10 px-3 py-1 text-[11px] tracking-widest text-zinc-300 uppercase">
-                {s}
+                {tag}
               </span>
-            ))}
+            )}
           </div>
 
-          <p className="mt-6 leading-relaxed text-zinc-300">{product.description}</p>
+          <h1 className="font-display mt-4 text-4xl tracking-tight sm:text-5xl" style={{ fontWeight: 800 }}>
+            {product.name}
+          </h1>
+          <p className="mt-2 text-[var(--muted)]">{subline(product)}</p>
 
-          {/* Buy card */}
-          <div className="mt-8 rounded-2xl border border-white/10 bg-[#101012] p-6">
-            <div className="flex items-end justify-between">
-              <div>
-                <p className="ff-mono text-[11px] tracking-widest text-zinc-500 uppercase">
-                  {FORMAT_LABELS[activeFormat]}
-                </p>
-                <p className="ff-display text-4xl font-black">{money(price)}</p>
-              </div>
-              {product.inStock ? (
-                <span className="ff-mono text-[11px] tracking-widest text-zinc-500 uppercase">In stock</span>
-              ) : (
-                <span className="ff-mono text-[11px] tracking-widest text-[#ff6b4a] uppercase">Sold out</span>
-              )}
-            </div>
-
-            <p className="ff-mono mt-6 mb-3 text-[11px] tracking-widest text-zinc-400 uppercase">Choose format</p>
-            <div className="grid gap-2 sm:grid-cols-3">
+          {available.length > 0 && (
+            <div className="mt-6 flex flex-wrap gap-2">
               {available.map((f) => {
-                const on = activeFormat === f
+                const on = f === activeFormat
                 return (
                   <button
                     key={f}
+                    type="button"
                     onClick={() => setFormat(f)}
-                    className={`rounded-xl border p-3 text-left transition-colors ${
-                      on ? "border-[#e63329] bg-[#140b0a]" : "border-white/10 hover:border-white/30"
+                    className={`mat-btn rounded-full px-4 py-2 text-sm font-semibold ${
+                      on
+                        ? "bg-[var(--foreground)] text-white shadow-[var(--shadow-1)]"
+                        : "bg-[var(--surface-2)] text-[var(--foreground)] hover:bg-[var(--border)]"
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="ff-display font-bold">{FORMAT_LABELS[f]}</span>
-                      {on && <Check className="h-4 w-4 text-[#ff6b4a]" />}
-                    </div>
-                    <span className="ff-mono text-[11px] tracking-wider text-zinc-500">
-                      {money(product.prices[f])}
-                    </span>
+                    {FORMAT_LABELS[f]}
                   </button>
                 )
               })}
             </div>
-            <p className="mt-3 text-sm text-zinc-500">{FORMAT_DESC[activeFormat]}</p>
+          )}
 
+          <div className="mt-4 text-3xl font-bold">{money(product.prices[activeFormat])}</div>
+
+          <p className="mt-5 max-w-lg text-lg leading-relaxed text-[var(--muted)]">{product.description}</p>
+
+          <div className="mt-7 flex flex-wrap items-center gap-3">
+            <div className="flex items-center rounded-full border border-[var(--border)] bg-white">
+              <button
+                type="button"
+                aria-label="Decrease quantity"
+                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                className="mat-btn grid h-11 w-11 place-items-center rounded-full text-lg hover:bg-[var(--surface-2)]"
+              >
+                −
+              </button>
+              <span className="w-8 text-center font-semibold">{qty}</span>
+              <button
+                type="button"
+                aria-label="Increase quantity"
+                onClick={() => setQty((q) => q + 1)}
+                className="mat-btn grid h-11 w-11 place-items-center rounded-full text-lg hover:bg-[var(--surface-2)]"
+              >
+                +
+              </button>
+            </div>
             <button
+              type="button"
               onClick={onAdd}
-              disabled={!product.inStock}
-              className={`mt-6 flex w-full items-center justify-center gap-2 rounded-full py-4 ff-display font-bold text-white transition-transform ${
-                !product.inStock
-                  ? "cursor-not-allowed border border-white/15 bg-white/5 text-zinc-500"
-                  : added
-                    ? "bg-emerald-600 hover:scale-[1.02]"
-                    : "bg-[#e63329] led-glow-soft hover:scale-[1.02]"
+              disabled={!canAdd}
+              className={`mat-btn rounded-full px-8 py-3.5 text-sm font-semibold text-white shadow-[var(--shadow-2)] transition-transform disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 disabled:shadow-none ${
+                added ? "bg-emerald-600" : "bg-[var(--primary)] hover:scale-[1.02] hover:shadow-[var(--shadow-3)]"
               }`}
             >
-              {!product.inStock ? (
+              {!canAdd ? (
                 "Sold out"
               ) : added ? (
-                <>
-                  <Check className="h-5 w-5" /> Added to cart
-                </>
+                <span className="inline-flex items-center gap-2">
+                  <Check className="h-4 w-4" /> Added to cart
+                </span>
               ) : (
-                <>
-                  <ShoppingBag className="h-5 w-5" /> Add to cart — {money(price)}
-                </>
+                "Add to cart"
               )}
             </button>
-            {!product.inStock && (
-              <p className="mt-3 text-center text-sm text-zinc-500">
-                This edition has sold out. Follow{" "}
-                <a
-                  href="https://instagram.com/brikc.it"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[#ff6b4a] hover:underline"
-                >
-                  @brikc.it
-                </a>{" "}
-                for restocks.
-              </p>
-            )}
-
-            <div className="mt-5 grid gap-3 border-t border-white/10 pt-5 sm:grid-cols-2">
-              <div className="flex items-center gap-2 text-sm text-zinc-400">
-                <Truck className="h-4 w-4 text-[#ff6b4a]" /> Double-boxed, insured shipping
-              </div>
-              <div className="flex items-center gap-2 text-sm text-zinc-400">
-                <ShieldCheck className="h-4 w-4 text-[#ff6b4a]" /> Inspected before dispatch
-              </div>
-            </div>
           </div>
-        </div>
+
+          <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[var(--muted)]">
+            {REASSURANCE.map(({ icon: Icon, text }) => (
+              <span key={text} className="inline-flex items-center gap-1.5">
+                <Icon className="h-4 w-4 text-[var(--primary)]" />
+                {text}
+              </span>
+            ))}
+          </div>
+
+          <dl className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--border)]">
+            {specs(product).map((s) => (
+              <div key={s.label} className="bg-white p-4">
+                <dt className="text-xs font-semibold tracking-wider text-[var(--muted)] uppercase">{s.label}</dt>
+                <dd className="mt-1 font-semibold">{s.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </Reveal>
       </div>
 
       {suggestions.length > 0 && (
-        <div className="mt-24">
-          <h2 className="ff-display mb-8 text-3xl font-extrabold tracking-tight">You might also like</h2>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-20">
+          <h2 className="font-display mb-6 text-2xl" style={{ fontWeight: 700 }}>
+            You might also like
+          </h2>
+          <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
             {suggestions.map((p) => (
               <ProductCard key={p.slug} product={p} />
             ))}

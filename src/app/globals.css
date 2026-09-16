@@ -1,14 +1,26 @@
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=Roboto+Slab:wght@400;500;700;800&display=swap');
 @import 'tailwindcss';
 
+/**
+ * Light, Material-leaning theme. Elevation comes from the three shadow steps
+ * rather than borders, so a card reads as lifted off the page instead of drawn
+ * on it — keep new surfaces on that scale rather than inventing shadows.
+ */
 :root {
-  --bg: #09090a;
-  --bg-elev: #101012;
-  --fg: #f4f4f5;
-  --muted: #a1a1aa;
-  --line: rgba(255, 255, 255, 0.08);
-  --brand: #e63329;
-  --brand-glow: #ff4b2b;
+  --background: #faf8f6;
+  --surface: #ffffff;
+  --surface-2: #f4f0ec;
+  --foreground: #1c1b1f;
+  --muted: #5f5d5a;
+  --border: #e7e2dd;
+  --primary: #e23a2e;
+  --primary-2: #ff6b2c;
+  --primary-foreground: #ffffff;
+  --ring: #e23a2e;
+
+  --shadow-1: 0 1px 2px rgba(28, 27, 31, 0.06), 0 1px 3px rgba(28, 27, 31, 0.08);
+  --shadow-2: 0 2px 6px rgba(28, 27, 31, 0.08), 0 6px 16px rgba(28, 27, 31, 0.08);
+  --shadow-3: 0 8px 24px rgba(28, 27, 31, 0.12), 0 16px 40px rgba(28, 27, 31, 0.1);
 }
 
 html {
@@ -17,75 +29,169 @@ html {
 
 body {
   margin: 0;
-  background-color: var(--bg);
-  color: var(--fg);
-  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Roboto', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Headings and prices. Body copy stays Roboto. */
+.font-display {
+  font-family: 'Roboto Slab', Georgia, serif;
 }
 
 ::selection {
-  background: var(--brand);
-  color: #fff;
+  background: rgba(226, 58, 46, 0.18);
 }
 
-.ff-display {
-  font-family: 'Archivo', system-ui, sans-serif;
-}
-
-.ff-mono {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-}
-
-/* Hide scrollbars until the user actually scrolls */
+/* Scrollbars stay invisible until the pointer is over the scrolling area. */
 * {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+*:hover {
+  scrollbar-color: rgba(28, 27, 31, 0.2) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 8px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+:hover::-webkit-scrollbar-thumb {
+  background: rgba(28, 27, 31, 0.22);
+  background-clip: content-box;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
   scrollbar-width: none;
 }
-*::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+
+/* Material-ish press feedback. Goes on anything clickable. */
+.mat-btn {
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.12s ease,
+    background 0.2s ease,
+    filter 0.2s ease;
+}
+.mat-btn:active {
+  transform: translateY(1px) scale(0.99);
 }
 
-.led-glow {
-  box-shadow:
-    0 0 0 1px rgba(230, 51, 41, 0.35),
-    0 0 24px -2px rgba(255, 75, 43, 0.45),
-    0 0 60px -10px rgba(255, 75, 43, 0.5);
-}
-
-.led-glow-soft {
-  box-shadow: 0 0 40px -8px rgba(255, 75, 43, 0.28);
-}
-
-@keyframes marquee {
+@keyframes fade-up {
   from {
-    transform: translateX(0);
+    opacity: 0;
+    transform: translateY(12px);
   }
   to {
-    transform: translateX(-50%);
+    opacity: 1;
+    transform: translateY(0);
   }
-}
-.animate-marquee {
-  animation: marquee 32s linear infinite;
 }
 
-@keyframes flicker {
-  0%,
+/**
+ * Scroll reveal. The element is hidden until <Reveal> adds .is-visible, so
+ * anything using this MUST be inside a Reveal — otherwise it never appears.
+ */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Slow drifting gradient for the dark premium bands. */
+@keyframes gradient-drift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
   100% {
-    opacity: 1;
-  }
-  92% {
-    opacity: 1;
-  }
-  93% {
-    opacity: 0.55;
-  }
-  94% {
-    opacity: 1;
-  }
-  97% {
-    opacity: 0.7;
+    background-position: 0% 50%;
   }
 }
-.animate-flicker {
-  animation: flicker 6s infinite;
+.animated-gradient {
+  background-size: 200% 200%;
+  animation: gradient-drift 14s ease infinite;
+}
+
+/* Sheen sweep across a surface on hover. */
+.sheen {
+  position: relative;
+  overflow: hidden;
+}
+.sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-120%) skewX(-18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  transition: transform 0.9s ease;
+  pointer-events: none;
+}
+.sheen:hover::after {
+  transform: translateX(120%) skewX(-18deg);
+}
+
+/* Floating accent orbs behind the dark bands. */
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(0, -18px) scale(1.05);
+  }
+}
+.float-slow {
+  animation: float-slow 9s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(226, 58, 46, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(226, 58, 46, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(226, 58, 46, 0);
+  }
+}
+.pulse-ring {
+  animation: pulse-ring 2.4s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .animated-gradient,
+  .float-slow,
+  .pulse-ring {
+    animation: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
 }

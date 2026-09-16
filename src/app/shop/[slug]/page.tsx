@@ -33,7 +33,5 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     .filter((p) => p.slug !== slug && !related.some((r) => r.slug === p.slug))
     .slice(0, Math.max(0, 4 - related.length))
 
-  return (
-    <ProductDetailView product={product} suggestions={[...related, ...fill]} />
-  )
+  return <ProductDetailView product={product} suggestions={[...related, ...fill]} />
 }

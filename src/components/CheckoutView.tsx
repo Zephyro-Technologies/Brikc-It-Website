@@ -10,8 +10,11 @@ import { CONFIRMATION_KEY } from "../lib/checkout"
 import { OTHER_CITY, PROVINCES, citiesIn } from "../lib/pakistan"
 
 const FIELD =
-  "w-full rounded-md border border-white/15 bg-[#101012] px-3 py-2.5 text-zinc-100 outline-none " +
-  "placeholder:text-zinc-600 focus:border-[#e63329] disabled:opacity-50"
+  "w-full rounded-xl border border-[var(--border)] bg-white px-3.5 py-2.5 text-[var(--foreground)] outline-none " +
+  "placeholder:text-[var(--muted)] transition-shadow focus:border-[var(--primary)] focus:ring-4 " +
+  "focus:ring-[var(--primary)]/15 disabled:cursor-not-allowed disabled:bg-[var(--surface-2)] disabled:opacity-60"
+
+const LABEL = "mb-1.5 block text-xs font-semibold tracking-wide text-[var(--muted)] uppercase"
 
 function Field({
   label,
@@ -29,11 +32,11 @@ function Field({
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "id">) {
   return (
     <div>
-      <label htmlFor={id} className="ff-mono mb-1.5 block text-[11px] tracking-widest text-zinc-500 uppercase">
+      <label htmlFor={id} className={LABEL}>
         {label}
       </label>
       <input id={id} value={value} onChange={(e) => onChange(e.target.value)} className={FIELD} {...rest} />
-      {hint && <p className="mt-1 text-xs text-zinc-600">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-[var(--muted)]">{hint}</p>}
     </div>
   )
 }
@@ -59,7 +62,7 @@ function SelectField({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="ff-mono mb-1.5 block text-[11px] tracking-widest text-zinc-500 uppercase">
+      <label htmlFor={id} className={LABEL}>
         {label}
       </label>
       <div className="relative">
@@ -71,13 +74,13 @@ function SelectField({
           onChange={(e) => onChange(e.target.value)}
           // appearance-none drops the native arrow, so one is drawn below —
           // without it the control reads as a text box that won't accept typing.
-          className={`${FIELD} appearance-none pr-10 disabled:cursor-not-allowed`}
+          className={`${FIELD} appearance-none pr-10`}
         >
           {children}
         </select>
-        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+        <ChevronDown className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
       </div>
-      {hint && <p className="mt-1 text-xs text-zinc-600">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-[var(--muted)]">{hint}</p>}
     </div>
   )
 }
@@ -217,12 +220,13 @@ export default function CheckoutView({
   if (lines.length === 0) {
     return (
       <Shell>
-        <div className="flex flex-col items-center gap-5 rounded-2xl border border-white/10 bg-[#101012] px-6 py-20 text-center">
-          <ShoppingBag className="h-10 w-10 text-zinc-600" />
-          <p className="text-zinc-400">There&rsquo;s nothing in your cart yet.</p>
+        <div className="flex flex-col items-center gap-5 rounded-3xl bg-white px-6 py-20 text-center shadow-[var(--shadow-1)]">
+          <ShoppingBag className="h-10 w-10 text-[var(--muted)]" />
+          <p className="text-[var(--muted)]">There&rsquo;s nothing in your cart yet.</p>
           <Link
             href="/shop"
-            className="rounded-full bg-[#e63329] px-6 py-3 ff-display font-bold text-white led-glow-soft"
+            className="mat-btn rounded-full bg-[var(--primary)] px-6 py-3 font-display text-white shadow-[var(--shadow-1)] hover:shadow-[var(--shadow-2)]"
+            style={{ fontWeight: 700 }}
           >
             Browse builds
           </Link>
@@ -234,21 +238,23 @@ export default function CheckoutView({
   if (!ordersOpen) {
     return (
       <Shell>
-        <div className="rounded-2xl border border-white/10 bg-[#101012] p-8">
-          <h2 className="ff-display text-xl font-extrabold">Ordering online is off right now</h2>
-          <p className="mt-3 leading-relaxed text-zinc-400">
+        <div className="rounded-3xl bg-white p-8 shadow-[var(--shadow-1)]">
+          <h2 className="font-display text-xl" style={{ fontWeight: 800 }}>
+            Ordering online is off right now
+          </h2>
+          <p className="mt-3 leading-relaxed text-[var(--muted)]">
             We take orders by hand at the moment. Message us on Instagram at{" "}
             <a
               href={`https://instagram.com/${instagram.replace(/^@/, "")}`}
               target="_blank"
               rel="noreferrer"
-              className="text-[#ff6b4a] underline-offset-4 hover:underline"
+              className="text-[var(--primary)] underline-offset-4 hover:underline"
             >
               @{instagram.replace(/^@/, "")}
             </a>{" "}
             with what you&rsquo;re after and we&rsquo;ll get it sorted.
           </p>
-          <p className="ff-mono mt-6 text-[11px] tracking-widest text-zinc-600 uppercase">
+          <p className="mt-6 text-xs font-semibold tracking-wide text-[var(--muted)] uppercase">
             Your cart is saved — it&rsquo;ll still be here.
           </p>
         </div>
@@ -260,9 +266,11 @@ export default function CheckoutView({
     <Shell>
       <form onSubmit={submit} className="grid gap-10 lg:grid-cols-[1fr_22rem] lg:items-start">
         <div className="space-y-8">
-          <section>
-            <h2 className="ff-display text-lg font-extrabold">Where it&rsquo;s going</h2>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <section className="rounded-3xl bg-white p-6 shadow-[var(--shadow-1)] sm:p-8">
+            <h2 className="font-display text-lg" style={{ fontWeight: 700 }}>
+              Where it&rsquo;s going
+            </h2>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <Field label="Full name" id="name" value={form.name} onChange={set("name")} required autoComplete="name" maxLength={120} />
               <Field label="Phone" id="phone" value={form.phone} onChange={set("phone")} required autoComplete="tel" placeholder="03001234567" maxLength={40} />
               <div className="sm:col-span-2">
@@ -328,18 +336,20 @@ export default function CheckoutView({
             </div>
           </section>
 
-          <section>
-            <h2 className="ff-display text-lg font-extrabold">How it gets to you</h2>
-            <div className="mt-4 space-y-3">
+          <section className="rounded-3xl bg-white p-6 shadow-[var(--shadow-1)] sm:p-8">
+            <h2 className="font-display text-lg" style={{ fontWeight: 700 }}>
+              How it gets to you
+            </h2>
+            <div className="mt-6 space-y-3">
               {delivery.map((o) => {
                 const ok = cityQualifies(o, city)
                 const on = chosen?.id === o.id
                 return (
                   <label
                     key={o.id}
-                    className={`flex items-start gap-3 rounded-xl border p-4 transition-colors ${
-                      on ? "border-[#e63329] bg-[#140b0a]" : "border-white/10"
-                    } ${ok ? "cursor-pointer hover:border-white/30" : "cursor-not-allowed opacity-45"}`}
+                    className={`mat-btn flex items-start gap-3 rounded-2xl border p-4 ${
+                      on ? "border-[var(--primary)] bg-[var(--primary)]/5" : "border-[var(--border)] bg-white"
+                    } ${ok ? "cursor-pointer hover:border-[var(--foreground)]/25" : "cursor-not-allowed opacity-50"}`}
                   >
                     <input
                       type="radio"
@@ -348,18 +358,20 @@ export default function CheckoutView({
                       checked={on}
                       disabled={!ok}
                       onChange={() => setMethod(o.id)}
-                      className="mt-1 h-4 w-4 shrink-0 accent-[#e63329]"
+                      className="mt-1 h-4 w-4 shrink-0 accent-[var(--primary)]"
                     />
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-baseline justify-between gap-x-3">
-                        <span className="ff-display font-bold">{o.label}</span>
-                        <span className="ff-display font-bold">
+                        <span className="font-display" style={{ fontWeight: 700 }}>
+                          {o.label}
+                        </span>
+                        <span className="font-display" style={{ fontWeight: 700 }}>
                           {o.fee > 0 ? money(o.fee) : "Free"}
                         </span>
                       </span>
-                      <span className="mt-1 block text-sm text-zinc-400">{o.detail}</span>
+                      <span className="mt-1 block text-sm text-[var(--muted)]">{o.detail}</span>
                       {!ok && (
-                        <span className="ff-mono mt-1.5 block text-[11px] tracking-wider text-amber-400/80 uppercase">
+                        <span className="mt-1.5 block text-xs font-semibold tracking-wide text-amber-600 uppercase">
                           {city
                             ? `Not available in ${city}`
                             : "Choose your city to see if this is available"}
@@ -371,7 +383,7 @@ export default function CheckoutView({
                           target="_blank"
                           rel="noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="mt-1.5 inline-block text-xs text-[#ff6b4a] underline-offset-4 hover:underline"
+                          className="mt-1.5 inline-block text-xs text-[var(--primary)] underline-offset-4 hover:underline"
                         >
                           Who&rsquo;s delivering &rarr;
                         </a>
@@ -383,9 +395,11 @@ export default function CheckoutView({
             </div>
           </section>
 
-          <section className="rounded-xl border border-white/10 bg-[#101012] p-5">
-            <h2 className="ff-display text-lg font-extrabold">How you&rsquo;ll pay</h2>
-            <p className="mt-2 leading-relaxed text-zinc-400">
+          <section className="rounded-3xl bg-[var(--surface-2)] p-6 sm:p-8">
+            <h2 className="font-display text-lg" style={{ fontWeight: 700 }}>
+              How you&rsquo;ll pay
+            </h2>
+            <p className="mt-2 leading-relaxed text-[var(--muted)]">
               Bank transfer or mobile wallet. Place the order first — the next page gives you the
               account details and your order number, and you send the receipt to us on WhatsApp.
               Nothing is charged automatically and we start the build once the transfer lands.
@@ -393,26 +407,34 @@ export default function CheckoutView({
           </section>
         </div>
 
-        <aside className="space-y-4 rounded-2xl border border-white/10 bg-[#101012] p-5 lg:sticky lg:top-28">
-          <h2 className="ff-display text-lg font-extrabold">Your order</h2>
+        <aside className="space-y-4 rounded-3xl bg-white p-6 shadow-[var(--shadow-2)] lg:sticky lg:top-28">
+          <h2 className="font-display text-lg" style={{ fontWeight: 700 }}>
+            Your order
+          </h2>
 
           <ul className="space-y-3">
             {priced.map((l) => (
               <li key={l.key} className="flex gap-3">
-                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-md bg-zinc-800">
+                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[var(--surface-2)]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={l.image} alt={l.name} className="h-full w-full object-cover" />
+                  <img
+                    src={l.image}
+                    alt={l.name}
+                    loading="lazy"
+                    style={{ backgroundColor: "#eceae7" }}
+                    className="h-full w-full object-cover"
+                  />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="ff-display truncate text-sm font-bold">{l.name}</p>
-                  <p className="ff-mono text-[10px] tracking-widest text-[#ff6b4a] uppercase">
+                  <p className="truncate text-sm font-semibold">{l.name}</p>
+                  <p className="text-xs font-semibold tracking-wide text-[var(--primary)] uppercase">
                     {FORMAT_LABELS[l.format]} × {l.qty}
                   </p>
                   {l.unavailable && (
-                    <p className="mt-1 text-xs text-amber-400">This one is {l.unavailable}.</p>
+                    <p className="mt-1 text-xs text-amber-600">This one is {l.unavailable}.</p>
                   )}
                 </div>
-                <span className={`ff-display text-sm font-bold ${l.unavailable ? "text-zinc-600 line-through" : ""}`}>
+                <span className={`font-display text-sm font-bold ${l.unavailable ? "text-[var(--muted)] line-through" : ""}`}>
                   {money(l.unitPrice * l.qty)}
                 </span>
               </li>
@@ -420,43 +442,50 @@ export default function CheckoutView({
           </ul>
 
           {repriced.length > 0 && (
-            <p className="rounded-md border border-white/10 bg-[#09090a] p-3 text-xs text-zinc-400">
+            <p className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-3 text-xs text-[var(--muted)]">
               Prices have changed since you added {repriced.length === 1 ? "that build" : "those builds"}
               . The figures above are current.
             </p>
           )}
 
-          <div className="space-y-2 border-t border-white/10 pt-4">
-            <div className="flex items-center justify-between gap-3 text-sm text-zinc-400">
+          <div className="space-y-2 border-t border-[var(--border)] pt-4">
+            <div className="flex items-center justify-between gap-3 text-sm text-[var(--muted)]">
               <span className="min-w-0 truncate">{chosen?.label ?? "Delivery"}</span>
-              <span className="shrink-0 text-zinc-300">{shipping > 0 ? money(shipping) : "Free"}</span>
+              <span className="shrink-0 text-[var(--foreground)]">{shipping > 0 ? money(shipping) : "Free"}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="ff-display font-bold">Total</span>
-              <span className="ff-display text-xl font-extrabold">{money(total)}</span>
+              <span className="font-display" style={{ fontWeight: 700 }}>
+                Total
+              </span>
+              <span className="font-display text-xl" style={{ fontWeight: 800 }}>
+                {money(total)}
+              </span>
             </div>
           </div>
 
           {blocked.length > 0 && (
-            <p className="flex gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200">
+            <p className="flex gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>Remove the unavailable {blocked.length === 1 ? "item" : "items"} from your cart to carry on.</span>
             </p>
           )}
 
           {error && (
-            <p className="rounded-md border border-[#e63329]/50 bg-[#e63329]/10 p-3 text-sm text-red-200">{error}</p>
+            <p className="rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/10 p-3 text-sm text-[var(--primary)]">
+              {error}
+            </p>
           )}
 
           <button
             type="submit"
             disabled={busy || blocked.length > 0}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-[#e63329] py-3.5 ff-display font-bold text-white transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 led-glow-soft"
+            className="mat-btn flex w-full items-center justify-center gap-2 rounded-full bg-[var(--primary)] py-3.5 font-display text-white shadow-[var(--shadow-1)] hover:shadow-[var(--shadow-2)] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-[var(--shadow-1)] disabled:hover:brightness-100"
+            style={{ fontWeight: 700 }}
           >
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
             {busy ? "Placing your order…" : "Place order"}
           </button>
-          <p className="text-center text-xs text-zinc-600">
+          <p className="text-center text-xs text-[var(--muted)]">
             You&rsquo;ll get the payment details on the next page.
           </p>
         </aside>
@@ -470,11 +499,13 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div className="mx-auto max-w-6xl px-5 pt-28 pb-24 md:pt-36">
       <Link
         href="/shop"
-        className="ff-mono inline-flex items-center gap-2 text-[11px] tracking-widest text-zinc-500 uppercase hover:text-white"
+        className="mat-btn inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-[var(--muted)] uppercase hover:text-[var(--foreground)]"
       >
         <ArrowLeft className="h-3.5 w-3.5" /> Keep shopping
       </Link>
-      <h1 className="ff-display mt-4 mb-10 text-4xl font-extrabold tracking-tight md:text-5xl">Checkout</h1>
+      <h1 className="font-display mt-4 mb-10 text-4xl tracking-tight md:text-5xl" style={{ fontWeight: 800 }}>
+        Checkout
+      </h1>
       {children}
     </div>
   )
