@@ -10,15 +10,20 @@ import Link from "next/link"
  */
 export default function NotFound() {
   return (
-    <div className="mx-auto max-w-3xl px-5 pt-40 pb-24 text-center">
-      <h1 className="ff-display text-3xl font-extrabold">Page not found</h1>
-      <p className="mt-3 text-zinc-400">That page isn&apos;t part of the shop.</p>
+    <section className="mx-auto flex min-h-[60vh] max-w-2xl flex-col items-center justify-center px-4 py-20 text-center">
+      <span className="font-display text-7xl text-[var(--primary)]" style={{ fontWeight: 800 }}>
+        404
+      </span>
+      <h1 className="font-display mt-4 text-3xl tracking-tight" style={{ fontWeight: 700 }}>
+        Page not found
+      </h1>
+      <p className="mt-3 text-[var(--muted)]">That brick doesn&apos;t click into place. Let&apos;s get you back on track.</p>
       <Link
         href="/"
-        className="mt-6 inline-block rounded-full bg-[#e63329] px-6 py-3 ff-display font-bold text-white"
+        className="mat-btn mt-8 rounded-full bg-[var(--primary)] px-7 py-3.5 text-sm font-semibold text-white shadow-[var(--shadow-2)] hover:brightness-105"
       >
-        Back home
+        Back to home
       </Link>
-    </div>
+    </section>
   )
 }

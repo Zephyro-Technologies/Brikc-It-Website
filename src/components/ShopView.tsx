@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { fromPrice, type Category, type Product } from "../data"
-import { ProductCard } from "./ProductCard"
+import { ProductCard, Reveal, SectionHead } from "./ui"
 
 const CATS: (Category | "All")[] = ["All", "F1", "Cars", "Bikes", "Collector"]
 const SORTS = [
@@ -26,8 +26,7 @@ export default function ShopView({ products: all }: { products: Product[] }) {
   }
 
   const products = useMemo(() => {
-    let list = active === "All" ? all : all.filter((p) => p.category === active)
-    list = [...list]
+    const list = active === "All" ? [...all] : all.filter((p) => p.category === active)
     if (sort === "price-asc") list.sort((a, b) => fromPrice(a) - fromPrice(b))
     else if (sort === "price-desc") list.sort((a, b) => fromPrice(b) - fromPrice(a))
     else list.sort((a, b) => Number(!!b.featured) - Number(!!a.featured))
@@ -35,37 +34,39 @@ export default function ShopView({ products: all }: { products: Product[] }) {
   }, [active, sort, all])
 
   return (
-    <div className="mx-auto max-w-7xl px-5 pt-28 pb-24 md:pt-36">
-      <p className="ff-mono mb-3 text-xs tracking-[0.3em] text-[#ff6b4a] uppercase">The collection</p>
-      <h1 className="ff-display text-4xl font-black tracking-tight md:text-6xl">Shop all builds</h1>
-      <p className="mt-4 max-w-xl text-zinc-400">
-        Boxed, built, or framed with LED — each build sets its own options.
-        {products.length > 0 &&
-          ` ${products.length} ${products.length === 1 ? "build" : "builds"} in ${active === "All" ? "the range" : active}.`}
-      </p>
+    <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
+      <SectionHead
+        title="Shop"
+        desc="Boxed, built, or framed — filter by what you're after, then tap any model for details."
+      />
 
-      <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-y border-white/10 py-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap gap-2">
-          {CATS.map((c) => (
-            <button
-              key={c}
-              onClick={() => setCat(c)}
-              className={`ff-mono rounded-full border px-4 py-1.5 text-xs tracking-widest uppercase transition-colors ${
-                active === c
-                  ? "border-[#e63329] bg-[#e63329] text-white"
-                  : "border-white/15 text-zinc-400 hover:text-white"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
+          {CATS.map((c) => {
+            const isActive = active === c
+            return (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCat(c)}
+                className={`mat-btn rounded-full px-4 py-2 text-sm font-medium ${
+                  isActive
+                    ? "bg-[var(--primary)] text-white shadow-[var(--shadow-1)]"
+                    : "border border-[var(--border)] bg-white text-[var(--muted)] hover:border-[var(--foreground)] hover:text-[var(--foreground)]"
+                }`}
+              >
+                {c}
+              </button>
+            )
+          })}
         </div>
-        <label className="flex items-center gap-2">
-          <span className="ff-mono text-[11px] tracking-widest text-zinc-500 uppercase">Sort</span>
+
+        <label className="flex items-center gap-2 text-sm">
+          <span className="font-medium text-[var(--muted)]">Sort</span>
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortKey)}
-            className="ff-mono rounded-md border border-white/15 bg-[#101012] px-3 py-1.5 text-xs tracking-wider text-zinc-200 outline-none focus:border-[#e63329]"
+            className="mat-btn rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-medium text-[var(--foreground)] shadow-[var(--shadow-1)] outline-none focus:border-[var(--primary)]"
           >
             {SORTS.map((s) => (
               <option key={s.key} value={s.key}>
@@ -76,29 +77,39 @@ export default function ShopView({ products: all }: { products: Product[] }) {
         </label>
       </div>
 
+      {products.length > 0 && (
+        <p className="mb-6 text-sm text-[var(--muted)]">
+          {products.length} {products.length === 1 ? "build" : "builds"} in{" "}
+          {active === "All" ? "the range" : active}
+        </p>
+      )}
+
       {products.length === 0 ? (
-        <div className="mt-8 rounded-2xl border border-white/10 bg-[#101012] px-6 py-20 text-center">
-          <p className="ff-display text-xl font-extrabold">
+        <div className="mt-4 rounded-3xl bg-white px-6 py-20 text-center shadow-[var(--shadow-1)]">
+          <p className="font-display text-xl" style={{ fontWeight: 800 }}>
             {all.length === 0 ? "Nothing here yet" : `No ${active} builds right now`}
           </p>
-          <p className="mx-auto mt-3 max-w-sm text-zinc-400">
+          <p className="mx-auto mt-3 max-w-sm text-[var(--muted)]">
             {all.length === 0
-              ? "The first builds are on their way. Follow along on Instagram and you'll see them as they land."
+              ? "New builds are on their way — check back soon."
               : "Everything else is still worth a look."}
           </p>
           {all.length > 0 && (
             <button
+              type="button"
               onClick={() => setCat("All")}
-              className="mt-6 rounded-full border border-white/20 px-6 py-3 ff-display font-semibold hover:bg-white/5"
+              className="mat-btn mt-6 rounded-full bg-[var(--foreground)] px-6 py-3 text-sm font-semibold text-white shadow-[var(--shadow-1)] hover:bg-black hover:shadow-[var(--shadow-2)]"
             >
               Show every build
             </button>
           )}
         </div>
       ) : (
-        <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {products.map((p) => (
-            <ProductCard key={p.slug} product={p} />
+        <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
+          {products.map((p, i) => (
+            <Reveal key={p.slug} delay={(i % 4) * 70}>
+              <ProductCard product={p} />
+            </Reveal>
           ))}
         </div>
       )}

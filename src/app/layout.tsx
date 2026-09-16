@@ -25,7 +25,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <Suspense fallback={null}>
             <ScrollToTop />
           </Suspense>
-          <div className="min-h-screen bg-[#09090a] text-zinc-100">
+          <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
             <Nav />
             <CartDrawer />
             <main>{children}</main>

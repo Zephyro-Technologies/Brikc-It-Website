@@ -1,135 +1,222 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ShoppingBag, Menu, X } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { Menu, MessageCircle, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react"
+import { useCart } from "../cart"
+import { money } from "../lib/money"
+import { FORMAT_LABELS } from "../data"
+import { BANNER, NAV } from "../content/site"
 
-function Instagram({ className = "" }: { className?: string }) {
+/**
+ * The light, Material-leaning chrome every page sits inside: a dismissible
+ * announcement bar, a sticky header that picks up elevation on scroll, the
+ * cart slide-over and the footer. Nav and the banner share one component so
+ * the root layout only has to mount one thing above `main`.
+ */
+
+// lucide-react ships no brand marks any more, so Instagram is hand-rolled —
+// same glyph the old dark chrome used, just recoloured via currentColor.
+function InstagramIcon({ className = "" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
       <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
       <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
       <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
     </svg>
   )
 }
-// Full horizontal lockup — the wordmark is part of the artwork, so nothing
-// needs to set "brikc.it" in type alongside it.
-const logo = "/brand/logo.png"
-import { useCart, money } from "../cart"
-import { FORMAT_LABELS } from "../data"
 
-const NAV = [
-  { label: "Shop", to: "/shop" },
-  { label: "F1", to: "/shop?cat=F1" },
-  { label: "Cars", to: "/shop?cat=Cars" },
-  { label: "Bikes", to: "/shop?cat=Bikes" },
-]
+function LogoMark({ className = "" }: { className?: string }) {
+  return (
+    <span className={`grid place-items-center overflow-hidden rounded-2xl bg-[#0d0d0d] ${className}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/brand/mark.png"
+        alt="brikc.it"
+        loading="lazy"
+        style={{ backgroundColor: "#eceae7" }}
+        className="h-full w-full object-contain p-1"
+      />
+    </span>
+  )
+}
 
-export function Logo({ className = "" }: { className?: string }) {
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={logo} alt="brikc.it" className={className} />
+function CartButton() {
+  const { count, setOpen } = useCart()
+  return (
+    <button
+      type="button"
+      onClick={() => setOpen(true)}
+      aria-label="Open cart"
+      className="mat-btn relative flex items-center gap-2 rounded-full bg-[var(--foreground)] px-4 py-2.5 text-sm font-medium text-white shadow-[var(--shadow-1)] hover:shadow-[var(--shadow-2)]"
+    >
+      <ShoppingBag className="h-[18px] w-[18px]" />
+      <span className="hidden sm:inline">Cart</span>
+      {count > 0 && (
+        <span className="absolute -right-1.5 -top-1.5 grid h-6 min-w-6 place-items-center rounded-full bg-[var(--primary)] px-1.5 text-xs font-bold text-white ring-2 ring-white">
+          {count}
+        </span>
+      )}
+    </button>
+  )
 }
 
 export function Nav() {
-  const [open, setOpen] = useState(false)
-  const { count, setOpen: setCartOpen } = useCart()
+  const pathname = usePathname()
+  const [bannerOpen, setBannerOpen] = useState(true)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
+  const isActive = (to: string) => (to === "/" ? pathname === "/" : pathname.startsWith(to))
+
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#09090a]/80 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5">
-        <Link href="/" className="flex items-center" aria-label="brikc.it — home">
-          <Logo className="h-10 w-auto" />
-        </Link>
-        <nav className="hidden items-center gap-8 md:flex">
-          {NAV.map((n) => (
-            <Link
-              key={n.to}
-              href={n.to}
-              className="ff-mono text-xs tracking-widest text-zinc-400 uppercase transition-colors hover:text-white"
+    <>
+      {bannerOpen && (
+        <div className="relative bg-[linear-gradient(90deg,#e23a2e,#ff6b2c)] text-white">
+          {/* Wider gutters than the site's usual px-4 sm:px-6, and symmetric, so
+              the centred text clears the absolutely-positioned close button at
+              every width instead of running under it. */}
+          <div className="mx-auto flex max-w-7xl items-center justify-center gap-3 px-12 py-2.5 text-center text-sm font-medium sm:px-14">
+            <span>{BANNER}</span>
+            <button
+              type="button"
+              aria-label="Dismiss banner"
+              onClick={() => setBannerOpen(false)}
+              className="mat-btn absolute right-3 grid h-7 w-7 place-items-center rounded-full hover:bg-white/20"
             >
-              {n.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="flex items-center gap-3">
-          <a
-            href="https://instagram.com/brikc.it"
-            target="_blank"
-            rel="noreferrer"
-            aria-label="Instagram"
-            className="hidden h-9 w-9 items-center justify-center rounded-md border border-white/15 text-zinc-300 transition-colors hover:text-white sm:flex"
-          >
-            <Instagram className="h-4 w-4" />
-          </a>
-          <button
-            onClick={() => setCartOpen(true)}
-            className="relative flex items-center gap-2 rounded-full bg-[#e63329] px-4 py-2.5 ff-display text-sm font-bold text-white transition-transform hover:scale-105 led-glow-soft"
-          >
-            <ShoppingBag className="h-4 w-4" />
-            <span className="hidden sm:inline">Cart</span>
-            {count > 0 && (
-              <span className="ff-mono absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[11px] font-bold text-[#e63329]">
-                {count}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setOpen((o) => !o)}
-            className="flex h-9 w-9 items-center justify-center rounded-md border border-white/15 text-white md:hidden"
-            aria-label="Menu"
-          >
-            {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-          </button>
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
-      </div>
-      {open && (
-        <nav className="flex flex-col gap-1 border-t border-white/10 px-5 py-3 md:hidden">
-          {NAV.map((n) => (
-            <Link
-              key={n.to}
-              href={n.to}
-              onClick={() => setOpen(false)}
-              className="ff-mono py-2 text-sm tracking-widest text-zinc-300 uppercase"
-            >
-              {n.label}
-            </Link>
-          ))}
-        </nav>
       )}
-    </header>
+
+      <header
+        className={`sticky top-0 z-40 border-b transition-all ${
+          scrolled
+            ? "border-[var(--border)] bg-white/85 shadow-[var(--shadow-1)] backdrop-blur-md"
+            : "border-transparent bg-[var(--background)]"
+        }`}
+      >
+        <nav className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
+          <Link href="/" className="flex items-center gap-2.5" aria-label="brikc.it — home">
+            <LogoMark className="h-11 w-11 shadow-[var(--shadow-1)]" />
+            <span className="font-display text-xl tracking-tight" style={{ fontWeight: 800 }}>
+              brikc.it
+            </span>
+          </Link>
+
+          <div className="mx-auto hidden items-center gap-1 lg:flex">
+            {NAV.map((n) => (
+              <Link
+                key={n.to}
+                href={n.to}
+                className={`mat-btn rounded-full px-4 py-2 text-sm font-medium ${
+                  isActive(n.to)
+                    ? "bg-[var(--surface-2)] text-[var(--foreground)]"
+                    : "text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--foreground)]"
+                }`}
+              >
+                {n.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* No search in this app — a dead icon linking nowhere is worse than
+              no icon, so the prototype's search button was dropped rather than
+              ported. */}
+          <div className="ml-auto flex items-center gap-2 lg:ml-0">
+            <CartButton />
+            <button
+              type="button"
+              aria-label="Menu"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="mat-btn grid h-11 w-11 place-items-center rounded-full text-[var(--foreground)] hover:bg-[var(--surface-2)] lg:hidden"
+            >
+              {menuOpen ? <X className="h-[22px] w-[22px]" /> : <Menu className="h-[22px] w-[22px]" />}
+            </button>
+          </div>
+        </nav>
+
+        {menuOpen && (
+          <div className="border-t border-[var(--border)] bg-white px-4 py-2 lg:hidden">
+            {NAV.map((n) => (
+              <Link
+                key={n.to}
+                href={n.to}
+                onClick={() => setMenuOpen(false)}
+                className={`block rounded-xl px-4 py-3 text-sm font-medium ${
+                  isActive(n.to)
+                    ? "bg-[var(--surface-2)] text-[var(--foreground)]"
+                    : "text-[var(--foreground)] hover:bg-[var(--surface-2)]"
+                }`}
+              >
+                {n.label}
+              </Link>
+            ))}
+          </div>
+        )}
+      </header>
+    </>
   )
 }
 
 export function CartDrawer() {
   const { lines, open, setOpen, subtotal, remove, setQty, count, clear } = useCart()
+
   return (
     <>
       <div
         onClick={() => setOpen(false)}
-        className={`fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm transition-opacity ${
+        aria-hidden="true"
+        className={`fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm transition-opacity ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       />
       <aside
-        className={`fixed right-0 top-0 z-[70] flex h-full w-full max-w-md flex-col border-l border-white/10 bg-[#0d0d0f] transition-transform duration-300 ${
+        aria-hidden={!open}
+        className={`fixed top-0 right-0 z-[70] flex h-full w-full max-w-md flex-col bg-white shadow-[var(--shadow-3)] transition-transform duration-300 ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-          <h2 className="ff-display text-lg font-extrabold">Your cart {count > 0 && `(${count})`}</h2>
-          <button onClick={() => setOpen(false)} aria-label="Close" className="text-zinc-400 hover:text-white">
+        <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
+          <h2 className="font-display text-lg" style={{ fontWeight: 800 }}>
+            Your cart {count > 0 && `(${count})`}
+          </h2>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            aria-label="Close cart"
+            className="mat-btn grid h-9 w-9 place-items-center rounded-full text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--foreground)]"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {lines.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-            <ShoppingBag className="h-10 w-10 text-zinc-600" />
-            <p className="text-zinc-400">Your cart is empty.</p>
+            <ShoppingBag className="h-10 w-10 text-[var(--muted)]" />
+            <p className="text-[var(--muted)]">Your cart is empty.</p>
             <Link
               href="/shop"
               onClick={() => setOpen(false)}
-              className="rounded-full border border-white/20 px-5 py-2.5 ff-display font-semibold hover:bg-white/5"
+              className="mat-btn rounded-full bg-[var(--foreground)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-black"
             >
               Browse builds
             </Link>
@@ -138,64 +225,82 @@ export function CartDrawer() {
           <>
             <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
               {lines.map((l) => (
-                <div key={l.key} className="flex gap-4 rounded-xl border border-white/10 bg-[#101012] p-3">
-                  <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-zinc-800">
+                <div
+                  key={l.key}
+                  className="flex gap-4 rounded-3xl border border-[var(--border)] bg-[var(--surface-2)] p-3"
+                >
+                  <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-white">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={l.image} alt={l.name} className="h-full w-full object-cover" />
+                    <img
+                      src={l.image}
+                      alt={l.name}
+                      loading="lazy"
+                      style={{ backgroundColor: "#eceae7" }}
+                      className="h-full w-full object-cover"
+                    />
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="ff-display truncate font-bold">{l.name}</p>
-                        <p className="ff-mono text-[11px] tracking-widest text-[#ff6b4a] uppercase">
+                        <p className="font-display truncate text-sm" style={{ fontWeight: 700 }}>
+                          {l.name}
+                        </p>
+                        <p className="mt-0.5 text-xs font-bold tracking-wide text-[var(--primary)] uppercase">
                           {FORMAT_LABELS[l.format]}
                         </p>
                       </div>
                       <button
+                        type="button"
                         onClick={() => remove(l.key)}
-                        className="text-zinc-500 hover:text-white"
-                        aria-label="Remove"
+                        aria-label={`Remove ${l.name}`}
+                        className="mat-btn shrink-0 text-[var(--muted)] hover:text-[var(--primary)]"
                       >
-                        <X className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                     <div className="mt-auto flex items-center justify-between pt-2">
-                      <div className="flex items-center rounded-full border border-white/15">
+                      <div className="flex items-center rounded-full border border-[var(--border)] bg-white">
                         <button
+                          type="button"
                           onClick={() => setQty(l.key, l.qty - 1)}
-                          className="px-3 py-1 text-zinc-300 hover:text-white"
+                          aria-label="Decrease quantity"
+                          className="mat-btn grid h-8 w-8 place-items-center text-[var(--muted)] hover:text-[var(--foreground)]"
                         >
-                          −
+                          <Minus className="h-3.5 w-3.5" />
                         </button>
-                        <span className="ff-mono w-6 text-center text-sm">{l.qty}</span>
+                        <span className="w-6 text-center text-sm font-semibold">{l.qty}</span>
                         <button
+                          type="button"
                           onClick={() => setQty(l.key, l.qty + 1)}
-                          className="px-3 py-1 text-zinc-300 hover:text-white"
+                          aria-label="Increase quantity"
+                          className="mat-btn grid h-8 w-8 place-items-center text-[var(--muted)] hover:text-[var(--foreground)]"
                         >
-                          +
+                          <Plus className="h-3.5 w-3.5" />
                         </button>
                       </div>
-                      <span className="ff-display font-bold">{money(l.unitPrice * l.qty)}</span>
+                      <span className="font-display font-bold">{money(l.unitPrice * l.qty)}</span>
                     </div>
                   </div>
                 </div>
               ))}
-              <button onClick={clear} className="ff-mono text-[11px] tracking-widest text-zinc-500 uppercase hover:text-white">
+              <button
+                type="button"
+                onClick={clear}
+                className="mat-btn text-xs font-semibold tracking-wide text-[var(--muted)] uppercase hover:text-[var(--foreground)]"
+              >
                 Clear cart
               </button>
             </div>
-            <div className="border-t border-white/10 px-5 py-5">
+            <div className="border-t border-[var(--border)] px-5 py-5">
               <div className="mb-1 flex items-center justify-between">
-                <span className="text-zinc-400">Subtotal</span>
-                <span className="ff-display text-xl font-extrabold">{money(subtotal)}</span>
+                <span className="text-[var(--muted)]">Subtotal</span>
+                <span className="font-display text-xl font-extrabold">{money(subtotal)}</span>
               </div>
-              <p className="ff-mono mb-4 text-[11px] tracking-wider text-zinc-500">
-                Free delivery nationwide
-              </p>
+              <p className="mb-4 text-xs text-[var(--muted)]">Free delivery anywhere in Pakistan</p>
               <Link
                 href="/checkout"
                 onClick={() => setOpen(false)}
-                className="block w-full rounded-full bg-[#e63329] py-3.5 text-center ff-display font-bold text-white transition-transform hover:scale-[1.02] led-glow-soft"
+                className="mat-btn block w-full rounded-full bg-[var(--primary)] py-3.5 text-center text-sm font-bold text-white shadow-[var(--shadow-1)] hover:brightness-105 hover:shadow-[var(--shadow-2)]"
               >
                 Checkout
               </Link>
@@ -207,60 +312,82 @@ export function CartDrawer() {
   )
 }
 
+// Computed once when the module loads rather than inside the render body —
+// the value only ever changes once a year, so a module-level constant can't
+// disagree between a server render and the client hydrating it the way a
+// call inside JSX could.
+const YEAR = new Date().getFullYear()
+
 export function Footer({ instagram = "@brikc.it" }: { instagram?: string }) {
   const handle = instagram.replace(/^@/, "")
   return (
-    <footer className="relative overflow-hidden border-t border-white/10">
-      <div className="absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-[#e63329]/20 blur-[120px]" />
-      <div className="relative mx-auto max-w-7xl px-5 py-20">
-        <div className="grid gap-10 md:grid-cols-[2fr_1fr_1fr]">
-          <div>
-            <Logo className="h-11 w-auto" />
-            <p className="mt-4 max-w-xs text-zinc-400">
-              LEGO-style models &amp; LED display frames. Built, boxed, or framed to be seen.
-            </p>
-          </div>
-          <div>
-            <p className="ff-mono mb-4 text-[11px] tracking-widest text-zinc-500 uppercase">Shop</p>
-            <ul className="space-y-2 text-zinc-400">
-              {["F1", "Cars", "Bikes", "Collector"].map((c) => (
-                <li key={c}>
-                  <Link href={`/shop?cat=${c}`} className="hover:text-white">
-                    {c}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <p className="ff-mono mb-4 text-[11px] tracking-widest text-zinc-500 uppercase">Follow</p>
-            <a
-              href={`https://instagram.com/${handle}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 text-zinc-400 hover:text-white"
-            >
-              <Instagram className="h-4 w-4" /> @{handle}
-            </a>
-          </div>
-        </div>
-        <div className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 sm:flex-row">
-          <p className="ff-mono text-[11px] tracking-widest text-zinc-500 uppercase">
-            © {new Date().getFullYear()} brikc.it — Cars • Bikes • F1
+    <footer className="border-t border-[var(--border)] bg-white">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
+        <div>
+          <Link href="/" className="flex items-center gap-2.5" aria-label="brikc.it — home">
+            <LogoMark className="h-10 w-10" />
+            <span className="font-display text-lg" style={{ fontWeight: 800 }}>
+              brikc.it
+            </span>
+          </Link>
+          <p className="mt-4 max-w-xs text-sm text-[var(--muted)]">
+            Cars, bikes, F1 and collector builds — boxed, built, or mounted in an LED-lit frame.
           </p>
-          <p className="ff-mono text-[11px] tracking-widest text-zinc-600 uppercase">
-            Built, boxed &amp; framed in Pakistan
+          <a
+            href={`https://instagram.com/${handle}`}
+            target="_blank"
+            rel="noreferrer"
+            className="mat-btn mt-5 inline-flex items-center gap-2 rounded-full bg-[var(--surface-2)] px-4 py-2 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--primary)] hover:text-white"
+          >
+            <InstagramIcon className="h-4 w-4" />@{handle}
+          </a>
+        </div>
+
+        <div>
+          <h4 className="text-sm font-bold tracking-wider text-[var(--muted)] uppercase">Explore</h4>
+          <ul className="mt-4 space-y-2.5 text-sm">
+            {NAV.map((n) => (
+              <li key={n.to}>
+                <Link href={n.to} className="text-[var(--foreground)] hover:text-[var(--primary)]">
+                  {n.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* The prototype's newsletter form posted nowhere — there is no
+            mailing list here. Instagram is the one channel getSettings()
+            actually gives the footer, so that's what this column offers. */}
+        <div>
+          <h4 className="text-sm font-bold tracking-wider text-[var(--muted)] uppercase">Get in touch</h4>
+          <p className="mt-4 text-sm text-[var(--muted)]">Questions before you order? We reply fastest on Instagram.</p>
+          <a
+            href={`https://instagram.com/${handle}`}
+            target="_blank"
+            rel="noreferrer"
+            className="mat-btn mt-3 inline-flex items-center gap-2 rounded-full bg-[var(--foreground)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-black"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Message us
+          </a>
+        </div>
+      </div>
+
+      <div className="border-t border-[var(--border)] px-4 py-6 sm:px-6">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
+          <p className="text-xs whitespace-nowrap text-[var(--muted)]">© {YEAR} brikc.it — built by hand, framed with care.</p>
+          {/* Kept from the previous chrome: the shop calls its models
+              "LEGO-style" throughout, so saying plainly that the LEGO Group
+              has nothing to do with us is what keeps that descriptive rather
+              than a suggestion of endorsement. */}
+          <p className="max-w-2xl text-xs leading-relaxed text-[var(--muted)]">
+            LEGO&reg; is a trademark of the LEGO Group, which does not sponsor, authorise or endorse this
+            site. brikc.it is not affiliated with the LEGO Group, nor with any vehicle manufacturer, racing
+            team or championship whose car or livery a model may resemble — such names are used only to
+            describe the subject of a build.
           </p>
         </div>
-        {/* The shop describes its models as LEGO-style in the title, the hero and
-            above. Saying plainly that the LEGO Group has nothing to do with us is
-            what keeps that descriptive rather than a suggestion of endorsement. */}
-        <p className="mt-6 max-w-2xl text-xs leading-relaxed text-zinc-600">
-          LEGO&reg; is a trademark of the LEGO Group, which does not sponsor, authorise or endorse
-          this site. brikc.it is not affiliated with the LEGO Group, nor with any vehicle
-          manufacturer, racing team or championship whose car or livery a model may resemble — such
-          names are used only to describe the subject of a build.
-        </p>
       </div>
     </footer>
   )

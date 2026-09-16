@@ -20,7 +20,13 @@ type CartCtx = {
   subtotal: number
   open: boolean
   setOpen: (v: boolean) => void
-  add: (product: Product, format: FormatKey, qty?: number) => void
+  /**
+   * `open` controls whether the drawer slides out. The product page wants it
+   * (one deliberate add, show the result); a quick-add chip in a grid doesn't,
+   * because covering the grid you're browsing to confirm one tap is a jolt —
+   * the chip confirms itself instead.
+   */
+  add: (product: Product, format: FormatKey, qty?: number, opts?: { open?: boolean }) => void
   remove: (key: string) => void
   setQty: (key: string, qty: number) => void
   clear: () => void
@@ -60,7 +66,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [lines, restored])
 
-  const add: CartCtx["add"] = (product, format, qty = 1) => {
+  const add: CartCtx["add"] = (product, format, qty = 1, opts) => {
     const key = `${product.slug}-${format}`
     const unitPrice = product.prices[format]
     setLines((prev) => {
@@ -82,7 +88,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         },
       ]
     })
-    setOpen(true)
+    if (opts?.open !== false) setOpen(true)
   }
 
   const remove: CartCtx["remove"] = (key) => setLines((prev) => prev.filter((l) => l.key !== key))
@@ -108,5 +114,3 @@ export function useCart() {
   return ctx
 }
 
-/** Rupees, no decimals — the store doesn't price in paisa. */
-export const money = (n: number) => `Rs ${Math.round(n).toLocaleString("en-PK")}`
