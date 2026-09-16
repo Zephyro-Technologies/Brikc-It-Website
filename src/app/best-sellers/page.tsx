@@ -3,7 +3,7 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { getProducts, getSettings } from "../../lib/shop"
 import { Reveal } from "../../components/ui"
-import { cardTag, fromPrice, soldFormats, subline } from "../../lib/product-view"
+import { cardTag, fromPrice, productImage, soldFormats, subline } from "../../lib/product-view"
 import { money } from "../../lib/money"
 import { FORMAT_LABELS } from "../../data"
 
@@ -108,7 +108,7 @@ export default async function BestSellersPage() {
                         <div className="relative overflow-hidden">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={p.images[0]}
+                            src={productImage(p)}
                             alt={p.name}
                             loading="lazy"
                             style={{ backgroundColor: "#eceae7" }}

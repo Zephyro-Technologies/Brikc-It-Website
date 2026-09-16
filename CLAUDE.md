@@ -182,3 +182,33 @@ the Cloudflare dashboard — see DEPLOYMENT.md §5.
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — **build-time**; inlined by
   `next build` and needed for prerendering. Read-only under RLS; no secret key is used here.
 - `REVALIDATE_SECRET` — runtime secret, must match the admin's exactly.
+
+### Running the whole thing locally
+
+The schema, the migrations and the seed all live in the admin repo (`../Brikc-It-Admin`) — this
+app only ever reads. To bring up a local backend:
+
+```bash
+cd "../Brikc-It-Admin" && supabase start   # applies every migration, runs supabase/seed.sql
+supabase status                            # prints the URL and publishable key for .env.local
+```
+
+The local stack is on **544xx, not the Supabase default 543xx** — another project on this machine
+holds that range, and `supabase/config.toml` there was remapped so both can run at once. API
+`54421`, Postgres `54422`, Studio `54423`.
+
+Both apps read the same stack with the same publishable key, and both want port 3000, so run the
+admin on another: `npm run dev -- -p 3001`. Their `REVALIDATE_SECRET` values must be identical or
+every revalidation 401s.
+
+The admin needs a Supabase Auth user that is also enrolled in `public.admins` — RLS gates on that
+table, so an account that isn't enrolled signs in and legitimately sees nothing. `admins` has only
+a SELECT policy, so the first one is created with SQL; DEPLOYMENT.md in the admin has the snippet.
+
+Two things that bite:
+
+- `psql` may not be on PATH. Go through the container:
+  `docker exec supabase_db_BrickIt_Admin psql -U postgres -d postgres -c '…'`
+- Checkout is closed until **Settings → Payments** has a WhatsApp number and at least one account.
+  `canCheckout()` is doing its job — the seed deliberately leaves those blank rather than shipping
+  a fake bank account, so a fresh database shows "ordering online is off right now".

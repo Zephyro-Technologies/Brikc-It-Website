@@ -4,7 +4,7 @@ import { Reveal, SectionHead, ExploreMore, ProductCard } from "../components/ui"
 import { money } from "../lib/money"
 import type { Product } from "../data"
 import { getCategories, getProducts, getReviews } from "../lib/shop"
-import { cardTag, fromPrice, subline } from "../lib/product-view"
+import { cardTag, fromPrice, productImage, subline } from "../lib/product-view"
 import { HERO_STATS, PROMISES, STEPS } from "../content/site"
 import { DISPLAY_FINISHES } from "../content/displays"
 import { GUIDES } from "../content/guides"
@@ -137,7 +137,7 @@ function BestSellers({ products }: { products: Product[] }) {
                     <div className="relative overflow-hidden">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={p.images[0]}
+                        src={productImage(p)}
                         alt={p.name}
                         loading="lazy"
                         style={{ backgroundColor: "var(--foreground)" }}

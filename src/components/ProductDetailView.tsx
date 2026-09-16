@@ -6,7 +6,7 @@ import { Check, Package, ShieldCheck, Truck } from "lucide-react"
 import { useCart } from "../cart"
 import { money } from "../lib/money"
 import { FORMAT_LABELS, type FormatKey, type Product } from "../data"
-import { cardTag, soldFormats, specs, subline } from "../lib/product-view"
+import { cardTag, productImage, soldFormats, specs, subline } from "../lib/product-view"
 import { ProductCard, Reveal } from "./ui"
 
 /**
@@ -92,7 +92,7 @@ export default function ProductDetailView({
           <div className="overflow-hidden rounded-[28px] shadow-[var(--shadow-2)]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={product.images[activeImg]}
+              src={productImage(product, activeImg)}
               alt={product.name}
               loading="lazy"
               style={{ backgroundColor: "#eceae7" }}

@@ -6,7 +6,14 @@ import { ArrowRight, Check } from "lucide-react"
 import { useCart } from "../cart"
 import { money } from "../lib/money"
 import type { Product } from "../data"
-import { cardTag, cheapestFormat, fromPrice, isSellable, subline } from "../lib/product-view"
+import {
+  cardTag,
+  cheapestFormat,
+  fromPrice,
+  isSellable,
+  productImage,
+  subline,
+} from "../lib/product-view"
 
 /**
  * The shared vocabulary of the storefront: reveal-on-scroll, section headings,
@@ -174,7 +181,7 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="relative overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={product.images[0]}
+          src={productImage(product)}
           alt={product.name}
           loading="lazy"
           style={{ backgroundColor: "#eceae7" }}

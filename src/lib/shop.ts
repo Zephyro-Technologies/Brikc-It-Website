@@ -140,6 +140,11 @@ export async function getDeliveryOptions(): Promise<DeliveryOption[]> {
     .limit(1)
     .maybeSingle()
   if (res.error) throw new Error(`Supabase: failed to load delivery options — ${res.error.message}`)
+  // Fail as loudly as getSettings() and getPaymentDetails() do. Without this,
+  // a missing settings row degrades silently to standard-delivery-only: hand
+  // delivery just stops being offered, which looks like a deliberate change
+  // rather than a broken database.
+  if (!res.data) throw new Error("Supabase: the settings row is missing — has the seed been applied?")
 
   const options: DeliveryOption[] = [
     {

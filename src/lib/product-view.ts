@@ -48,6 +48,22 @@ export function formatSummary(product: Product): string {
   return sold.map((f) => FORMAT_LABELS[f]).join(" · ")
 }
 
+/**
+ * A flat tile in the surface colour, used when a build has no photograph.
+ *
+ * The admin's product form insists on at least one image, but nothing in the
+ * database enforces it, so a row can legitimately arrive with none — and React
+ * drops `src={undefined}` entirely, emitting an <img> with no src at all. An
+ * empty tile is a fine thing to show; invalid markup is not.
+ */
+const PLACEHOLDER_IMAGE =
+  "data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%201%201'%3E%3Crect%20width%3D'1'%20height%3D'1'%20fill%3D'%23eceae7'%2F%3E%3C%2Fsvg%3E"
+
+/** The image to show for a build, falling back to the placeholder tile. */
+export function productImage(product: Product, index = 0): string {
+  return product.images[index] ?? PLACEHOLDER_IMAGE
+}
+
 /** The small muted line under a product name. Real fields only, no filler. */
 export function subline(product: Product): string {
   return [product.team, product.scale].filter(Boolean).join(" · ")
