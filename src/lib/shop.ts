@@ -3,8 +3,10 @@ import { normaliseWhatsapp } from "./checkout"
 import type {
   Category,
   DeliveryOption,
+  DisplayFinish,
   FaqItem,
   FormatKey,
+  Guide,
   PaymentDetails,
   Product,
   Review,
@@ -204,4 +206,56 @@ export async function getPaymentDetails(): Promise<PaymentDetails> {
     jazzcash: { title: res.data.jazzcash_title, number: res.data.jazzcash_number },
     easypaisa: { title: res.data.easypaisa_title, number: res.data.easypaisa_number },
   }
+}
+
+export async function getDisplayFinishes(): Promise<DisplayFinish[]> {
+  const res = await supabase()
+    .from("display_finishes")
+    .select("name, finish, from_price, swatch, image, sort")
+    .order("sort")
+  return unwrap("display finishes", res).map((f) => ({
+    name: f.name,
+    finish: f.finish,
+    from: f.from_price,
+    swatch: f.swatch,
+    image: f.image,
+  }))
+}
+
+const GUIDE_SELECT = `
+  slug, title, description, pages, icon,
+  guide_chapters ( title, body, sort )
+`
+
+type GuideRow = {
+  slug: string
+  title: string
+  description: string
+  pages: number
+  icon: string
+  guide_chapters: { title: string; body: string; sort: number }[]
+}
+
+function toGuide(row: GuideRow): Guide {
+  return {
+    slug: row.slug,
+    title: row.title,
+    desc: row.description,
+    pages: row.pages,
+    icon: row.icon,
+    chapters: [...row.guide_chapters]
+      .sort((a, b) => a.sort - b.sort)
+      .map((c) => ({ title: c.title, body: c.body })),
+  }
+}
+
+export async function getGuides(): Promise<Guide[]> {
+  const res = await supabase().from("guides").select(GUIDE_SELECT).order("sort")
+  return (unwrap("guides", res) as unknown as GuideRow[]).map(toGuide)
+}
+
+export async function getGuide(slug: string): Promise<Guide | undefined> {
+  const res = await supabase().from("guides").select(GUIDE_SELECT).eq("slug", slug).maybeSingle()
+  if (res.error) throw new Error(`Supabase: failed to load guide ${slug} — ${res.error.message}`)
+  return res.data ? toGuide(res.data as unknown as GuideRow) : undefined
 }

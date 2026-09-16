@@ -65,6 +65,26 @@ export type Settings = {
   instagram: string
 }
 
+export type DisplayFinish = {
+  name: string
+  /** Material and the frame size it is cut for. */
+  finish: string
+  from: number | null
+  /** A CSS colour or gradient for the swatch block. */
+  swatch: string
+  /** A photograph URL. Takes priority over `swatch` when set. */
+  image: string
+}
+
+export type Guide = {
+  slug: string
+  title: string
+  desc: string
+  pages: number
+  icon: string
+  chapters: { title: string; body: string }[]
+}
+
 /**
  * The lowest price this build can be had for, across the formats it is
  * actually sold in — what "from" means on a card or in a sort.

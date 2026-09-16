@@ -2,10 +2,11 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
-import { GUIDES, findGuide } from "../../../content/guides"
+import { getGuide, getGuides } from "../../../lib/shop"
 
 export async function generateStaticParams() {
-  return GUIDES.map((g) => ({ id: g.id }))
+  const guides = await getGuides()
+  return guides.map((g) => ({ id: g.slug }))
 }
 
 export async function generateMetadata({
@@ -14,7 +15,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>
 }): Promise<Metadata> {
   const { id } = await params
-  const guide = findGuide(id)
+  const guide = await getGuide(id)
   if (!guide) return { title: "Guide not found — brikc.it" }
   return {
     title: `${guide.title} — brikc.it`,
@@ -24,7 +25,7 @@ export async function generateMetadata({
 
 export default async function BookletPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const guide = findGuide(id)
+  const guide = await getGuide(id)
   if (!guide) notFound()
 
   return (
@@ -38,9 +39,11 @@ export default async function BookletPage({ params }: { params: Promise<{ id: st
       </nav>
 
       <header className="flex items-start gap-5">
-        <span className="grid h-16 w-16 flex-none place-items-center rounded-3xl bg-[var(--surface-2)] text-3xl">
-          {guide.icon}
-        </span>
+        {guide.icon && (
+          <span className="grid h-16 w-16 flex-none place-items-center rounded-3xl bg-[var(--surface-2)] text-3xl">
+            {guide.icon}
+          </span>
+        )}
         <div>
           <span className="text-xs font-bold tracking-[0.2em] text-[var(--primary)] uppercase">Booklet guide</span>
           <h1 className="font-display mt-1 text-4xl tracking-tight sm:text-5xl" style={{ fontWeight: 800 }}>

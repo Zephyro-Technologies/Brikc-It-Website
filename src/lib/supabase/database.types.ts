@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.15"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -84,6 +79,36 @@ export type Database = {
         }
         Relationships: []
       }
+      display_finishes: {
+        Row: {
+          finish: string
+          from_price: number | null
+          id: string
+          image: string
+          name: string
+          sort: number
+          swatch: string
+        }
+        Insert: {
+          finish: string
+          from_price?: number | null
+          id?: string
+          image?: string
+          name: string
+          sort?: number
+          swatch?: string
+        }
+        Update: {
+          finish?: string
+          from_price?: number | null
+          id?: string
+          image?: string
+          name?: string
+          sort?: number
+          swatch?: string
+        }
+        Relationships: []
+      }
       faqs: {
         Row: {
           answer: string
@@ -102,6 +127,68 @@ export type Database = {
           id?: string
           question?: string
           sort?: number
+        }
+        Relationships: []
+      }
+      guide_chapters: {
+        Row: {
+          body: string
+          guide_id: string
+          id: string
+          sort: number
+          title: string
+        }
+        Insert: {
+          body: string
+          guide_id: string
+          id?: string
+          sort?: number
+          title: string
+        }
+        Update: {
+          body?: string
+          guide_id?: string
+          id?: string
+          sort?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guide_chapters_guide_id_fkey"
+            columns: ["guide_id"]
+            isOneToOne: false
+            referencedRelation: "guides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guides: {
+        Row: {
+          description: string
+          icon: string
+          id: string
+          pages: number
+          slug: string
+          sort: number
+          title: string
+        }
+        Insert: {
+          description: string
+          icon?: string
+          id?: string
+          pages?: number
+          slug: string
+          sort?: number
+          title: string
+        }
+        Update: {
+          description?: string
+          icon?: string
+          id?: string
+          pages?: number
+          slug?: string
+          sort?: number
+          title?: string
         }
         Relationships: []
       }
@@ -681,3 +768,4 @@ export const Constants = {
     },
   },
 } as const
+

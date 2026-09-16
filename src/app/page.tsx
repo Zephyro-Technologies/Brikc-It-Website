@@ -3,12 +3,10 @@ import { ArrowRight, Sparkles, ShieldCheck, Truck, type LucideIcon } from "lucid
 import { Reveal, SectionHead, ExploreMore, ProductCard } from "../components/ui"
 import { money } from "../lib/money"
 import type { Product } from "../data"
-import { getCategories, getProducts, getReviews } from "../lib/shop"
+import { getCategories, getDisplayFinishes, getGuides, getProducts, getReviews } from "../lib/shop"
 import { cardTag, fromPrice, productImage, subline } from "../lib/product-view"
 import { HERO_STATS, PROMISES, STEPS } from "../content/site"
-import { DISPLAY_FINISHES } from "../content/displays"
-import { GUIDES } from "../content/guides"
-import type { Review, StoreCategory } from "../data"
+import type { DisplayFinish, Guide, Review, StoreCategory } from "../data"
 
 // Icon names come out of content/site.ts as strings so that file can stay
 // framework-free — this is the one place they're turned into components.
@@ -199,7 +197,10 @@ function ShopPreview({ products }: { products: Product[] }) {
   )
 }
 
-function DisplaysPreview() {
+function DisplaysPreview({ finishes }: { finishes: DisplayFinish[] }) {
+  // A heading over an empty grid reads as broken, not empty — skip the section entirely.
+  if (finishes.length === 0) return null
+
   return (
     <section className="bg-[var(--surface-2)] py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -211,13 +212,23 @@ function DisplaysPreview() {
           />
         </Reveal>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {DISPLAY_FINISHES.map((f, i) => (
+          {finishes.map((f, i) => (
             <Reveal key={f.name} delay={i * 80}>
               <article className="mat-btn rounded-3xl bg-white p-6 shadow-[var(--shadow-1)] hover:-translate-y-1 hover:shadow-[var(--shadow-2)]">
-                <span
-                  className="block h-24 w-full rounded-2xl shadow-inner"
-                  style={{ background: f.swatch }}
-                />
+                {f.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={f.image}
+                    alt=""
+                    loading="lazy"
+                    className="block h-24 w-full rounded-2xl object-cover shadow-inner"
+                  />
+                ) : (
+                  <span
+                    className="block h-24 w-full rounded-2xl shadow-inner"
+                    style={{ background: f.swatch }}
+                  />
+                )}
                 <h3 className="font-display mt-5 text-lg" style={{ fontWeight: 700 }}>
                   {f.name}
                 </h3>
@@ -344,7 +355,10 @@ function Reviews({ reviews }: { reviews: Review[] }) {
   )
 }
 
-function BookletsPreview() {
+function BookletsPreview({ guides }: { guides: Guide[] }) {
+  // A heading over an empty row reads as broken, not empty — skip the section entirely.
+  if (guides.length === 0) return null
+
   return (
     <section className="border-t border-[var(--border)] bg-[var(--surface-2)] py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -356,10 +370,10 @@ function BookletsPreview() {
           />
         </Reveal>
         <div className="grid gap-4 sm:grid-cols-2">
-          {GUIDES.map((g, i) => (
-            <Reveal key={g.id} delay={i * 70}>
+          {guides.map((g, i) => (
+            <Reveal key={g.slug} delay={i * 70}>
               <Link
-                href={`/booklets/${g.id}`}
+                href={`/booklets/${g.slug}`}
                 className="mat-btn flex items-center gap-4 rounded-3xl bg-white px-5 py-5 shadow-[var(--shadow-1)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-2)]"
               >
                 <span className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-[var(--surface-2)] text-xl">
@@ -382,11 +396,13 @@ function BookletsPreview() {
 }
 
 export default async function Home() {
-  // Three independent reads — fire them together rather than in series.
-  const [products, categories, reviews] = await Promise.all([
+  // Independent reads — fire them together rather than in series.
+  const [products, categories, reviews, displayFinishes, guides] = await Promise.all([
     getProducts(),
     getCategories(),
     getReviews(),
+    getDisplayFinishes(),
+    getGuides(),
   ])
 
   return (
@@ -394,11 +410,11 @@ export default async function Home() {
       <Hero categories={categories} />
       <BestSellers products={products} />
       <ShopPreview products={products} />
-      <DisplaysPreview />
+      <DisplaysPreview finishes={displayFinishes} />
       <HowItWorks />
       <Promises />
       <Reviews reviews={reviews} />
-      <BookletsPreview />
+      <BookletsPreview guides={guides} />
     </>
   )
 }
