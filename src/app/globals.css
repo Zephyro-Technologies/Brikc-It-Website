@@ -13,10 +13,10 @@
   --foreground: #1c1b1f;
   --muted: #5f5d5a;
   --border: #e7e2dd;
-  --primary: #e23a2e;
-  --primary-2: #ff6b2c;
+  --primary: #d31f2e;
+  --primary-2: #f0384a;
   --primary-foreground: #ffffff;
-  --ring: #e23a2e;
+  --ring: #d31f2e;
 
   --shadow-1: 0 1px 2px rgba(28, 27, 31, 0.06), 0 1px 3px rgba(28, 27, 31, 0.08);
   --shadow-2: 0 2px 6px rgba(28, 27, 31, 0.08), 0 6px 16px rgba(28, 27, 31, 0.08);
@@ -42,7 +42,7 @@ body {
 }
 
 ::selection {
-  background: rgba(226, 58, 46, 0.18);
+  background: rgba(211, 31, 46, 0.18);
 }
 
 /* Scrollbars stay invisible until the pointer is over the scrolling area. */
@@ -167,13 +167,13 @@ body {
 
 @keyframes pulse-ring {
   0% {
-    box-shadow: 0 0 0 0 rgba(226, 58, 46, 0.5);
+    box-shadow: 0 0 0 0 rgba(211, 31, 46, 0.5);
   }
   70% {
-    box-shadow: 0 0 0 12px rgba(226, 58, 46, 0);
+    box-shadow: 0 0 0 12px rgba(211, 31, 46, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(226, 58, 46, 0);
+    box-shadow: 0 0 0 0 rgba(211, 31, 46, 0);
   }
 }
 .pulse-ring {

@@ -24,7 +24,7 @@ export default async function BestSellersPage() {
 
   return (
     <div className="relative isolate overflow-hidden bg-[#0b0b0d] text-white">
-      <div className="animated-gradient absolute inset-0 bg-[linear-gradient(125deg,#0b0b0d_0%,#180d0e_30%,#2c0d08_55%,#140a0b_78%,#0b0b0d_100%)]" />
+      <div className="animated-gradient absolute inset-0 bg-[linear-gradient(125deg,#0b0b0d_0%,#180d0e_30%,#2c0812_55%,#140a0b_78%,#0b0b0d_100%)]" />
       <div className="absolute -left-32 top-24 h-96 w-96 rounded-full bg-[var(--primary)]/25 blur-3xl float-slow" />
       <div
         className="absolute right-0 top-1/3 h-80 w-80 rounded-full bg-[var(--primary-2)]/20 blur-3xl float-slow"
@@ -43,7 +43,7 @@ export default async function BestSellersPage() {
               style={{ fontWeight: 800 }}
             >
               Best{" "}
-              <span className="bg-[linear-gradient(120deg,#ff6b2c,#e23a2e)] bg-clip-text text-transparent">
+              <span className="bg-[linear-gradient(120deg,#f0384a,#d31f2e)] bg-clip-text text-transparent">
                 Sellers
               </span>
             </h1>
@@ -86,7 +86,7 @@ export default async function BestSellersPage() {
               </p>
               <Link
                 href="/shop"
-                className="mat-btn mt-6 inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#ff6b2c,#e23a2e)] px-7 py-3.5 text-sm font-semibold text-white hover:brightness-105"
+                className="mat-btn mt-6 inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#f0384a,#d31f2e)] px-7 py-3.5 text-sm font-semibold text-white hover:brightness-105"
               >
                 Shop all models
                 <ArrowRight className="h-4 w-4" />
@@ -102,7 +102,7 @@ export default async function BestSellersPage() {
                   <Reveal key={p.slug} delay={i * 100}>
                     <Link
                       href={`/shop/${p.slug}`}
-                      className="mat-btn sheen group block h-full overflow-hidden rounded-[26px] bg-gradient-to-b from-white/[0.1] to-white/[0.02] p-px ring-1 ring-white/10 transition hover:-translate-y-2 hover:ring-[var(--primary-2)]/60 hover:shadow-[0_30px_60px_-15px_rgba(226,58,46,0.4)]"
+                      className="mat-btn sheen group block h-full overflow-hidden rounded-[26px] bg-gradient-to-b from-white/[0.1] to-white/[0.02] p-px ring-1 ring-white/10 transition hover:-translate-y-2 hover:ring-[var(--primary-2)]/60 hover:shadow-[0_30px_60px_-15px_rgba(211,31,46,0.4)]"
                     >
                       <div className="flex h-full flex-col overflow-hidden rounded-[25px] bg-[#121114]">
                         <div className="relative overflow-hidden">
@@ -116,7 +116,7 @@ export default async function BestSellersPage() {
                           />
                           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#121114] to-transparent" />
                           {tag && (
-                            <span className="absolute left-4 top-4 rounded-full bg-[linear-gradient(135deg,#ff6b2c,#e23a2e)] px-3.5 py-1.5 text-xs font-bold text-white shadow-lg">
+                            <span className="absolute left-4 top-4 rounded-full bg-[linear-gradient(135deg,#f0384a,#d31f2e)] px-3.5 py-1.5 text-xs font-bold text-white shadow-lg">
                               {tag}
                             </span>
                           )}
@@ -156,7 +156,7 @@ export default async function BestSellersPage() {
                 </div>
                 <Link
                   href="/shop"
-                  className="mat-btn flex-none rounded-full bg-[linear-gradient(135deg,#ff6b2c,#e23a2e)] px-7 py-3.5 text-sm font-semibold text-white hover:brightness-105"
+                  className="mat-btn flex-none rounded-full bg-[linear-gradient(135deg,#f0384a,#d31f2e)] px-7 py-3.5 text-sm font-semibold text-white hover:brightness-105"
                 >
                   Shop all models
                 </Link>

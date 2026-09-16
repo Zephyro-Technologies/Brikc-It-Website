@@ -26,7 +26,7 @@ function Hero({ categories }: { categories: StoreCategory[] }) {
         className="absolute inset-0 h-full w-full object-cover brightness-[0.62]"
       />
       <div className="absolute inset-0 bg-[linear-gradient(100deg,rgba(250,248,246,0.98)_0%,rgba(250,248,246,0.93)_42%,rgba(250,248,246,0.62)_70%,rgba(250,248,246,0.28)_100%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(60%_80%_at_85%_20%,rgba(226,58,46,0.14),transparent)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(60%_80%_at_85%_20%,rgba(211,31,46,0.14),transparent)]" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-[var(--background)]" />
 
       <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:py-28">
@@ -92,7 +92,7 @@ function BestSellers({ products }: { products: Product[] }) {
 
   return (
     <section className="relative isolate overflow-hidden bg-[#0b0b0d] text-white">
-      <div className="animated-gradient absolute inset-0 bg-[linear-gradient(120deg,#0b0b0d_0%,#1a0f10_35%,#2a0e0a_60%,#0b0b0d_100%)] opacity-90" />
+      <div className="animated-gradient absolute inset-0 bg-[linear-gradient(120deg,#0b0b0d_0%,#1a0c11_35%,#2a0812_60%,#0b0b0d_100%)] opacity-90" />
       <div className="absolute -top-10 -left-24 h-72 w-72 rounded-full bg-[var(--primary)]/25 blur-3xl float-slow" />
       <div
         className="absolute -right-16 bottom-0 h-80 w-80 rounded-full bg-[var(--primary-2)]/20 blur-3xl float-slow"
@@ -143,7 +143,7 @@ function BestSellers({ products }: { products: Product[] }) {
                         className="h-56 w-full object-cover transition-transform duration-700 group-hover:scale-110"
                       />
                       {tag && (
-                        <span className="absolute top-4 left-4 rounded-full bg-[linear-gradient(135deg,#ff6b2c,#e23a2e)] px-3 py-1 text-xs font-bold text-white shadow-lg">
+                        <span className="absolute top-4 left-4 rounded-full bg-[linear-gradient(135deg,#f0384a,#d31f2e)] px-3 py-1 text-xs font-bold text-white shadow-lg">
                           {tag}
                         </span>
                       )}

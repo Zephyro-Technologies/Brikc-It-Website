@@ -89,7 +89,7 @@ export function Nav() {
   return (
     <>
       {bannerOpen && (
-        <div className="relative bg-[linear-gradient(90deg,#e23a2e,#ff6b2c)] text-white">
+        <div className="relative bg-[linear-gradient(90deg,#d31f2e,#f0384a)] text-white">
           {/* Wider gutters than the site's usual px-4 sm:px-6, and symmetric, so
               the centred text clears the absolutely-positioned close button at
               every width instead of running under it. */}
