@@ -9,7 +9,7 @@ import { getDisplays } from "../../lib/shop"
 export const metadata: Metadata = {
   title: "Displays — brikc.it",
   description:
-    "Choose the finish that fits your wall. Every brikc.it model ships mount-ready, with a paper template and rated fixings included.",
+    "Frames, desks and the rest of the range — the pieces a build lives on once it is finished.",
 }
 
 export default async function DisplaysPage() {
@@ -20,7 +20,7 @@ export default async function DisplaysPage() {
       <Reveal>
         <SectionHead
           title="Displays"
-          desc="Choose the finish that fits your wall. Every brikc.it model ships mount-ready, with a paper template and rated fixings included."
+          desc="Frames, desks and the rest of the range — the pieces a build lives on once it is finished."
         />
       </Reveal>
 

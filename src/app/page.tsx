@@ -197,7 +197,7 @@ function DisplaysPreview({ displays }: { displays: Product[] }) {
         <Reveal>
           <SectionHead
             title="Displays"
-            desc="Choose the finish that fits your wall. Every frame ships mount-ready."
+            desc="Frames, desks and the rest of the range."
             action={<ExploreMore to="/displays" label="Explore all displays" />}
           />
         </Reveal>
