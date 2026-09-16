@@ -6,7 +6,14 @@ import Link from "next/link"
 import { AlertTriangle, ArrowLeft, ChevronDown, Loader2, ShoppingBag } from "lucide-react"
 import { useCart } from "../cart"
 import { money } from "../lib/money"
-import { FORMAT_LABELS, cityQualifies, type DeliveryOption, type Product, type ShippingMethod } from "../data"
+import {
+  FORMAT_LABELS,
+  cityQualifies,
+  type DeliveryOption,
+  type FormatKey,
+  type Product,
+  type ShippingMethod,
+} from "../data"
 import { CONFIRMATION_KEY } from "../lib/checkout"
 import { OTHER_CITY, PROVINCES, citiesIn } from "../lib/pakistan"
 
@@ -146,14 +153,26 @@ export default function CheckoutView({
     const bySlug = new Map(products.map((p) => [p.slug, p]))
     return lines.map((l) => {
       const product = bySlug.get(l.slug)
-      const unavailable = !product
-        ? "no longer in the catalogue"
-        : !product.inStock
-          ? "sold out"
-          : !product.formats[l.format]
-            ? `no longer sold ${FORMAT_LABELS[l.format].toLowerCase()}`
+      if (!product) {
+        return { ...l, unitPrice: l.unitPrice, unavailable: "no longer in the catalogue", changed: false }
+      }
+      if (l.kind === "display") {
+        const variant = product.variants.find((v) => v.id === l.variantId)
+        const unavailable = !variant
+          ? "that size is no longer available"
+          : !variant.inStock
+            ? "sold out"
             : null
-      const unitPrice = product ? product.prices[l.format] : l.unitPrice
+        const unitPrice = variant ? variant.price : l.unitPrice
+        return { ...l, unitPrice, unavailable, changed: !unavailable && unitPrice !== l.unitPrice }
+      }
+      const format = l.format as FormatKey
+      const unavailable = !product.inStock
+        ? "sold out"
+        : !product.formats[format]
+          ? `no longer sold ${FORMAT_LABELS[format].toLowerCase()}`
+          : null
+      const unitPrice = product.prices[format]
       return { ...l, unitPrice, unavailable, changed: !unavailable && unitPrice !== l.unitPrice }
     })
   }, [lines, products])
@@ -181,7 +200,11 @@ export default function CheckoutView({
             province: form.province,
             postcode: form.postcode,
           },
-          lines: priced.map((l) => ({ slug: l.slug, format: l.format, qty: l.qty })),
+          lines: priced.map((l) =>
+            l.kind === "display"
+              ? { slug: l.slug, variant: l.variantId, qty: l.qty }
+              : { slug: l.slug, format: l.format, qty: l.qty },
+          ),
           shippingMethod: chosen?.id ?? "standard",
         }),
       })
@@ -429,7 +452,7 @@ export default function CheckoutView({
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">{l.name}</p>
                   <p className="text-xs font-semibold tracking-wide text-[var(--primary)] uppercase">
-                    {FORMAT_LABELS[l.format]} × {l.qty}
+                    {l.kind === "display" ? l.variantLabel : FORMAT_LABELS[l.format as FormatKey]} × {l.qty}
                   </p>
                   {l.unavailable && (
                     <p className="mt-1 text-xs text-amber-600">This one is {l.unavailable}.</p>

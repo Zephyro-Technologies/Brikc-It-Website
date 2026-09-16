@@ -1,10 +1,10 @@
 /**
  * Page furniture for /displays that has no admin screen.
  *
- * The finish grid itself (name, material, price, swatch or photo) now lives
- * in Supabase — see `getDisplayFinishes()` in `src/lib/shop.ts` and the
- * `DisplayFinish` type in `src/data.ts`. What's left here is copy fixed to
- * the page layout rather than something the admin edits.
+ * The finishes themselves are ordinary catalogue products now (kind:
+ * "display") — see `getDisplays()` / `getDisplay()` in `src/lib/shop.ts`.
+ * What's left here is copy fixed to the page layout rather than something
+ * the admin edits.
  */
 
 /** The three promises under the finish grid on /displays. */

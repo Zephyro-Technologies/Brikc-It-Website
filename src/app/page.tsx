@@ -1,12 +1,13 @@
 import Link from "next/link"
 import { ArrowRight, Sparkles, ShieldCheck, Truck, type LucideIcon } from "lucide-react"
 import { Reveal, SectionHead, ExploreMore, ProductCard } from "../components/ui"
+import { DisplayCard } from "../components/DisplayCard"
 import { money } from "../lib/money"
 import type { Product } from "../data"
-import { getCategories, getDisplayFinishes, getGuides, getProducts, getReviews } from "../lib/shop"
+import { getCategories, getDisplays, getGuides, getProducts, getReviews } from "../lib/shop"
 import { cardTag, fromPrice, productImage, subline } from "../lib/product-view"
 import { HERO_STATS, PROMISES, STEPS } from "../content/site"
-import type { DisplayFinish, Guide, Review, StoreCategory } from "../data"
+import type { Guide, Review, StoreCategory } from "../data"
 
 // Icon names come out of content/site.ts as strings so that file can stay
 // framework-free — this is the one place they're turned into components.
@@ -197,9 +198,9 @@ function ShopPreview({ products }: { products: Product[] }) {
   )
 }
 
-function DisplaysPreview({ finishes }: { finishes: DisplayFinish[] }) {
+function DisplaysPreview({ displays }: { displays: Product[] }) {
   // A heading over an empty grid reads as broken, not empty — skip the section entirely.
-  if (finishes.length === 0) return null
+  if (displays.length === 0) return null
 
   return (
     <section className="bg-[var(--surface-2)] py-16">
@@ -212,36 +213,9 @@ function DisplaysPreview({ finishes }: { finishes: DisplayFinish[] }) {
           />
         </Reveal>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {finishes.map((f, i) => (
-            <Reveal key={f.name} delay={i * 80}>
-              <article className="mat-btn rounded-3xl bg-white p-6 shadow-[var(--shadow-1)] hover:-translate-y-1 hover:shadow-[var(--shadow-2)]">
-                {f.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={f.image}
-                    alt=""
-                    loading="lazy"
-                    className="block h-24 w-full rounded-2xl object-cover shadow-inner"
-                  />
-                ) : (
-                  <span
-                    className="block h-24 w-full rounded-2xl shadow-inner"
-                    style={{ background: f.swatch }}
-                  />
-                )}
-                <h3 className="font-display mt-5 text-lg" style={{ fontWeight: 700 }}>
-                  {f.name}
-                </h3>
-                <p className="mt-1 text-sm text-[var(--muted)]">{f.finish}</p>
-                {f.from != null && (
-                  <div className="mt-4 text-sm text-[var(--muted)]">
-                    from{" "}
-                    <span className="text-base font-bold text-[var(--foreground)]">
-                      {money(f.from)}
-                    </span>
-                  </div>
-                )}
-              </article>
+          {displays.slice(0, 4).map((d, i) => (
+            <Reveal key={d.slug} delay={i * 80}>
+              <DisplayCard product={d} />
             </Reveal>
           ))}
         </div>
@@ -397,11 +371,11 @@ function BookletsPreview({ guides }: { guides: Guide[] }) {
 
 export default async function Home() {
   // Independent reads — fire them together rather than in series.
-  const [products, categories, reviews, displayFinishes, guides] = await Promise.all([
+  const [products, categories, reviews, displays, guides] = await Promise.all([
     getProducts(),
     getCategories(),
     getReviews(),
-    getDisplayFinishes(),
+    getDisplays(),
     getGuides(),
   ])
 
@@ -410,7 +384,7 @@ export default async function Home() {
       <Hero categories={categories} />
       <BestSellers products={products} />
       <ShopPreview products={products} />
-      <DisplaysPreview finishes={displayFinishes} />
+      <DisplaysPreview displays={displays} />
       <HowItWorks />
       <Promises />
       <Reviews reviews={reviews} />

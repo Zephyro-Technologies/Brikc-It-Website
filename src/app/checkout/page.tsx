@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import CheckoutView from "../../components/CheckoutView"
 import { canCheckout } from "../../data"
-import { getDeliveryOptions, getPaymentDetails, getProducts, getSettings } from "../../lib/shop"
+import { getDeliveryOptions, getDisplays, getPaymentDetails, getProducts, getSettings } from "../../lib/shop"
 
 export const metadata: Metadata = {
   title: "Checkout — brikc.it",
@@ -15,8 +15,11 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic"
 
 export default async function CheckoutPage() {
-  const [products, payment, settings, delivery] = await Promise.all([
+  // A cart line can be either kind, so the catalogue the checkout re-prices
+  // against — CheckoutView's `products` — has to carry both.
+  const [models, displays, payment, settings, delivery] = await Promise.all([
     getProducts(),
+    getDisplays(),
     getPaymentDetails(),
     getSettings(),
     getDeliveryOptions(),
@@ -24,7 +27,7 @@ export default async function CheckoutPage() {
 
   return (
     <CheckoutView
-      products={products}
+      products={[...models, ...displays]}
       ordersOpen={canCheckout(payment)}
       instagram={settings.instagram}
       delivery={delivery}

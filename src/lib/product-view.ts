@@ -1,4 +1,4 @@
-import { FORMAT_KEYS, FORMAT_LABELS, fromPrice, type FormatKey, type Product } from "../data"
+import { FORMAT_KEYS, FORMAT_LABELS, fromPrice, type FormatKey, type Product, type Variant } from "../data"
 
 /**
  * Presentation helpers that turn a catalogue row into the strings the cards and
@@ -9,22 +9,33 @@ import { FORMAT_KEYS, FORMAT_LABELS, fromPrice, type FormatKey, type Product } f
  * prices, a stock flag and per-format availability, so everything the design
  * asks for is derived here rather than invented — one place to look when a
  * label reads wrong.
+ *
+ * A product is now either a model (formats) or a display (variants), and
+ * every helper below has to be right for both.
  */
 
-/** The formats this build is actually sold in, in display order. */
+/** The formats this build is actually sold in, in display order. Empty for a display. */
 export function soldFormats(product: Product): FormatKey[] {
+  if (product.kind === "display") return []
   return FORMAT_KEYS.filter((f) => product.formats[f])
+}
+
+/** The sizes a display currently has on hand, in the order the catalogue lists them. */
+export function variantsInStock(product: Product): Variant[] {
+  return product.variants.filter((v) => v.inStock)
 }
 
 /**
  * Whether a shopper can actually buy this build right now.
  *
- * Stock is only half of it: a build with every format switched off is in stock
- * and unbuyable. `place_order` rejects such a line anyway, but a card that
- * offers an Add button for it turns a catalogue mistake into a shopper's dead
- * end at checkout, so nothing offers it in the first place.
+ * Stock is only half of it: a build with every format switched off (or, for a
+ * display, no size currently in stock) is in stock and unbuyable. `place_order`
+ * rejects such a line anyway, but a card that offers an Add button for it
+ * turns a catalogue mistake into a shopper's dead end at checkout, so nothing
+ * offers it in the first place.
  */
 export function isSellable(product: Product): boolean {
+  if (product.kind === "display") return product.inStock && variantsInStock(product).length > 0
   return product.inStock && soldFormats(product).length > 0
 }
 
@@ -34,6 +45,7 @@ export function isSellable(product: Product): boolean {
  *
  * Callers must gate on isSellable() first; the "boxed" fallback here exists
  * only so the type stays total, and adding it would be rejected server-side.
+ * Models only — see cheapestVariant() for a display.
  */
 export function cheapestFormat(product: Product): FormatKey {
   const sold = soldFormats(product)
@@ -41,11 +53,27 @@ export function cheapestFormat(product: Product): FormatKey {
   return sold.reduce((best, f) => (product.prices[f] < product.prices[best] ? f : best), sold[0])
 }
 
+/**
+ * The size a "from" price refers to — the cheapest in-stock variant. Quick-add
+ * on a display card uses this. Null when nothing is in stock to add.
+ */
+export function cheapestVariant(product: Product): Variant | null {
+  const inStock = variantsInStock(product)
+  if (inStock.length === 0) return null
+  return inStock.reduce((best, v) => (v.price < best.price ? v : best), inStock[0])
+}
+
 /** "Boxed · Built · Framed + LED" — the ways this build can be had. */
 export function formatSummary(product: Product): string {
   const sold = soldFormats(product)
   if (sold.length === 0) return "Not currently sold"
   return sold.map((f) => FORMAT_LABELS[f]).join(" · ")
+}
+
+/** "60×90cm · 90×140cm" — the sizes a display comes in. */
+function variantSummary(product: Product): string {
+  if (product.variants.length === 0) return "Not currently sized"
+  return product.variants.map((v) => v.label).join(" · ")
 }
 
 /**
@@ -64,8 +92,21 @@ export function productImage(product: Product, index = 0): string {
   return product.images[index] ?? PLACEHOLDER_IMAGE
 }
 
+/**
+ * What a display card shows when there is no photograph: its swatch, not the
+ * neutral placeholder tile — a colour or finish says more than an empty tile
+ * does. A model always has the placeholder as its fallback and has no swatch
+ * to fall back to.
+ */
+export function displayVisual(product: Product): { kind: "image" | "swatch"; value: string } {
+  const image = product.images[0]
+  if (image) return { kind: "image", value: image }
+  return { kind: "swatch", value: product.swatch }
+}
+
 /** The small muted line under a product name. Real fields only, no filler. */
 export function subline(product: Product): string {
+  if (product.kind === "display") return [product.team, product.blurb].filter(Boolean).join(" · ")
   return [product.team, product.scale].filter(Boolean).join(" · ")
 }
 
@@ -74,7 +115,9 @@ export function subline(product: Product): string {
  * know they can't have it before they're told everyone else wants it.
  */
 export function cardTag(product: Product): string | null {
-  if (soldFormats(product).length === 0) return "Unavailable"
+  const hasAnythingToSell =
+    product.kind === "display" ? variantsInStock(product).length > 0 : soldFormats(product).length > 0
+  if (!hasAnythingToSell) return "Unavailable"
   if (!product.inStock) return "Sold out"
   if (product.featured) return "Best seller"
   return null
@@ -82,13 +125,22 @@ export function cardTag(product: Product): string | null {
 
 /** The spec grid on the product page, built from what the build actually records. */
 export function specs(product: Product): { label: string; value: string }[] {
-  return [
-    { label: "Pieces", value: product.pieces.toLocaleString("en-PK") },
-    { label: "Scale", value: product.scale },
-    { label: "Edition", value: product.edition },
-    { label: "Available as", value: formatSummary(product) },
-  ]
+  const rows: { label: string; value: string }[] = []
+  // A display has no piece count or scale — omit rather than show "0" or "".
+  if (product.pieces > 0) rows.push({ label: "Pieces", value: product.pieces.toLocaleString("en-PK") })
+  if (product.scale) rows.push({ label: "Scale", value: product.scale })
+  rows.push({ label: "Edition", value: product.edition })
+  rows.push(
+    product.kind === "display"
+      ? { label: "Sizes", value: variantSummary(product) }
+      : { label: "Available as", value: formatSummary(product) },
+  )
+  return rows
 }
 
-/** What a card advertises: the cheapest format on sale. */
+/**
+ * What a card advertises: the cheapest sold format for a model, the cheapest
+ * in-stock size for a display. Kind-aware, so it lives with the rest of the
+ * shared helpers in data.ts rather than being duplicated here.
+ */
 export { fromPrice }

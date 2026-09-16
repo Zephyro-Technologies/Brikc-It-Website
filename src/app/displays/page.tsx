@@ -2,9 +2,9 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { Reveal, SectionHead } from "../../components/ui"
-import { money } from "../../lib/money"
+import { DisplayCard } from "../../components/DisplayCard"
 import { DISPLAY_PROMISES } from "../../content/displays"
-import { getDisplayFinishes } from "../../lib/shop"
+import { getDisplays } from "../../lib/shop"
 
 export const metadata: Metadata = {
   title: "Displays — brikc.it",
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 }
 
 export default async function DisplaysPage() {
-  const finishes = await getDisplayFinishes()
+  const displays = await getDisplays()
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
@@ -24,11 +24,11 @@ export default async function DisplaysPage() {
         />
       </Reveal>
 
-      {finishes.length === 0 ? (
+      {displays.length === 0 ? (
         <Reveal>
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-2)] p-10 text-center">
             <h2 className="font-display text-2xl" style={{ fontWeight: 700 }}>
-              No finishes to show yet
+              No displays to show yet
             </h2>
             <p className="mx-auto mt-2 max-w-md text-[var(--muted)]">
               Check back soon, or pair a model straight from the shop while the lineup fills in.
@@ -44,41 +44,15 @@ export default async function DisplaysPage() {
         </Reveal>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {finishes.map((f, i) => (
-            <Reveal key={f.name} delay={i * 80}>
-              <article className="mat-btn h-full rounded-3xl bg-white p-6 shadow-[var(--shadow-1)] hover:-translate-y-1 hover:shadow-[var(--shadow-2)]">
-                {f.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={f.image}
-                    alt=""
-                    loading="lazy"
-                    className="block h-28 w-full rounded-2xl object-cover shadow-inner"
-                  />
-                ) : (
-                  <span className="block h-28 w-full rounded-2xl shadow-inner" style={{ background: f.swatch }} />
-                )}
-                <h3 className="font-display mt-5 text-lg" style={{ fontWeight: 700 }}>
-                  {f.name}
-                </h3>
-                <p className="mt-1 text-sm text-[var(--muted)]">{f.finish}</p>
-                <div className={`mt-4 flex items-center gap-2 ${f.from !== null ? "justify-between" : "justify-end"}`}>
-                  {f.from !== null && (
-                    <span className="text-sm text-[var(--muted)]">
-                      from <span className="text-base font-bold text-[var(--foreground)]">{money(f.from)}</span>
-                    </span>
-                  )}
-                  <Link href="/shop" className="text-sm font-semibold text-[var(--primary)] hover:underline">
-                    Pair a model →
-                  </Link>
-                </div>
-              </article>
+          {displays.map((d, i) => (
+            <Reveal key={d.slug} delay={i * 80}>
+              <DisplayCard product={d} />
             </Reveal>
           ))}
         </div>
       )}
 
-      <Reveal delay={finishes.length * 80}>
+      <Reveal delay={displays.length * 80}>
         <div className="mt-12 grid gap-6 rounded-3xl bg-[var(--surface-2)] p-8 sm:grid-cols-3">
           {DISPLAY_PROMISES.map((x) => (
             <div key={x.title}>

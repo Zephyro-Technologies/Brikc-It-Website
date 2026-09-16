@@ -68,7 +68,7 @@ export default function ProductDetailView({
 
   const onAdd = () => {
     if (!canAdd) return
-    add(product, activeFormat, qty)
+    add(product, { format: activeFormat }, qty)
     setAdded(true)
     setQty(1)
   }

@@ -14,7 +14,7 @@ import { supabase } from "../../../lib/supabase/client"
  * would be one more place a total could be wrong.
  */
 
-type IncomingLine = { slug?: unknown; format?: unknown; qty?: unknown }
+type IncomingLine = { slug?: unknown; format?: unknown; variant?: unknown; qty?: unknown }
 
 /** Our own validation failures, raised with errcode 22023, are safe to show. */
 const USER_ERROR = "22023"
@@ -36,13 +36,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Your cart is empty." }, { status: 400 })
   }
 
-  // Only slug, format and quantity cross the wire. Anything else the client
-  // might have sent about a line — a name, an image, a price — is dropped here.
-  const lines = rawLines.slice(0, 20).map((l) => ({
-    slug: str(l.slug),
-    format: str(l.format),
-    qty: Number(l.qty) || 0,
-  }))
+  // Only slug, one of format/variant, and quantity cross the wire. Anything
+  // else the client might have sent about a line — a name, an image, a price
+  // — is dropped here. A model line carries format; a display line carries
+  // variant; never both, and place_order rejects the wrong one rather than
+  // ignoring it.
+  const lines = rawLines.slice(0, 20).map((l) => {
+    const base = { slug: str(l.slug), qty: Number(l.qty) || 0 }
+    return typeof l.variant === "string" && l.variant
+      ? { ...base, variant: l.variant }
+      : { ...base, format: str(l.format) }
+  })
 
   const { data, error } = await supabase().rpc("place_order", {
     p_name: str(customer.name),

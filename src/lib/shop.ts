@@ -3,15 +3,16 @@ import { normaliseWhatsapp } from "./checkout"
 import type {
   Category,
   DeliveryOption,
-  DisplayFinish,
   FaqItem,
   FormatKey,
   Guide,
   PaymentDetails,
   Product,
+  ProductKind,
   Review,
   Settings,
   StoreCategory,
+  Variant,
 } from "../data"
 
 /**
@@ -21,10 +22,22 @@ import type {
  */
 
 const PRODUCT_SELECT = `
-  slug, name, team, category, price_boxed, price_built, price_framed,
+  slug, name, team, category, kind, swatch, price_boxed, price_built, price_framed,
   scale, pieces, edition, blurb, description,
   sells_boxed, sells_built, sells_framed, featured, in_stock,
   product_images ( url, sort )
+`
+
+// Same columns as PRODUCT_SELECT, plus the variants a display is priced and
+// sized by. Kept as its own literal (rather than built from PRODUCT_SELECT)
+// because supabase-js reads the select string at the type level — only a
+// literal survives that.
+const DISPLAY_SELECT = `
+  slug, name, team, category, kind, swatch, price_boxed, price_built, price_framed,
+  scale, pieces, edition, blurb, description,
+  sells_boxed, sells_built, sells_framed, featured, in_stock,
+  product_images ( url, sort ),
+  product_variants ( id, label, price, in_stock, sort )
 `
 
 type ProductRow = {
@@ -32,6 +45,8 @@ type ProductRow = {
   name: string
   team: string
   category: Category
+  kind: ProductKind
+  swatch: string
   price_boxed: number
   price_built: number
   price_framed: number
@@ -48,12 +63,18 @@ type ProductRow = {
   product_images: { url: string; sort: number }[]
 }
 
-function toProduct(row: ProductRow): Product {
+type VariantRow = { id: string; label: string; price: number; in_stock: boolean; sort: number }
+
+type DisplayRow = ProductRow & { product_variants: VariantRow[] }
+
+/** Shared by every reader, model or display, so they all return the same Product shape. */
+function toProduct(row: ProductRow, variantRows: VariantRow[] = []): Product {
   return {
     slug: row.slug,
     name: row.name,
     team: row.team,
     category: row.category,
+    kind: row.kind,
     prices: { boxed: row.price_boxed, built: row.price_built, framed: row.price_framed },
     scale: row.scale,
     pieces: row.pieces,
@@ -61,7 +82,11 @@ function toProduct(row: ProductRow): Product {
     blurb: row.blurb,
     description: row.description,
     images: [...row.product_images].sort((a, b) => a.sort - b.sort).map((i) => i.url),
+    swatch: row.swatch,
     formats: { boxed: row.sells_boxed, built: row.sells_built, framed: row.sells_framed },
+    variants: [...variantRows]
+      .sort((a, b) => a.sort - b.sort)
+      .map((v): Variant => ({ id: v.id, label: v.label, price: v.price, inStock: v.in_stock })),
     inStock: row.in_stock,
     featured: row.featured,
   }
@@ -75,9 +100,14 @@ function unwrap<T>(what: string, res: { data: T | null; error: { message: string
   return res.data
 }
 
+/** /shop and the homepage show models only — displays never appear in the grid. */
 export async function getProducts(): Promise<Product[]> {
-  const res = await supabase().from("products").select(PRODUCT_SELECT).order("created_at")
-  return (unwrap("products", res) as unknown as ProductRow[]).map(toProduct)
+  const res = await supabase()
+    .from("products")
+    .select(PRODUCT_SELECT)
+    .eq("kind", "model")
+    .order("created_at")
+  return (unwrap("products", res) as unknown as ProductRow[]).map((r) => toProduct(r))
 }
 
 export async function getProduct(slug: string): Promise<Product | undefined> {
@@ -86,9 +116,34 @@ export async function getProduct(slug: string): Promise<Product | undefined> {
   return res.data ? toProduct(res.data as unknown as ProductRow) : undefined
 }
 
+/** Drives the /shop/[slug] prerender — models only, same rule as getProducts(). */
 export async function getProductSlugs(): Promise<string[]> {
-  const res = await supabase().from("products").select("slug")
+  const res = await supabase().from("products").select("slug").eq("kind", "model")
   return unwrap("product slugs", res).map((r) => r.slug)
+}
+
+/** /displays lists these — the display products, each with its sizes embedded. */
+export async function getDisplays(): Promise<Product[]> {
+  const res = await supabase()
+    .from("products")
+    .select(DISPLAY_SELECT)
+    .eq("kind", "display")
+    .order("created_at")
+  return (unwrap("displays", res) as unknown as DisplayRow[]).map((r) => toProduct(r, r.product_variants))
+}
+
+/** A display's detail page is /displays/<slug>, never /shop/<slug>. */
+export async function getDisplay(slug: string): Promise<Product | undefined> {
+  const res = await supabase()
+    .from("products")
+    .select(DISPLAY_SELECT)
+    .eq("slug", slug)
+    .eq("kind", "display")
+    .maybeSingle()
+  if (res.error) throw new Error(`Supabase: failed to load display ${slug} — ${res.error.message}`)
+  if (!res.data) return undefined
+  const row = res.data as unknown as DisplayRow
+  return toProduct(row, row.product_variants)
 }
 
 export async function getCategories(): Promise<StoreCategory[]> {
@@ -206,20 +261,6 @@ export async function getPaymentDetails(): Promise<PaymentDetails> {
     jazzcash: { title: res.data.jazzcash_title, number: res.data.jazzcash_number },
     easypaisa: { title: res.data.easypaisa_title, number: res.data.easypaisa_number },
   }
-}
-
-export async function getDisplayFinishes(): Promise<DisplayFinish[]> {
-  const res = await supabase()
-    .from("display_finishes")
-    .select("name, finish, from_price, swatch, image, sort")
-    .order("sort")
-  return unwrap("display finishes", res).map((f) => ({
-    name: f.name,
-    finish: f.finish,
-    from: f.from_price,
-    swatch: f.swatch,
-    image: f.image,
-  }))
 }
 
 const GUIDE_SELECT = `

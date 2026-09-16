@@ -246,7 +246,7 @@ export function CartDrawer() {
                           {l.name}
                         </p>
                         <p className="mt-0.5 text-xs font-bold tracking-wide text-[var(--primary)] uppercase">
-                          {FORMAT_LABELS[l.format]}
+                          {l.format ? FORMAT_LABELS[l.format] : l.variantLabel}
                         </p>
                       </div>
                       <button

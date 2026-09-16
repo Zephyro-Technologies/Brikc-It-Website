@@ -79,36 +79,6 @@ export type Database = {
         }
         Relationships: []
       }
-      display_finishes: {
-        Row: {
-          finish: string
-          from_price: number | null
-          id: string
-          image: string
-          name: string
-          sort: number
-          swatch: string
-        }
-        Insert: {
-          finish: string
-          from_price?: number | null
-          id?: string
-          image?: string
-          name: string
-          sort?: number
-          swatch?: string
-        }
-        Update: {
-          finish?: string
-          from_price?: number | null
-          id?: string
-          image?: string
-          name?: string
-          sort?: number
-          swatch?: string
-        }
-        Relationships: []
-      }
       faqs: {
         Row: {
           answer: string
@@ -194,7 +164,7 @@ export type Database = {
       }
       order_lines: {
         Row: {
-          format: Database["public"]["Enums"]["format_key"]
+          format: Database["public"]["Enums"]["format_key"] | null
           id: string
           image: string
           name: string
@@ -203,9 +173,11 @@ export type Database = {
           qty: number
           slug: string
           unit_price: number
+          variant_id: string | null
+          variant_label: string
         }
         Insert: {
-          format: Database["public"]["Enums"]["format_key"]
+          format?: Database["public"]["Enums"]["format_key"] | null
           id?: string
           image?: string
           name: string
@@ -214,9 +186,11 @@ export type Database = {
           qty?: number
           slug: string
           unit_price: number
+          variant_id?: string | null
+          variant_label?: string
         }
         Update: {
-          format?: Database["public"]["Enums"]["format_key"]
+          format?: Database["public"]["Enums"]["format_key"] | null
           id?: string
           image?: string
           name?: string
@@ -225,6 +199,8 @@ export type Database = {
           qty?: number
           slug?: string
           unit_price?: number
+          variant_id?: string | null
+          variant_label?: string
         }
         Relationships: [
           {
@@ -239,6 +215,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_lines_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
             referencedColumns: ["id"]
           },
         ]
@@ -411,6 +394,41 @@ export type Database = {
           },
         ]
       }
+      product_variants: {
+        Row: {
+          id: string
+          in_stock: boolean
+          label: string
+          price: number
+          product_id: string
+          sort: number
+        }
+        Insert: {
+          id?: string
+          in_stock?: boolean
+          label: string
+          price: number
+          product_id: string
+          sort?: number
+        }
+        Update: {
+          id?: string
+          in_stock?: boolean
+          label?: string
+          price?: number
+          product_id?: string
+          sort?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           blurb: string
@@ -421,6 +439,7 @@ export type Database = {
           featured: boolean
           id: string
           in_stock: boolean
+          kind: Database["public"]["Enums"]["product_kind"]
           name: string
           pieces: number
           price_boxed: number
@@ -431,6 +450,7 @@ export type Database = {
           sells_built: boolean
           sells_framed: boolean
           slug: string
+          swatch: string
           team: string
           updated_at: string
         }
@@ -443,16 +463,18 @@ export type Database = {
           featured?: boolean
           id?: string
           in_stock?: boolean
+          kind?: Database["public"]["Enums"]["product_kind"]
           name: string
           pieces?: number
           price_boxed: number
           price_built: number
           price_framed: number
-          scale: string
+          scale?: string
           sells_boxed?: boolean
           sells_built?: boolean
           sells_framed?: boolean
           slug: string
+          swatch?: string
           team: string
           updated_at?: string
         }
@@ -465,6 +487,7 @@ export type Database = {
           featured?: boolean
           id?: string
           in_stock?: boolean
+          kind?: Database["public"]["Enums"]["product_kind"]
           name?: string
           pieces?: number
           price_boxed?: number
@@ -475,6 +498,7 @@ export type Database = {
           sells_built?: boolean
           sells_framed?: boolean
           slug?: string
+          swatch?: string
           team?: string
           updated_at?: string
         }
@@ -620,7 +644,8 @@ export type Database = {
         | "delivered"
         | "cancelled"
         | "refunded"
-      product_category: "F1" | "Cars" | "Bikes" | "Collector"
+      product_category: "F1" | "Cars" | "Bikes" | "Collector" | "Displays"
+      product_kind: "model" | "display"
       shipping_method: "standard" | "teamhq"
     }
     CompositeTypes: {
@@ -763,7 +788,8 @@ export const Constants = {
         "cancelled",
         "refunded",
       ],
-      product_category: ["F1", "Cars", "Bikes", "Collector"],
+      product_category: ["F1", "Cars", "Bikes", "Collector", "Displays"],
+      product_kind: ["model", "display"],
       shipping_method: ["standard", "teamhq"],
     },
   },

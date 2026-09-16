@@ -9,9 +9,10 @@ import type { Product } from "../data"
 import {
   cardTag,
   cheapestFormat,
+  cheapestVariant,
+  displayVisual,
   fromPrice,
   isSellable,
-  productImage,
   subline,
 } from "../lib/product-view"
 
@@ -141,6 +142,11 @@ export function AddButton({ product, className = "" }: { product: Product; class
 
   if (!isSellable(product)) return null
 
+  // isSellable() already guarantees a sold format (model) or an in-stock
+  // variant (display) exists, so the non-null assertion here can't fire.
+  const choice =
+    product.kind === "display" ? { variant: cheapestVariant(product)! } : { format: cheapestFormat(product) }
+
   return (
     <button
       type="button"
@@ -148,7 +154,7 @@ export function AddButton({ product, className = "" }: { product: Product; class
         // The card is a link — adding must not navigate to the product page.
         e.preventDefault()
         e.stopPropagation()
-        add(product, cheapestFormat(product), 1, { open: false })
+        add(product, choice, 1, { open: false })
         setAdded(true)
       }}
       aria-label={`Add ${product.name} to cart`}
@@ -172,23 +178,35 @@ export function AddButton({ product, className = "" }: { product: Product; class
 export function ProductCard({ product }: { product: Product }) {
   const tag = cardTag(product)
   const soldOut = !isSellable(product)
+  const visual = displayVisual(product)
+  const href = product.kind === "display" ? `/displays/${product.slug}` : `/shop/${product.slug}`
 
   return (
     <Link
-      href={`/shop/${product.slug}`}
+      href={href}
       className="mat-btn group flex flex-col overflow-hidden rounded-3xl bg-white shadow-[var(--shadow-1)] hover:-translate-y-1 hover:shadow-[var(--shadow-2)]"
     >
       <div className="relative overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={productImage(product)}
-          alt={product.name}
-          loading="lazy"
-          style={{ backgroundColor: "#eceae7" }}
-          className={`aspect-square w-full object-cover transition-transform duration-500 group-hover:scale-105 ${
-            soldOut ? "opacity-60" : ""
-          }`}
-        />
+        {visual.kind === "image" ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={visual.value}
+            alt={product.name}
+            loading="lazy"
+            style={{ backgroundColor: "#eceae7" }}
+            className={`aspect-square w-full object-cover transition-transform duration-500 group-hover:scale-105 ${
+              soldOut ? "opacity-60" : ""
+            }`}
+          />
+        ) : (
+          <div
+            aria-hidden="true"
+            style={{ background: visual.value || "#eceae7" }}
+            className={`aspect-square w-full transition-transform duration-500 group-hover:scale-105 ${
+              soldOut ? "opacity-60" : ""
+            }`}
+          />
+        )}
         {tag && (
           <span
             className={`absolute top-3 left-3 rounded-full px-2.5 py-1 text-xs font-bold shadow-[var(--shadow-1)] ${

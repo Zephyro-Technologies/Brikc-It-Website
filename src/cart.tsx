@@ -1,7 +1,8 @@
 "use client"
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
-import type { FormatKey, Product } from "./data"
+import type { FormatKey, Product, ProductKind, Variant } from "./data"
+import { productImage } from "./lib/product-view"
 
 export type CartLine = {
   key: string
@@ -9,10 +10,18 @@ export type CartLine = {
   name: string
   team: string
   image: string
-  format: FormatKey
+  kind: ProductKind
+  /** Set for a model line. */
+  format?: FormatKey
+  /** Set for a display line. */
+  variantId?: string
+  /** Set for a display line — the size label, for the drawer and the summary. */
+  variantLabel?: string
   unitPrice: number
   qty: number
 }
+
+type CartChoice = { format: FormatKey } | { variant: Variant }
 
 type CartCtx = {
   lines: CartLine[]
@@ -26,7 +35,7 @@ type CartCtx = {
    * because covering the grid you're browsing to confirm one tap is a jolt —
    * the chip confirms itself instead.
    */
-  add: (product: Product, format: FormatKey, qty?: number, opts?: { open?: boolean }) => void
+  add: (product: Product, choice: CartChoice, qty?: number, opts?: { open?: boolean }) => void
   remove: (key: string) => void
   setQty: (key: string, qty: number) => void
   clear: () => void
@@ -34,7 +43,12 @@ type CartCtx = {
 
 const Ctx = createContext<CartCtx | null>(null)
 
-const STORAGE_KEY = "brikc.cart.v1"
+// v2: a line used to be format-only; a display line now carries a variant
+// instead, which the old shape has no room for. An old v1 cart would crash the
+// drawer trying to read fields that were never written, so it's dropped
+// rather than migrated — a lost cart from before this release is far better
+// than a broken one now.
+const STORAGE_KEY = "brikc.cart.v2"
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([])
@@ -66,9 +80,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [lines, restored])
 
-  const add: CartCtx["add"] = (product, format, qty = 1, opts) => {
-    const key = `${product.slug}-${format}`
-    const unitPrice = product.prices[format]
+  const add: CartCtx["add"] = (product, choice, qty = 1, opts) => {
+    const isVariant = "variant" in choice
+    const key = isVariant ? `${product.slug}-${choice.variant.id}` : `${product.slug}-${choice.format}`
+    const unitPrice = isVariant ? choice.variant.price : product.prices[choice.format]
     setLines((prev) => {
       const existing = prev.find((l) => l.key === key)
       if (existing) {
@@ -81,8 +96,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
           slug: product.slug,
           name: product.name,
           team: product.team,
-          image: product.images[0] ?? "",
-          format,
+          // Never "" — an empty src makes the browser re-request the whole page,
+          // and a swatch-only display has no photograph to give. productImage()
+          // hands back a neutral tile instead.
+          image: productImage(product),
+          kind: product.kind,
+          ...(isVariant
+            ? { variantId: choice.variant.id, variantLabel: choice.variant.label }
+            : { format: choice.format }),
           unitPrice,
           qty,
         },
@@ -113,4 +134,3 @@ export function useCart() {
   if (!ctx) throw new Error("useCart must be used within CartProvider")
   return ctx
 }
-
