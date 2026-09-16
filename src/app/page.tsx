@@ -20,10 +20,10 @@ function Hero({ categories }: { categories: StoreCategory[] }) {
         aria-hidden
         loading="lazy"
         style={{ backgroundColor: "#eceae7" }}
-        className="absolute inset-0 h-full w-full object-cover brightness-[0.62]"
+        className="absolute inset-0 h-full w-full object-cover brightness-[0.78]"
       />
-      <div className="absolute inset-0 bg-[linear-gradient(100deg,rgba(250,248,246,0.98)_0%,rgba(250,248,246,0.93)_42%,rgba(250,248,246,0.62)_70%,rgba(250,248,246,0.28)_100%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(60%_80%_at_85%_20%,rgba(211,31,46,0.14),transparent)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(100deg,rgba(250,248,246,0.98)_0%,rgba(250,248,246,0.93)_42%,rgba(250,248,246,0.34)_72%,rgba(250,248,246,0.02)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(60%_80%_at_85%_20%,rgba(211,31,46,0.09),transparent)]" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-[var(--background)]" />
 
       <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:py-28">
