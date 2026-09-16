@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { fromPrice, type Category, type Product } from "../data"
-import { ProductCard, Reveal, SectionHead } from "./ui"
+import { ComingSoon, ProductCard, Reveal, SectionHead } from "./ui"
 
 const CATS: (Category | "All")[] = ["All", "F1", "Cars", "Bikes", "Collector"]
 const SORTS = [
@@ -85,16 +85,16 @@ export default function ShopView({ products: all }: { products: Product[] }) {
       )}
 
       {products.length === 0 ? (
-        <div className="mt-4 rounded-3xl bg-white px-6 py-20 text-center shadow-[var(--shadow-1)]">
-          <p className="font-display text-xl" style={{ fontWeight: 800 }}>
-            {all.length === 0 ? "Nothing here yet" : `No ${active} builds right now`}
-          </p>
-          <p className="mx-auto mt-3 max-w-sm text-[var(--muted)]">
-            {all.length === 0
-              ? "New builds are on their way — check back soon."
-              : "Everything else is still worth a look."}
-          </p>
-          {all.length > 0 && (
+        all.length === 0 ? (
+          <ComingSoon note="The first builds are on their way." />
+        ) : (
+          <div className="mt-4 rounded-3xl bg-white px-6 py-20 text-center shadow-[var(--shadow-1)]">
+            <p className="font-display text-xl" style={{ fontWeight: 800 }}>
+              No {active} builds right now
+            </p>
+            <p className="mx-auto mt-3 max-w-sm text-[var(--muted)]">
+              Everything else is still worth a look.
+            </p>
             <button
               type="button"
               onClick={() => setCat("All")}
@@ -102,8 +102,8 @@ export default function ShopView({ products: all }: { products: Product[] }) {
             >
               Show every build
             </button>
-          )}
-        </div>
+          </div>
+        )
       ) : (
         <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
           {products.map((p, i) => (

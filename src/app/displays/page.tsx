@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
-import { Reveal, SectionHead } from "../../components/ui"
+import { ComingSoon, Reveal, SectionHead } from "../../components/ui"
 import { DisplayCard } from "../../components/DisplayCard"
 import { DISPLAY_PROMISES } from "../../content/displays"
 import { getDisplays } from "../../lib/shop"
@@ -26,21 +26,7 @@ export default async function DisplaysPage() {
 
       {displays.length === 0 ? (
         <Reveal>
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-2)] p-10 text-center">
-            <h2 className="font-display text-2xl" style={{ fontWeight: 700 }}>
-              No displays to show yet
-            </h2>
-            <p className="mx-auto mt-2 max-w-md text-[var(--muted)]">
-              Check back soon, or pair a model straight from the shop while the lineup fills in.
-            </p>
-            <Link
-              href="/shop"
-              className="mat-btn mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--primary)] px-7 py-3.5 text-sm font-semibold text-white hover:brightness-105"
-            >
-              Browse the shop
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
+          <ComingSoon note="The display range is being photographed and priced." />
         </Reveal>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">

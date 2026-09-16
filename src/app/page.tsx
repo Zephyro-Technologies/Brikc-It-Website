@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
-import { Reveal, SectionHead, ExploreMore, ProductCard } from "../components/ui"
+import { ComingSoon, Reveal, SectionHead, ExploreMore, ProductCard } from "../components/ui"
 import { DisplayCard } from "../components/DisplayCard"
 import { money } from "../lib/money"
 import type { Product } from "../data"
@@ -72,8 +72,6 @@ function Hero({ categories }: { categories: StoreCategory[] }) {
 
 function BestSellers({ products }: { products: Product[] }) {
   const featured = products.filter((p) => p.featured).slice(0, 3)
-  // A heading over an empty row reads as broken, not empty — skip the band entirely.
-  if (featured.length === 0) return null
 
   return (
     <section className="relative isolate overflow-hidden bg-[#0b0b0d] text-white">
@@ -108,6 +106,9 @@ function BestSellers({ products }: { products: Product[] }) {
           </div>
         </Reveal>
 
+        {featured.length === 0 ? (
+          <ComingSoon onDark note="The first best sellers land as soon as the catalogue opens." />
+        ) : (
         <div className="grid gap-6 md:grid-cols-3">
           {featured.map((p, i) => {
             const tag = cardTag(p)
@@ -155,6 +156,7 @@ function BestSellers({ products }: { products: Product[] }) {
             )
           })}
         </div>
+        )}
       </div>
     </section>
   )
@@ -171,6 +173,9 @@ function ShopPreview({ products }: { products: Product[] }) {
             action={<ExploreMore to="/shop" label="Explore the full shop" />}
           />
         </Reveal>
+        {products.length === 0 ? (
+          <ComingSoon note="The first builds are on their way." />
+        ) : (
         <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
           {products.slice(0, 4).map((p, i) => (
             <Reveal key={p.slug} delay={i * 80}>
@@ -178,14 +183,13 @@ function ShopPreview({ products }: { products: Product[] }) {
             </Reveal>
           ))}
         </div>
+        )}
       </div>
     </section>
   )
 }
 
 function DisplaysPreview({ displays }: { displays: Product[] }) {
-  // A heading over an empty grid reads as broken, not empty — skip the section entirely.
-  if (displays.length === 0) return null
 
   return (
     <section className="bg-[var(--surface-2)] py-16">
@@ -197,6 +201,9 @@ function DisplaysPreview({ displays }: { displays: Product[] }) {
             action={<ExploreMore to="/displays" label="Explore all displays" />}
           />
         </Reveal>
+        {displays.length === 0 ? (
+          <ComingSoon note="The display range is being photographed and priced." />
+        ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {displays.slice(0, 4).map((d, i) => (
             <Reveal key={d.slug} delay={i * 80}>
@@ -204,6 +211,7 @@ function DisplaysPreview({ displays }: { displays: Product[] }) {
             </Reveal>
           ))}
         </div>
+        )}
       </div>
     </section>
   )
@@ -250,8 +258,6 @@ function HowItWorks() {
  * with a review screen whose contents appear nowhere, so the section stays.
  */
 function BookletsPreview({ guides }: { guides: Guide[] }) {
-  // A heading over an empty row reads as broken, not empty — skip the section entirely.
-  if (guides.length === 0) return null
 
   return (
     <section className="border-t border-[var(--border)] bg-[var(--surface-2)] py-16">
@@ -263,6 +269,9 @@ function BookletsPreview({ guides }: { guides: Guide[] }) {
             action={<ExploreMore to="/booklets" label="Explore all guides" />}
           />
         </Reveal>
+        {guides.length === 0 ? (
+          <ComingSoon note="Build, framing and lighting guides are being written." />
+        ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {guides.map((g, i) => (
             <Reveal key={g.slug} delay={i * 70}>
@@ -284,6 +293,7 @@ function BookletsPreview({ guides }: { guides: Guide[] }) {
             </Reveal>
           ))}
         </div>
+        )}
       </div>
     </section>
   )

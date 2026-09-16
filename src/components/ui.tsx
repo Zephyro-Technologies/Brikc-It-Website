@@ -241,3 +241,31 @@ export function ProductCard({ product }: { product: Product }) {
     </Link>
   )
 }
+
+/**
+ * What a section shows when it has nothing in it yet.
+ *
+ * Sections used to vanish when empty, which reads as a page missing a piece
+ * rather than a shop still filling up. Saying so plainly is better than a gap,
+ * and better than advertising things nobody can buy.
+ */
+export function ComingSoon({ note, onDark = false }: { note?: string; onDark?: boolean }) {
+  return (
+    <div
+      className={`rounded-3xl px-6 py-16 text-center ${
+        onDark
+          ? "border border-white/10 bg-white/[0.03]"
+          : "border border-[var(--border)] bg-white shadow-[var(--shadow-1)]"
+      }`}
+    >
+      <p className="font-display text-2xl" style={{ fontWeight: 800 }}>
+        Coming soon
+      </p>
+      {note && (
+        <p className={`mx-auto mt-2 max-w-sm ${onDark ? "text-white/60" : "text-[var(--muted)]"}`}>
+          {note}
+        </p>
+      )}
+    </div>
+  )
+}

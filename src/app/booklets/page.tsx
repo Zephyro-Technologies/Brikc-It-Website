@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
-import { SectionHead, Reveal } from "../../components/ui"
+import { ComingSoon, SectionHead, Reveal } from "../../components/ui"
 import { Faq } from "../../components/Faq"
 import { getFaqs, getGuides, getSettings } from "../../lib/shop"
 import type { Guide } from "../../data"
@@ -46,9 +46,6 @@ export default async function BookletsPage() {
 }
 
 function GuideGrid({ guides }: { guides: Guide[] }) {
-  // A heading over an empty grid reads as broken, not empty — skip the section entirely.
-  if (guides.length === 0) return null
-
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
       <Reveal>
@@ -57,6 +54,9 @@ function GuideGrid({ guides }: { guides: Guide[] }) {
           desc="Step-by-step build, framing, lighting and care guides — free with every model, and readable here any time."
         />
       </Reveal>
+      {guides.length === 0 ? (
+        <ComingSoon note="Build, framing and lighting guides are being written." />
+      ) : (
       <div className="grid gap-5 sm:grid-cols-2">
         {guides.map((g, i) => (
           <Reveal key={g.slug} delay={i * 80}>
@@ -88,6 +88,7 @@ function GuideGrid({ guides }: { guides: Guide[] }) {
           </Reveal>
         ))}
       </div>
+      )}
     </section>
   )
 }

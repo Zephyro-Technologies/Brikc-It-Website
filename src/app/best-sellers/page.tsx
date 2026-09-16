@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { getProducts, getSettings } from "../../lib/shop"
-import { Reveal } from "../../components/ui"
+import { ComingSoon, Reveal } from "../../components/ui"
 import { cardTag, fromPrice, productImage, soldFormats, subline } from "../../lib/product-view"
 import { money } from "../../lib/money"
 import { FORMAT_LABELS } from "../../data"
@@ -76,23 +76,7 @@ export default async function BestSellersPage() {
         </header>
 
         {featured.length === 0 ? (
-          <Reveal>
-            <div className="mb-24 rounded-3xl border border-white/10 bg-white/[0.03] p-10 text-center">
-              <h2 className="font-display text-2xl" style={{ fontWeight: 700 }}>
-                Nothing's marked as a best seller yet
-              </h2>
-              <p className="mx-auto mt-2 max-w-md text-white/60">
-                Check back soon, or browse the full range while the lineup fills in.
-              </p>
-              <Link
-                href="/shop"
-                className="mat-btn mt-6 inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-deep))] px-7 py-3.5 text-sm font-semibold text-white hover:brightness-105"
-              >
-                Shop all models
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </Reveal>
+          <ComingSoon onDark note="The first best sellers land as soon as the catalogue opens." />
         ) : (
           <>
             <div className="grid gap-7 pb-24 md:grid-cols-3">
