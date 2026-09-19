@@ -146,9 +146,12 @@ revalidated page can take about a minute to reach every region.
   200. `src/app/not-found.tsx` is a backstop and **must not import `Home`** — Next serialises the
   not-found boundary into every route's payload, so that shipped the whole homepage with every page.
 - Plain `<img>` everywhere, not `next/image`, deliberately.
-- Cart lives in `CartProvider` (`src/cart.tsx`), persisted to localStorage under `brikc.cart.v1`.
+- Cart lives in `CartProvider` (`src/cart.tsx`), persisted to localStorage under `brikc.cart.v2`.
+  A line carries either a `format` (model) or a `variantId` (display); the key was
+  bumped because a cart saved under the old shape would crash the drawer.
   It starts empty and fills in after mount — reading storage during render is a hydration mismatch.
-  `money()` lives here too: rupees, no decimals.
+  `money()` is NOT here — it lives in `src/lib/money.ts`, because this file is a client
+  component and Server Components format prices too.
 - Fire independent Supabase reads with `Promise.all`, as the pages already do. Note the comment on
   `Promises` in `src/app/page.tsx`: a component named `Promise` would shadow the global.
 - Commit subjects in this repo are plain sentences describing the behaviour change
@@ -160,15 +163,18 @@ Light and Material-leaning, ported from a Figma Make prototype (`../BrikcIt`, Vi
 reference). Tailwind v4 with no config file; everything lives in `src/app/globals.css`.
 
 - Colour comes from CSS variables — `--background`, `--surface`, `--surface-2`, `--foreground`,
-  `--muted`, `--border`, `--primary` (`#e23a2e`), `--primary-2` (`#ff6b2c`). Reach for a token,
-  not a hex. The exceptions are deliberate literals: the dark Best Sellers band (`#0b0b0d`,
+  `--muted`, `--border`, `--primary` (`#d31f2e`), `--primary-2` (`#f0384a`) and `--primary-deep`
+  (`#b81022`). All three sit at the logo's hue, ~354°. White text clears AA on
+  `--primary` and `--primary-deep` but not on `--primary-2`, so a gradient with text
+  on it runs between the first two and `--primary-2` stays decorative. Reach for a
+  token, not a hex. The exceptions are deliberate literals: the dark Best Sellers band (`#0b0b0d`,
   `#121114`) and the brand gradients.
 - Depth is the three-step `--shadow-1/2/3` scale, not borders. `.mat-btn` goes on anything
   clickable for the press feedback.
 - `.font-display` is Roboto Slab and needs an explicit `style={{ fontWeight: 700 | 800 }}`;
   body copy is Roboto.
 - `src/components/ui.tsx` is the shared vocabulary: `Reveal`, `SectionHead`, `ExploreMore`,
-  `AddButton`, `ProductCard`. Build pages from these rather than restyling one-offs.
+  `AddButton`, `ProductCard`, `ComingSoon` (what a section shows when it is empty). Build pages from these rather than restyling one-offs.
 - `.reveal` starts at **opacity 0** and only becomes visible when `<Reveal>` adds `.is-visible`,
   so anything using that class must be inside a `Reveal` or it never appears.
 - Quick-add on a grid card confirms inline and does *not* open the cart drawer
@@ -183,11 +189,14 @@ that went nowhere. None of it survived, and none of it should come back.
 A claim on this site has to be sourced: from Supabase (lead times, Instagram handle, reviews,
 FAQ), or from something the shop genuinely does (free courier anywhere in Pakistan, framed
 builds in reinforced crates). If a control has no handler, delete the control rather than ship
-it dead. `DISPLAY_FINISHES[].from` is `null` for exactly this reason — no one has supplied real
-frame prices, so the cards omit the price line instead of showing a plausible number.
+it dead. There is no seed file, deliberately: one existed with an invented catalogue in it, and
+although it only ran locally it kept surfacing as real products on a shop that has none.
+A reset gives the schema, the settings singleton and the category rows — nothing else.
 
-Admin-editable content must not be stranded by a redesign: the FAQ lives on `/booklets` and
-reviews on the homepage, because the admin still has screens for both.
+Admin-editable content must not be stranded by a redesign — the FAQ lives on `/booklets`
+for that reason. Two things currently ARE stranded and want a decision: **reviews** have an
+admin screen and render nowhere since the homepage band was removed, and a **category's
+blurb and cover image** are editable but the storefront only renders the category name.
 
 ### Environment
 
@@ -200,11 +209,11 @@ the Cloudflare dashboard — see DEPLOYMENT.md §5.
 
 ### Running the whole thing locally
 
-The schema, the migrations and the seed all live in the admin repo (`../Brikc-It-Admin`) — this
+The schema and the migrations live in the admin repo (`../Brikc-It-Admin`) — this
 app only ever reads. To bring up a local backend:
 
 ```bash
-cd "../Brikc-It-Admin" && supabase start   # applies every migration, runs supabase/seed.sql
+cd "../Brikc-It-Admin" && supabase start   # applies every migration
 supabase status                            # prints the URL and publishable key for .env.local
 ```
 
@@ -225,5 +234,5 @@ Two things that bite:
 - `psql` may not be on PATH. Go through the container:
   `docker exec supabase_db_BrickIt_Admin psql -U postgres -d postgres -c '…'`
 - Checkout is closed until **Settings → Payments** has a WhatsApp number and at least one account.
-  `canCheckout()` is doing its job — the seed deliberately leaves those blank rather than shipping
-  a fake bank account, so a fresh database shows "ordering online is off right now".
+  `canCheckout()` is doing its job — nothing invents a bank account, so a fresh database shows
+  "ordering online is off right now" until someone fills them in.
