@@ -63,6 +63,15 @@ price, and the screen has to agree with what the database will charge.
   how-it-works steps) and `displays.ts` (only the three promises under the `/displays` grid).
   The frame finishes and the booklet guides used to live here and are now admin-managed —
   check the database before assuming a page's content is in the repo.
+- `src/lib/markdown.tsx` draws a product description. It is Markdown now — paragraphs, headings,
+  bullet and numbered lists, bold, links and images, and nothing else. Written by hand rather than
+  pulled in, because a library is a lot of code running over text from the admin. React escapes text
+  nodes but **not** `href` and `src`, so every URL goes through `safeUrl()`, which allows only http,
+  https, mailto and real paths — `//host/x` is not a path, it is protocol-relative, and is refused.
+- A product may carry up to two videos. A pasted link is never stored as a link: only the provider and
+  the video's id are kept, and `embedUrl()` builds the player address from those, so nothing anybody
+  types can reach an iframe. The database checks the same shapes, because a form check protects
+  nobody who writes to the table another way.
 - `src/lib/product-view.ts` derives every string a card shows (`subline`, `cardTag`, `specs`,
   `isSellable`, `cheapestFormat`, `cheapestVariant`, `displayVisual`) from a catalogue row, and
   branches on the product's kind. The design came from a prototype whose products had one price
@@ -88,10 +97,22 @@ A display shows its photograph when it has one and its `swatch` — a CSS colour
 when it doesn't, so a finish nobody has shot yet still reads as a material. A display with no
 priced variants renders and says it cannot be ordered, which is how every one of them arrives.
 
-Prices are PKR, and for a model every format carries its own price (`price_boxed`, `price_built`,
-`price_framed`) — nothing is derived from a base price and there is no uplift. Cards and sorts
-use `fromPrice()`, the cheapest format actually on sale, so a build not sold boxed never
-advertises a boxed price.
+**A build is an assembly plus an optional frame.** A shopper chooses unassembled or assembled —
+stored as `boxed` and `built`, which already meant that; only the labels changed, because renaming
+them would rewrite what past orders say they sold — and separately ticks an LED frame, priced on its
+own in `price_frame` and added on top. Four combinations from three numbers, and an unassembled kit
+can be bought with a frame to put it in later, which the old three-way pick made impossible.
+
+`FORMAT_KEYS` is therefore two long. `"framed"` survives in `FormatKey` only so order lines written
+before the change can still name what they sold; `place_order` refuses it for new lines and tells the
+shopper to re-add the item. `order_lines.with_frame` records whether a frame went with a line.
+`products.price_framed` is the old framed TOTAL, left in place by
+`20260920120000_frame_as_an_addon.sql` so the deployed shop kept quoting correctly across the
+changeover — it is dead now and a later migration should drop it.
+
+Prices are PKR, and each assembly carries its own price — nothing is derived from a base price and
+there is no uplift on the assemblies. Cards and sorts use `fromPrice()`, the cheapest assembly
+actually on sale, so a build not sold unassembled never advertises an unassembled price.
 
 **A category is not a price bracket.** `PRICE_BANDS` in `src/data.ts` is three fixed brackets in
 code — under Rs 10,000, Rs 10,000–25,000, over Rs 25,000 — filtered on `/shop` through `?price=`,

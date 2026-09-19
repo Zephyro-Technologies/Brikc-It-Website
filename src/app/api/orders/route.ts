@@ -14,7 +14,13 @@ import { supabase } from "../../../lib/supabase/client"
  * would be one more place a total could be wrong.
  */
 
-type IncomingLine = { slug?: unknown; format?: unknown; variant?: unknown; qty?: unknown }
+type IncomingLine = {
+  slug?: unknown
+  format?: unknown
+  framed?: unknown
+  variant?: unknown
+  qty?: unknown
+}
 
 /** Our own validation failures, raised with errcode 22023, are safe to show. */
 const USER_ERROR = "22023"
@@ -36,16 +42,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Your cart is empty." }, { status: 400 })
   }
 
-  // Only slug, one of format/variant, and quantity cross the wire. Anything
-  // else the client might have sent about a line — a name, an image, a price
-  // — is dropped here. A model line carries format; a display line carries
-  // variant; never both, and place_order rejects the wrong one rather than
-  // ignoring it.
+  // Only slug, one of format/variant, whether a frame was added, and quantity
+  // cross the wire. Anything else the client might have sent about a line — a
+  // name, an image, a price — is dropped here. `framed` is a yes/no, never an
+  // amount: what a frame costs is the database's business, and place_order adds
+  // it from the product's own price. A model line carries format; a display line
+  // carries variant; never both, and place_order rejects the wrong one rather
+  // than ignoring it.
   const lines = rawLines.slice(0, 20).map((l) => {
     const base = { slug: str(l.slug), qty: Number(l.qty) || 0 }
     return typeof l.variant === "string" && l.variant
       ? { ...base, variant: l.variant }
-      : { ...base, format: str(l.format) }
+      : { ...base, format: str(l.format), framed: l.framed === true }
   })
 
   const { data, error } = await supabase().rpc("place_order", {

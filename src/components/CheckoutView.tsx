@@ -4,11 +4,12 @@ import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { AlertTriangle, ArrowLeft, ChevronDown, Loader2, ShoppingBag } from "lucide-react"
-import { useCart } from "../cart"
+import { lineLabel, useCart } from "../cart"
 import { money } from "../lib/money"
 import {
   FORMAT_LABELS,
   cityQualifies,
+  priceOf,
   type DeliveryOption,
   type FormatKey,
   type Product,
@@ -173,14 +174,19 @@ export default function CheckoutView({
         return { ...l, unitPrice, unavailable, changed: !unavailable && unitPrice !== l.unitPrice }
       }
       const format = l.format as FormatKey
+      const framed = Boolean(l.framed)
       const unavailable = !product.inStock
         ? "sold out"
         : !product.formats[format]
           ? `no longer sold ${FORMAT_LABELS[format].toLowerCase()}`
-          : l.qty > product.stock
-            ? `down to ${product.stock} — lower the quantity`
-            : null
-      const unitPrice = product.prices[format]
+          : framed && !product.frame.offered
+            ? "no longer sold with a frame"
+            : l.qty > product.stock
+              ? `down to ${product.stock} — lower the quantity`
+              : null
+      // Recomputed from the live catalogue, frame included. The stored unitPrice
+      // is last week's; this is the number the database will actually charge.
+      const unitPrice = priceOf(product, format, framed)
       return { ...l, unitPrice, unavailable, changed: !unavailable && unitPrice !== l.unitPrice }
     })
   }, [lines, products])
@@ -208,10 +214,15 @@ export default function CheckoutView({
             province: form.province,
             postcode: form.postcode,
           },
+          // `framed` has to travel with the line: the summary above prices it in,
+          // and place_order prices from what arrives here. Leaving it out quotes
+          // one total and charges another — the exact disagreement the shop is
+          // built to prevent. Still only a yes/no; the frame's price is the
+          // database's business, not the browser's.
           lines: priced.map((l) =>
             l.kind === "display"
               ? { slug: l.slug, variant: l.variantId, qty: l.qty }
-              : { slug: l.slug, format: l.format, qty: l.qty },
+              : { slug: l.slug, format: l.format, framed: Boolean(l.framed), qty: l.qty },
           ),
           shippingMethod: chosen?.id ?? "standard",
         }),
@@ -460,7 +471,7 @@ export default function CheckoutView({
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">{l.name}</p>
                   <p className="text-xs font-semibold tracking-wide text-[var(--primary)] uppercase">
-                    {l.kind === "display" ? l.variantLabel : FORMAT_LABELS[l.format as FormatKey]} × {l.qty}
+                    {lineLabel(l)} × {l.qty}
                   </p>
                   {l.unavailable && (
                     <p className="mt-1 text-xs text-amber-600">This one is {l.unavailable}.</p>

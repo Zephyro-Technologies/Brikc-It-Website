@@ -4,9 +4,8 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Menu, MessageCircle, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react"
-import { useCart } from "../cart"
+import { lineLabel, useCart } from "../cart"
 import { money } from "../lib/money"
-import { FORMAT_LABELS } from "../data"
 import { BANNER, NAV } from "../content/site"
 
 /**
@@ -261,7 +260,7 @@ export function CartDrawer() {
                           {l.name}
                         </p>
                         <p className="mt-0.5 text-xs font-bold tracking-wide text-[var(--primary)] uppercase">
-                          {l.format ? FORMAT_LABELS[l.format] : l.variantLabel}
+                          {lineLabel(l)}
                         </p>
                       </div>
                       <button

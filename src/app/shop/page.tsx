@@ -5,7 +5,7 @@ import { getCategories, getProducts } from "../../lib/shop"
 
 export const metadata: Metadata = {
   title: "Shop all builds — brikc.it",
-  description: "Every model available boxed, built, or framed with LED.",
+  description: "Every model, unassembled or assembled, with an optional LED display frame.",
 }
 
 // Awaiting searchParams opts this route into dynamic rendering, which lets the

@@ -88,7 +88,11 @@ export function cheapestVariant(product: Product): Variant | null {
 export function formatSummary(product: Product): string {
   const sold = soldFormats(product)
   if (sold.length === 0) return "Not currently sold"
-  return sold.map((f) => FORMAT_LABELS[f]).join(" · ")
+  // The frame is not one of these any more — it is an extra on top of whichever
+  // is chosen — so it is named separately rather than listed as a third way to
+  // buy the build.
+  const base = sold.map((f) => FORMAT_LABELS[f]).join(" · ")
+  return product.frame.offered ? `${base} · LED frame optional` : base
 }
 
 /** "60×90cm · 90×140cm" — the sizes a display comes in. */

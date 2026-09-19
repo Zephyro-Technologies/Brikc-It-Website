@@ -9,7 +9,7 @@ import { FORMAT_LABELS } from "../../data"
 
 export const metadata: Metadata = {
   title: "Best sellers — brikc.it",
-  description: "The builds our collectors reach for most, boxed, built or framed with LED.",
+  description: "The builds our collectors reach for most, unassembled or assembled, with an optional LED frame.",
 }
 
 // The one dark band in an otherwise light storefront — reserved for this page.

@@ -31,19 +31,23 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   if (!product) return <ProductDetailView product={undefined} suggestions={[]} />
 
-  // Same category first, then anything else, up to four.
-  const related = all.filter((p) => p.slug !== slug && p.category === product.category).slice(0, 4)
-  const fill = all
-    .filter((p) => p.slug !== slug && !related.some((r) => r.slug === p.slug))
-    .slice(0, Math.max(0, 4 - related.length))
+  // Every other build, not a pre-picked four: the page shuffles this in the
+  // browser and takes four from it, so two visitors see different ones. Picking
+  // here instead would bake one arrangement into the prerendered HTML.
+  const pool = all.filter((p) => p.slug !== slug)
 
   // The breadcrumb links by slug, so it survives the category being renamed.
   const categorySlug = categories.find((c) => c.name === product.category)?.slug ?? ""
 
   return (
+    // Keyed on the build so React remounts it when you navigate from one
+    // product to another. Resetting the gallery position, the frame tick and the
+    // chosen tab in an effect instead would run a frame LATE — long enough to
+    // show the previous build's fourth photograph on the new one's page.
     <ProductDetailView
+      key={slug}
       product={product}
-      suggestions={[...related, ...fill]}
+      suggestions={pool}
       categorySlug={categorySlug}
     />
   )

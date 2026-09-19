@@ -178,6 +178,7 @@ export type Database = {
           unit_price: number
           variant_id: string | null
           variant_label: string
+          with_frame: boolean
         }
         Insert: {
           format?: Database["public"]["Enums"]["format_key"] | null
@@ -191,6 +192,7 @@ export type Database = {
           unit_price: number
           variant_id?: string | null
           variant_label?: string
+          with_frame?: boolean
         }
         Update: {
           format?: Database["public"]["Enums"]["format_key"] | null
@@ -204,6 +206,7 @@ export type Database = {
           unit_price?: number
           variant_id?: string | null
           variant_label?: string
+          with_frame?: boolean
         }
         Relationships: [
           {
@@ -435,6 +438,41 @@ export type Database = {
           },
         ]
       }
+      product_videos: {
+        Row: {
+          id: string
+          product_id: string
+          provider: string
+          sort: number
+          src: string
+          title: string
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          provider: string
+          sort: number
+          src: string
+          title?: string
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          provider?: string
+          sort?: number
+          src?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_videos_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           blurb: string
@@ -450,6 +488,7 @@ export type Database = {
           pieces: number
           price_boxed: number
           price_built: number
+          price_frame: number
           price_framed: number
           scale: string
           sells_boxed: boolean
@@ -475,6 +514,7 @@ export type Database = {
           pieces?: number
           price_boxed: number
           price_built: number
+          price_frame?: number
           price_framed: number
           scale?: string
           sells_boxed?: boolean
@@ -500,6 +540,7 @@ export type Database = {
           pieces?: number
           price_boxed?: number
           price_built?: number
+          price_frame?: number
           price_framed?: number
           scale?: string
           sells_boxed?: boolean

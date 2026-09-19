@@ -9,6 +9,7 @@ import type {
   PaymentDetails,
   Product,
   ProductKind,
+  ProductVideo,
   Review,
   Settings,
   StoreCategory,
@@ -24,8 +25,9 @@ import type {
 const PRODUCT_SELECT = `
   slug, name, team, category, kind, swatch, price_boxed, price_built, price_framed,
   scale, pieces, edition, blurb, description,
-  sells_boxed, sells_built, sells_framed, featured, stock,
-  product_images ( url, sort )
+  sells_boxed, sells_built, sells_framed, featured, stock, price_frame,
+  product_images ( url, sort ),
+  product_videos ( provider, src, title, sort )
 `
 
 // Same columns as PRODUCT_SELECT, plus the variants a display is priced and
@@ -35,8 +37,9 @@ const PRODUCT_SELECT = `
 const DISPLAY_SELECT = `
   slug, name, team, category, kind, swatch, price_boxed, price_built, price_framed,
   scale, pieces, edition, blurb, description,
-  sells_boxed, sells_built, sells_framed, featured, stock,
+  sells_boxed, sells_built, sells_framed, featured, stock, price_frame,
   product_images ( url, sort ),
+  product_videos ( provider, src, title, sort ),
   product_variants ( id, label, price, stock, sort )
 `
 
@@ -60,7 +63,9 @@ type ProductRow = {
   sells_framed: boolean
   featured: boolean
   stock: number
+  price_frame: number
   product_images: { url: string; sort: number }[]
+  product_videos: { provider: string; src: string; title: string; sort: number }[]
 }
 
 type VariantRow = { id: string; label: string; price: number; stock: number; sort: number }
@@ -86,7 +91,17 @@ function toProduct(row: ProductRow, variantRows: VariantRow[] = []): Product {
     description: row.description,
     images: [...row.product_images].sort((a, b) => a.sort - b.sort).map((i) => i.url),
     swatch: row.swatch,
-    formats: { boxed: row.sells_boxed, built: row.sells_built, framed: row.sells_framed },
+    // `formats` is what a shopper can choose, so the frame is not one of them
+    // any more — it rides on the choice instead, in `frame` below.
+    formats: { boxed: row.sells_boxed, built: row.sells_built, framed: false },
+    frame: { offered: row.sells_framed, price: row.price_frame },
+    videos: [...(row.product_videos ?? [])]
+      .sort((a, b) => a.sort - b.sort)
+      .map((v): ProductVideo => ({
+        provider: v.provider as ProductVideo["provider"],
+        src: v.src,
+        title: v.title,
+      })),
     variants: [...variantRows]
       .sort((a, b) => a.sort - b.sort)
       .map((v): Variant => ({
