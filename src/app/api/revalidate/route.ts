@@ -13,6 +13,12 @@ import { NextResponse, type NextRequest } from "next/server"
 
 export const dynamic = "force-dynamic"
 
+/**
+ * A cap on one request, not on what a save may invalidate. The admin batches
+ * anything longer into several calls (STOREFRONT_PATH_LIMIT in its
+ * revalidate-storefront route mirrors this number) — raise one and raise both,
+ * because what spills past this is dropped without saying so.
+ */
 const MAX_PATHS = 50
 
 export async function POST(request: NextRequest) {

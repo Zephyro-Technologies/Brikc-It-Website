@@ -93,6 +93,17 @@ Prices are PKR, and for a model every format carries its own price (`price_boxed
 use `fromPrice()`, the cheapest format actually on sale, so a build not sold boxed never
 advertises a boxed price.
 
+**A category is not a price bracket.** `PRICE_BANDS` in `src/data.ts` is three fixed brackets in
+code — under Rs 10,000, Rs 10,000–25,000, over Rs 25,000 — filtered on `/shop` through `?price=`,
+which composes with `?cat=`. They are deliberately not rows: a build is in a bracket because of what
+it costs, so nobody files it there and nobody re-files it when the price changes. Both bounds are
+inclusive and prices are whole rupees, so the three tile the range exactly — Rs 10,000 reads
+"Rs 10,000 – 25,000", never "Under Rs 10,000". `inPriceBand()` excludes anything the card would show
+as "Not available", so what you filter by is always the number you then read; it mirrors
+`isSellable()` and the two change together. The chips on `/shop` stay a taxonomy and price stays a
+dropdown on purpose — giving them the same shape is what makes someone file "Under 10k" as a
+category.
+
 **Categories are rows, not an enum.** `products.category` is text with a foreign key onto
 `categories(name)`, `ON UPDATE CASCADE ON DELETE RESTRICT` — so renaming a category moves every
 build carrying it in the same statement, and deleting one that still holds builds is refused
@@ -156,7 +167,16 @@ The placed order reaches `/checkout/confirmation` through `sessionStorage` under
 | `/api/revalidate` | `force-dynamic` | — |
 
 The admin calls `POST /api/revalidate` with `x-revalidate-secret`. It **fails closed**: a missing
-`REVALIDATE_SECRET` returns 503 rather than leaving the endpoint open.
+`REVALIDATE_SECRET` returns 503 rather than leaving the endpoint open. It also caps one request at
+`MAX_PATHS` (50) and drops the rest **without saying so**, so the admin batches anything longer —
+`STOREFRONT_PATH_LIMIT` there mirrors this number and the two move together.
+
+A page is only ever as fresh as the save that should have rebuilt it. Anything whose real effect is
+wider than the row it wrote — a trigger, a cascade, a rollup — has to revalidate the wider set:
+marking an order paid moves stock, so it rebuilds each line's build; a stocktake rebuilds the display
+a variant rolls up into; a settings save sweeps every build, and a display's page is
+`/displays/<slug>`, never `/shop/<slug>`. Paths are built from the **live** `products.slug`, never
+from `order_lines.slug`, which is a snapshot of what was sold and names a dead URL after a rename.
 
 On Cloudflare that path needs all three overrides in `open-next.config.ts` — KV incremental
 cache, D1 tag cache, Durable Object queue. Drop any one and the shop still serves but stops

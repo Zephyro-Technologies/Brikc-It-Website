@@ -132,6 +132,68 @@ export function fromPrice(product: Product): number {
   return sold.length ? Math.min(...sold) : product.prices.boxed
 }
 
+/**
+ * The price brackets the shop can be filtered by.
+ *
+ * Fixed in code rather than rows in the database, because a bracket is a way of
+ * reading the catalogue, not a thing the catalogue contains. A build is in one
+ * because of what it costs — nobody files it there, and nobody has to re-file it
+ * when the price changes. That is exactly what separates a bracket from a
+ * category, which a build belongs to because somebody said so.
+ *
+ * Both bounds are inclusive. Prices are whole rupees — the columns are integers
+ * and money() renders no decimals — so the three tile the range with no gap and
+ * no overlap, and the labels are true at the boundaries: a build at exactly
+ * 10,000 reads "Rs 10,000 – 25,000", never "Under Rs 10,000".
+ */
+export type PriceBand = {
+  id: string
+  /** For a chip or an option. */
+  label: string
+  /** For a sentence: "6 builds in Cars under Rs 10,000". */
+  phrase: string
+  min: number
+  /** Null for the open-ended top bracket. */
+  max: number | null
+}
+
+export const PRICE_BANDS: PriceBand[] = [
+  { id: "under-10k", label: "Under Rs 10,000", phrase: "under Rs 10,000", min: 0, max: 9_999 },
+  { id: "10k-25k", label: "Rs 10,000 – 25,000", phrase: "from Rs 10,000 to 25,000", min: 10_000, max: 25_000 },
+  { id: "over-25k", label: "Over Rs 25,000", phrase: "over Rs 25,000", min: 25_001, max: null },
+]
+
+/**
+ * Whether a build's "from" price falls inside a bracket.
+ *
+ * Compares the very number the card prints, so what you filtered by is what you
+ * then read — which is why the test for "has a price at all" has to be the same
+ * one the card uses to decide whether to print it. A card shows "Not available"
+ * instead of a price whenever the build can't be bought: sold out, or sold in no
+ * format at all. Letting such a build through would answer "under Rs 10,000"
+ * with a card that names no price, and nothing on screen would say why it is
+ * there.
+ *
+ * So a build with no price to show is in no bracket. It still appears under
+ * "All", and still in its category — only the brackets, which are about price
+ * alone, leave it out.
+ *
+ * This mirrors isSellable() in lib/product-view.ts. It is not imported from
+ * there because that module is presentation and this one is meant to stay free
+ * of it; if the rule changes, change both.
+ */
+export function inPriceBand(product: Product, band: PriceBand): boolean {
+  const hasPrice =
+    product.inStock &&
+    (product.kind === "display"
+      ? product.variants.some((v) => v.stock > 0)
+      : FORMAT_KEYS.some((f) => product.formats[f]))
+  if (!hasPrice) return false
+
+  const price = fromPrice(product)
+  return price >= band.min && (band.max === null || price <= band.max)
+}
+
 export type ShippingMethod = "standard" | "teamhq"
 
 export type DeliveryOption = {
