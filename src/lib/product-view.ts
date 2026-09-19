@@ -14,6 +14,27 @@ import { FORMAT_KEYS, FORMAT_LABELS, fromPrice, type FormatKey, type Product, ty
  * every helper below has to be right for both.
  */
 
+/**
+ * How many are left, if that is few enough to be worth saying.
+ *
+ * Above the threshold a shopper learns nothing useful from a number and the
+ * shop gives away what it holds, so nothing is shown. At zero the card already
+ * says "Sold out" and the Add button is gone, so nothing is shown there either
+ * — this is only the band in between. A threshold of zero turns it off.
+ */
+export function lowStockNote(product: Product, lowStockAt: number): string | null {
+  if (lowStockAt <= 0) return null
+  if (product.stock <= 0 || product.stock > lowStockAt) return null
+  return product.stock === 1 ? "Only 1 left" : `Only ${product.stock} left`
+}
+
+/** The same line for one size of a display, which is stocked on its own. */
+export function lowVariantStockNote(variant: Variant, lowStockAt: number): string | null {
+  if (lowStockAt <= 0) return null
+  if (variant.stock <= 0 || variant.stock > lowStockAt) return null
+  return variant.stock === 1 ? "Only 1 left" : `Only ${variant.stock} left`
+}
+
 /** The formats this build is actually sold in, in display order. Empty for a display. */
 export function soldFormats(product: Product): FormatKey[] {
   if (product.kind === "display") return []

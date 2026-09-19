@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import ProductDetailView from "../../../components/ProductDetailView"
-import { getProduct, getProductSlugs, getProducts } from "../../../lib/shop"
+import { getCategories, getProduct, getProductSlugs, getProducts } from "../../../lib/shop"
 
 export async function generateStaticParams() {
   return (await getProductSlugs()).map((slug) => ({ slug }))
@@ -23,7 +23,11 @@ export async function generateMetadata({
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const [product, all] = await Promise.all([getProduct(slug), getProducts()])
+  const [product, all, categories] = await Promise.all([
+    getProduct(slug),
+    getProducts(),
+    getCategories(),
+  ])
 
   if (!product) return <ProductDetailView product={undefined} suggestions={[]} />
 
@@ -33,5 +37,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     .filter((p) => p.slug !== slug && !related.some((r) => r.slug === p.slug))
     .slice(0, Math.max(0, 4 - related.length))
 
-  return <ProductDetailView product={product} suggestions={[...related, ...fill]} />
+  // The breadcrumb links by slug, so it survives the category being renamed.
+  const categorySlug = categories.find((c) => c.name === product.category)?.slug ?? ""
+
+  return (
+    <ProductDetailView
+      product={product}
+      suggestions={[...related, ...fill]}
+      categorySlug={categorySlug}
+    />
+  )
 }

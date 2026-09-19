@@ -57,7 +57,8 @@ export type Database = {
           blurb: string
           id: string
           image: string
-          name: Database["public"]["Enums"]["product_category"]
+          name: string
+          slug: string
           sort: number
           updated_at: string
         }
@@ -65,7 +66,8 @@ export type Database = {
           blurb: string
           id?: string
           image: string
-          name: Database["public"]["Enums"]["product_category"]
+          name: string
+          slug: string
           sort?: number
           updated_at?: string
         }
@@ -73,7 +75,8 @@ export type Database = {
           blurb?: string
           id?: string
           image?: string
-          name?: Database["public"]["Enums"]["product_category"]
+          name?: string
+          slug?: string
           sort?: number
           updated_at?: string
         }
@@ -397,27 +400,30 @@ export type Database = {
       product_variants: {
         Row: {
           id: string
-          in_stock: boolean
+          in_stock: boolean | null
           label: string
           price: number
           product_id: string
           sort: number
+          stock: number
         }
         Insert: {
           id?: string
-          in_stock?: boolean
+          in_stock?: boolean | null
           label: string
           price: number
           product_id: string
           sort?: number
+          stock?: number
         }
         Update: {
           id?: string
-          in_stock?: boolean
+          in_stock?: boolean | null
           label?: string
           price?: number
           product_id?: string
           sort?: number
+          stock?: number
         }
         Relationships: [
           {
@@ -432,13 +438,13 @@ export type Database = {
       products: {
         Row: {
           blurb: string
-          category: Database["public"]["Enums"]["product_category"]
+          category: string | null
           created_at: string
           description: string
           edition: string
           featured: boolean
           id: string
-          in_stock: boolean
+          in_stock: boolean | null
           kind: Database["public"]["Enums"]["product_kind"]
           name: string
           pieces: number
@@ -450,19 +456,20 @@ export type Database = {
           sells_built: boolean
           sells_framed: boolean
           slug: string
+          stock: number
           swatch: string
           team: string
           updated_at: string
         }
         Insert: {
           blurb: string
-          category: Database["public"]["Enums"]["product_category"]
+          category?: string | null
           created_at?: string
           description: string
           edition?: string
           featured?: boolean
           id?: string
-          in_stock?: boolean
+          in_stock?: boolean | null
           kind?: Database["public"]["Enums"]["product_kind"]
           name: string
           pieces?: number
@@ -474,19 +481,20 @@ export type Database = {
           sells_built?: boolean
           sells_framed?: boolean
           slug: string
+          stock?: number
           swatch?: string
           team: string
           updated_at?: string
         }
         Update: {
           blurb?: string
-          category?: Database["public"]["Enums"]["product_category"]
+          category?: string | null
           created_at?: string
           description?: string
           edition?: string
           featured?: boolean
           id?: string
-          in_stock?: boolean
+          in_stock?: boolean | null
           kind?: Database["public"]["Enums"]["product_kind"]
           name?: string
           pieces?: number
@@ -498,11 +506,20 @@ export type Database = {
           sells_built?: boolean
           sells_framed?: boolean
           slug?: string
+          stock?: number
           swatch?: string
           team?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_category_fkey"
+            columns: ["category"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["name"]
+          },
+        ]
       }
       reviews: {
         Row: {
@@ -547,6 +564,7 @@ export type Database = {
           jazzcash_title: string
           lead_time_framed: string
           lead_time_standard: string
+          low_stock_at: number
           store_name: string
           teamhq_cities: string
           teamhq_fee: number
@@ -569,6 +587,7 @@ export type Database = {
           jazzcash_title?: string
           lead_time_framed?: string
           lead_time_standard?: string
+          low_stock_at?: number
           store_name?: string
           teamhq_cities?: string
           teamhq_fee?: number
@@ -591,6 +610,7 @@ export type Database = {
           jazzcash_title?: string
           lead_time_framed?: string
           lead_time_standard?: string
+          low_stock_at?: number
           store_name?: string
           teamhq_cities?: string
           teamhq_fee?: number
@@ -644,7 +664,6 @@ export type Database = {
         | "delivered"
         | "cancelled"
         | "refunded"
-      product_category: "F1" | "Cars" | "Bikes" | "Collector" | "Displays"
       product_kind: "model" | "display"
       shipping_method: "standard" | "teamhq"
     }
@@ -788,7 +807,6 @@ export const Constants = {
         "cancelled",
         "refunded",
       ],
-      product_category: ["F1", "Cars", "Bikes", "Collector", "Displays"],
       product_kind: ["model", "display"],
       shipping_method: ["standard", "teamhq"],
     },

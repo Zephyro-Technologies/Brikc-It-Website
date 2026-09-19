@@ -24,7 +24,7 @@ import type {
 const PRODUCT_SELECT = `
   slug, name, team, category, kind, swatch, price_boxed, price_built, price_framed,
   scale, pieces, edition, blurb, description,
-  sells_boxed, sells_built, sells_framed, featured, in_stock,
+  sells_boxed, sells_built, sells_framed, featured, stock,
   product_images ( url, sort )
 `
 
@@ -35,16 +35,16 @@ const PRODUCT_SELECT = `
 const DISPLAY_SELECT = `
   slug, name, team, category, kind, swatch, price_boxed, price_built, price_framed,
   scale, pieces, edition, blurb, description,
-  sells_boxed, sells_built, sells_framed, featured, in_stock,
+  sells_boxed, sells_built, sells_framed, featured, stock,
   product_images ( url, sort ),
-  product_variants ( id, label, price, in_stock, sort )
+  product_variants ( id, label, price, stock, sort )
 `
 
 type ProductRow = {
   slug: string
   name: string
   team: string
-  category: Category
+  category: Category | null
   kind: ProductKind
   swatch: string
   price_boxed: number
@@ -59,11 +59,11 @@ type ProductRow = {
   sells_built: boolean
   sells_framed: boolean
   featured: boolean
-  in_stock: boolean
+  stock: number
   product_images: { url: string; sort: number }[]
 }
 
-type VariantRow = { id: string; label: string; price: number; in_stock: boolean; sort: number }
+type VariantRow = { id: string; label: string; price: number; stock: number; sort: number }
 
 type DisplayRow = ProductRow & { product_variants: VariantRow[] }
 
@@ -73,7 +73,10 @@ function toProduct(row: ProductRow, variantRows: VariantRow[] = []): Product {
     slug: row.slug,
     name: row.name,
     team: row.team,
-    category: row.category,
+    // A display belongs to no shopper-facing category and stores null; the UI
+    // treats the empty string as "no category" rather than checking for null
+    // everywhere a badge or a breadcrumb reads it.
+    category: row.category ?? "",
     kind: row.kind,
     prices: { boxed: row.price_boxed, built: row.price_built, framed: row.price_framed },
     scale: row.scale,
@@ -86,8 +89,15 @@ function toProduct(row: ProductRow, variantRows: VariantRow[] = []): Product {
     formats: { boxed: row.sells_boxed, built: row.sells_built, framed: row.sells_framed },
     variants: [...variantRows]
       .sort((a, b) => a.sort - b.sort)
-      .map((v): Variant => ({ id: v.id, label: v.label, price: v.price, inStock: v.in_stock })),
-    inStock: row.in_stock,
+      .map((v): Variant => ({
+        id: v.id,
+        label: v.label,
+        price: v.price,
+        stock: v.stock,
+        inStock: v.stock > 0,
+      })),
+    stock: row.stock,
+    inStock: row.stock > 0,
     featured: row.featured,
   }
 }
@@ -146,9 +156,15 @@ export async function getDisplay(slug: string): Promise<Product | undefined> {
   return toProduct(row, row.product_variants)
 }
 
+/**
+ * The categories the admin has created, in the order it put them in. There is no
+ * fixed list any more — the chips on /shop are whatever comes back from here, so
+ * a shop with no categories shows no chips rather than four that lead nowhere.
+ */
 export async function getCategories(): Promise<StoreCategory[]> {
-  const res = await supabase().from("categories").select("name, blurb, image, sort").order("sort")
+  const res = await supabase().from("categories").select("slug, name, blurb, image, sort").order("sort")
   return unwrap("categories", res).map((c) => ({
+    slug: c.slug,
     name: c.name as Category,
     blurb: c.blurb,
     image: c.image,
@@ -173,7 +189,7 @@ export async function getFaqs(): Promise<FaqItem[]> {
 export async function getSettings(): Promise<Settings> {
   const res = await supabase()
     .from("settings")
-    .select("lead_time_standard, lead_time_framed, instagram")
+    .select("lead_time_standard, lead_time_framed, instagram, low_stock_at")
     .limit(1)
     .maybeSingle()
   if (res.error) throw new Error(`Supabase: failed to load settings — ${res.error.message}`)
@@ -182,6 +198,7 @@ export async function getSettings(): Promise<Settings> {
   return {
     leadTimes: { standard: res.data.lead_time_standard, framed: res.data.lead_time_framed },
     instagram: res.data.instagram,
+    lowStockAt: res.data.low_stock_at,
   }
 }
 

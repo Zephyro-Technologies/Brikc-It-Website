@@ -158,11 +158,17 @@ export default function CheckoutView({
       }
       if (l.kind === "display") {
         const variant = product.variants.find((v) => v.id === l.variantId)
+        // A cart can sit in localStorage for a week while the shelf empties, so
+        // the quantity is checked against the count as well. place_order refuses
+        // the line either way; catching it here turns a server error at the last
+        // step into something the shopper can fix in the cart.
         const unavailable = !variant
           ? "that size is no longer available"
           : !variant.inStock
             ? "sold out"
-            : null
+            : l.qty > variant.stock
+              ? `down to ${variant.stock} — lower the quantity`
+              : null
         const unitPrice = variant ? variant.price : l.unitPrice
         return { ...l, unitPrice, unavailable, changed: !unavailable && unitPrice !== l.unitPrice }
       }
@@ -171,7 +177,9 @@ export default function CheckoutView({
         ? "sold out"
         : !product.formats[format]
           ? `no longer sold ${FORMAT_LABELS[format].toLowerCase()}`
-          : null
+          : l.qty > product.stock
+            ? `down to ${product.stock} — lower the quantity`
+            : null
       const unitPrice = product.prices[format]
       return { ...l, unitPrice, unavailable, changed: !unavailable && unitPrice !== l.unitPrice }
     })

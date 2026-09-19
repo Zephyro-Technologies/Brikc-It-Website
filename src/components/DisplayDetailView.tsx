@@ -6,7 +6,8 @@ import { Check, Package, ShieldCheck, Truck } from "lucide-react"
 import { useCart } from "../cart"
 import { money } from "../lib/money"
 import type { Product } from "../data"
-import { cardTag, displayVisual, specs, subline } from "../lib/product-view"
+import { cardTag, displayVisual, lowVariantStockNote, specs, subline } from "../lib/product-view"
+import { useShopSettings } from "../lib/shop-settings"
 import { DisplayCard } from "./DisplayCard"
 import { Reveal } from "./ui"
 
@@ -29,6 +30,7 @@ export default function DisplayDetailView({
   product: Product
   suggestions: Product[]
 }) {
+  const { lowStockAt } = useShopSettings()
   const [activeImg, setActiveImg] = useState(0)
   // Undefined until the shopper picks one; falls back to the cheapest
   // in-stock size below so the price shown always matches something addable.
@@ -51,6 +53,11 @@ export default function DisplayDetailView({
   const canAdd = product.inStock && Boolean(activeVariant?.inStock)
   const tag = cardTag(product)
   const visual = displayVisual(product)
+  const running = canAdd && activeVariant ? lowVariantStockNote(activeVariant, lowStockAt) : null
+
+  // Capped by the chosen size's own count — a 40cm frame running low says
+  // nothing about the 60cm on the shelf beside it.
+  const maxQty = Math.min(10, Math.max(1, activeVariant?.stock ?? 1))
 
   const onAdd = () => {
     if (!canAdd || !activeVariant) return
@@ -116,7 +123,7 @@ export default function DisplayDetailView({
         <Reveal delay={80}>
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-[var(--surface-2)] px-3 py-1 text-xs font-semibold tracking-wider text-[var(--muted)] uppercase">
-              {product.category}
+              {product.category || "Display"}
             </span>
             {tag && (
               <span
@@ -170,6 +177,12 @@ export default function DisplayDetailView({
                 {activeVariant ? money(activeVariant.price) : "—"}
               </div>
 
+              {/* Each size is stocked on its own shelf, so the count that
+                  matters is the chosen one's, not the product's. */}
+              {running && (
+                <p className="mt-3 text-sm font-semibold text-[var(--primary)]">{running}</p>
+              )}
+
               <div className="mt-7 flex flex-wrap items-center gap-3">
                 <div className="flex items-center rounded-full border border-[var(--border)] bg-white">
                   <button
@@ -184,8 +197,9 @@ export default function DisplayDetailView({
                   <button
                     type="button"
                     aria-label="Increase quantity"
-                    onClick={() => setQty((q) => q + 1)}
-                    className="mat-btn grid h-11 w-11 place-items-center rounded-full text-lg hover:bg-[var(--surface-2)]"
+                    onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+                    disabled={qty >= maxQty}
+                    className="mat-btn grid h-11 w-11 place-items-center rounded-full text-lg hover:bg-[var(--surface-2)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                   >
                     +
                   </button>

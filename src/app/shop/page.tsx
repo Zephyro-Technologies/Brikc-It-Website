@@ -1,7 +1,7 @@
 import { Suspense } from "react"
 import type { Metadata } from "next"
 import ShopView from "../../components/ShopView"
-import { getProducts } from "../../lib/shop"
+import { getCategories, getProducts } from "../../lib/shop"
 
 export const metadata: Metadata = {
   title: "Shop all builds — brikc.it",
@@ -16,11 +16,11 @@ export default async function ShopPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  const [products] = await Promise.all([getProducts(), searchParams])
+  const [products, categories] = await Promise.all([getProducts(), getCategories(), searchParams])
 
   return (
     <Suspense fallback={null}>
-      <ShopView products={products} />
+      <ShopView products={products} categories={categories} />
     </Suspense>
   )
 }

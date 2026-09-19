@@ -4,6 +4,7 @@ import { CartProvider } from "../cart"
 import { Nav, Footer, CartDrawer } from "../components/Layout"
 import { ScrollToTop } from "../components/ScrollToTop"
 import { getSettings } from "../lib/shop"
+import { ShopSettingsProvider } from "../lib/shop-settings"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -14,24 +15,27 @@ export const metadata: Metadata = {
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  // Only the footer's Instagram handle needs this now — prices live on the
-  // product, so the cart no longer depends on any store setting.
+  // The footer's Instagram handle, and the threshold the cards use to decide
+  // when to say "Only 2 left". Prices live on the product, so the cart still
+  // depends on no store setting.
   const settings = await getSettings()
 
   return (
     <html lang="en">
       <body>
-        <CartProvider>
-          <Suspense fallback={null}>
-            <ScrollToTop />
-          </Suspense>
-          <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-            <Nav />
-            <CartDrawer />
-            <main>{children}</main>
-            <Footer instagram={settings.instagram} />
-          </div>
-        </CartProvider>
+        <ShopSettingsProvider value={{ lowStockAt: settings.lowStockAt }}>
+          <CartProvider>
+            <Suspense fallback={null}>
+              <ScrollToTop />
+            </Suspense>
+            <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+              <Nav />
+              <CartDrawer />
+              <main>{children}</main>
+              <Footer instagram={settings.instagram} />
+            </div>
+          </CartProvider>
+        </ShopSettingsProvider>
       </body>
     </html>
   )

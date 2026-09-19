@@ -54,10 +54,12 @@ function Hero({ categories }: { categories: StoreCategory[] }) {
             </Link>
           </div>
           <div className="mt-8 flex flex-wrap gap-2">
+            {/* Linked by slug, not name: renaming a category in the admin
+                cascades to its builds but must not break a link in the wild. */}
             {categories.map((c) => (
               <Link
-                key={c.name}
-                href={`/shop?cat=${c.name}`}
+                key={c.slug}
+                href={`/shop?cat=${c.slug}`}
                 className="mat-btn rounded-full border border-[var(--border)] bg-white/70 px-4 py-2 text-sm font-medium text-[var(--muted)] backdrop-blur hover:border-[var(--primary)] hover:text-[var(--primary)]"
               >
                 {c.name}

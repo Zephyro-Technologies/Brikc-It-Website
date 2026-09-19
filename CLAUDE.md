@@ -93,7 +93,34 @@ Prices are PKR, and for a model every format carries its own price (`price_boxed
 use `fromPrice()`, the cheapest format actually on sale, so a build not sold boxed never
 advertises a boxed price.
 
-Two flags gate availability and the UI honours both: `formats` (any of the three can be off —
+**Categories are rows, not an enum.** `products.category` is text with a foreign key onto
+`categories(name)`, `ON UPDATE CASCADE ON DELETE RESTRICT` — so renaming a category moves every
+build carrying it in the same statement, and deleting one that still holds builds is refused
+rather than orphaning them. `categories.slug` is what `?cat=` carries and what `ShopView` filters
+on, so a rename never breaks a shared link. Nothing is hardcoded: the chips on `/shop` and in the
+hero are whatever `getCategories()` returns, and a shop with no categories shows no chips.
+A display's category is **null** — it belongs to no shopper-facing category, and a CHECK enforces
+`(kind = 'model') = (category is not null)`.
+
+**Stock is a count, not a switch.** `products.stock` and `product_variants.stock` are integers;
+`in_stock` still exists on both but is **GENERATED** as `stock > 0`, so writing it is an error
+and the two can never disagree. One count per build: a model's three formats all come off the
+same kit and share it, while a display is counted per variant and `products.stock` is the sum,
+maintained by a trigger on `product_variants`. Stock can go negative — that is "oversold", and
+it is shown rather than clamped.
+
+The count moves when an order is marked **paid**, not when it is placed (a trigger on `orders`;
+`private.stock_is_committed()` names the statuses that hold stock, and moving back out of one
+returns it). Orders arrive `pending_payment` and settle by bank transfer, so holding stock at
+checkout would let an abandoned cart sit on the last unit. The accepted trade is that two
+shoppers can order the last one before either pays. `place_order` reads the count and never
+writes it, but does refuse a line for more than is on the shelf.
+
+`settings.low_stock_at` is the threshold at which a card starts saying "Only 2 left"; zero turns
+it off. The root layout publishes it through `ShopSettingsProvider` so cards on all five pages
+read it without every page threading a prop.
+
+Two things gate availability and the UI honours both: `formats` (any of the three can be off —
 `ProductDetailView` falls back to the first available rather than trusting its state) and
 `inStock` (badge, sold-out label, Add to cart disabled).
 
@@ -122,7 +149,7 @@ The placed order reaches `/checkout/confirmation` through `sessionStorage` under
 | Route | Mode | Why |
 | --- | --- | --- |
 | `/`, `/shop/[slug]`, `/booklets/[id]` | prerendered | static HTML, revalidated on demand |
-| `/shop` | dynamic | awaits `searchParams` so `useSearchParams()` in `ShopView` resolves server-side and the grid ships as real HTML for any `?cat=` |
+| `/shop` | dynamic | awaits `searchParams` so `useSearchParams()` in `ShopView` resolves server-side and the grid ships as real HTML for any `?cat=`; also why a category change needs no revalidation here |
 | `/best-sellers`, `/displays`, `/displays/[slug]`, `/booklets` | prerendered | all read the database; a content or catalogue save has to revalidate them |
 | `/frames` | redirect | `redirect("/displays")`, so old links don't 404 |
 | `/checkout`, `/checkout/confirmation` | `force-dynamic` | a stale copy could quote an old total or an old bank account |

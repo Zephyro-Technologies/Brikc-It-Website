@@ -6,7 +6,13 @@
  * strings a card shows are derived in `src/lib/product-view.ts`.
  */
 
-export type Category = "F1" | "Cars" | "Bikes" | "Collector" | "Displays"
+/**
+ * A category is whatever the admin has created — a row in `categories`, not a
+ * fixed list. Builds carry the category's name; `StoreCategory.slug` is what the
+ * shop filters on, so renaming one doesn't break a link somebody has shared.
+ * Empty for a display, which belongs to no shopper-facing category.
+ */
+export type Category = string
 
 export type FormatKey = "built" | "boxed" | "framed"
 
@@ -25,8 +31,15 @@ export const FORMAT_LABELS: Record<FormatKey, string> = {
  */
 export type ProductKind = "model" | "display"
 
-/** One size a display can be ordered in. */
-export type Variant = { id: string; label: string; price: number; inStock: boolean }
+/** One size a display can be ordered in, stocked on its own shelf. */
+export type Variant = {
+  id: string
+  label: string
+  price: number
+  /** How many are left. `inStock` is this being above zero, nothing more. */
+  stock: number
+  inStock: boolean
+}
 
 export type Product = {
   slug: string
@@ -54,11 +67,20 @@ export type Product = {
   formats: Record<FormatKey, boolean>
   /** The sizes a display comes in, priced and stocked independently. Empty for a model. */
   variants: Variant[]
+  /**
+   * How many can be sold. One number per build: a model's three formats all come
+   * off the same kit, and a display's is the sum of its variants. Goes negative
+   * only when two orders for the last unit are both marked paid.
+   */
+  stock: number
+  /** `stock > 0`, and never anything else — the database generates it. */
   inStock: boolean
   featured: boolean
 }
 
 export type StoreCategory = {
+  /** What the shop filters on, and what `?cat=` carries. Survives a rename. */
+  slug: string
   name: Category
   blurb: string
   image: string
@@ -79,6 +101,11 @@ export type FaqItem = {
 export type Settings = {
   leadTimes: { standard: string; framed: string }
   instagram: string
+  /**
+   * At or below this many left, a card says so. Set in the admin; zero turns the
+   * nudge off entirely rather than showing it on the last one.
+   */
+  lowStockAt: number
 }
 
 export type Guide = {
@@ -98,7 +125,7 @@ export type Guide = {
  */
 export function fromPrice(product: Product): number {
   if (product.kind === "display") {
-    const inStock = product.variants.filter((v) => v.inStock).map((v) => v.price)
+    const inStock = product.variants.filter((v) => v.stock > 0).map((v) => v.price)
     return inStock.length ? Math.min(...inStock) : 0
   }
   const sold = FORMAT_KEYS.filter((f) => product.formats[f]).map((f) => product.prices[f])

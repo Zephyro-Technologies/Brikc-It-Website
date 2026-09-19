@@ -6,7 +6,16 @@ import { Check } from "lucide-react"
 import { useCart } from "../cart"
 import { money } from "../lib/money"
 import type { Product } from "../data"
-import { cardTag, cheapestVariant, displayVisual, fromPrice, isSellable, subline } from "../lib/product-view"
+import {
+  cardTag,
+  cheapestVariant,
+  displayVisual,
+  fromPrice,
+  isSellable,
+  lowStockNote,
+  subline,
+} from "../lib/product-view"
+import { useShopSettings } from "../lib/shop-settings"
 
 /**
  * A display's card on /displays and the homepage preview — the display
@@ -16,14 +25,18 @@ import { cardTag, cheapestVariant, displayVisual, fromPrice, isSellable, subline
  * button rather than one that would fail at checkout.
  */
 export function DisplayCard({ product }: { product: Product }) {
+  const { lowStockAt } = useShopSettings()
   const tag = cardTag(product)
   const sellable = isSellable(product)
   const visual = displayVisual(product)
+  // A display's count is the sum of its sizes, which is the right number for a
+  // card — the detail page narrows it to the size actually chosen.
+  const running = sellable ? lowStockNote(product, lowStockAt) : null
 
   return (
     <Link
       href={`/displays/${product.slug}`}
-      className="mat-btn group flex flex-col overflow-hidden rounded-3xl bg-white shadow-[var(--shadow-1)] hover:-translate-y-1 hover:shadow-[var(--shadow-2)]"
+      className="mat-btn group flex h-full flex-col overflow-hidden rounded-3xl bg-white shadow-[var(--shadow-1)] hover:-translate-y-1 hover:shadow-[var(--shadow-2)]"
     >
       <div className="relative overflow-hidden">
         {visual.kind === "image" ? (
@@ -59,7 +72,8 @@ export function DisplayCard({ product }: { product: Product }) {
           {product.name}
         </h3>
         <p className="mt-1 text-xs text-[var(--muted)]">{subline(product)}</p>
-        <div className="mt-4 flex items-center justify-between gap-2">
+        {running && <p className="mt-1.5 text-xs font-semibold text-[var(--primary)]">{running}</p>}
+        <div className="mt-auto flex items-center justify-between gap-2 pt-4">
           {/* No sellable size means no price to advertise. */}
           {sellable ? (
             <span className="font-bold">

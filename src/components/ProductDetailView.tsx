@@ -6,7 +6,8 @@ import { Check, Package, ShieldCheck, Truck } from "lucide-react"
 import { useCart } from "../cart"
 import { money } from "../lib/money"
 import { FORMAT_LABELS, type FormatKey, type Product } from "../data"
-import { cardTag, productImage, soldFormats, specs, subline } from "../lib/product-view"
+import { cardTag, lowStockNote, productImage, soldFormats, specs, subline } from "../lib/product-view"
+import { useShopSettings } from "../lib/shop-settings"
 import { ProductCard, Reveal } from "./ui"
 
 /**
@@ -23,10 +24,14 @@ const REASSURANCE = [
 export default function ProductDetailView({
   product,
   suggestions,
+  categorySlug = "",
 }: {
   product: Product | undefined
   suggestions: Product[]
+  /** Slug of the build's category, for the breadcrumb. Empty links to /shop. */
+  categorySlug?: string
 }) {
+  const { lowStockAt } = useShopSettings()
   const available = product ? soldFormats(product) : []
 
   // Falls back to the first sold format rather than trusting old state — a
@@ -65,6 +70,12 @@ export default function ProductDetailView({
 
   const canAdd = product.inStock && available.length > 0
   const tag = cardTag(product)
+  const running = canAdd ? lowStockNote(product, lowStockAt) : null
+
+  // All three formats come off the same kit, so one count caps the quantity
+  // whichever is chosen. place_order refuses more than this anyway; stopping the
+  // stepper is how the shopper finds out before the checkout, not at it.
+  const maxQty = Math.min(10, Math.max(1, product.stock))
 
   const onAdd = () => {
     if (!canAdd) return
@@ -80,7 +91,10 @@ export default function ProductDetailView({
           Shop
         </Link>
         <span>/</span>
-        <Link href={`/shop?cat=${product.category}`} className="hover:text-[var(--foreground)]">
+        <Link
+          href={categorySlug ? `/shop?cat=${categorySlug}` : "/shop"}
+          className="hover:text-[var(--foreground)]"
+        >
           {product.category}
         </Link>
         <span>/</span>
@@ -188,8 +202,9 @@ export default function ProductDetailView({
               <button
                 type="button"
                 aria-label="Increase quantity"
-                onClick={() => setQty((q) => q + 1)}
-                className="mat-btn grid h-11 w-11 place-items-center rounded-full text-lg hover:bg-[var(--surface-2)]"
+                onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+                disabled={qty >= maxQty}
+                className="mat-btn grid h-11 w-11 place-items-center rounded-full text-lg hover:bg-[var(--surface-2)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
               >
                 +
               </button>
@@ -213,6 +228,10 @@ export default function ProductDetailView({
               )}
             </button>
           </div>
+
+          {running && (
+            <p className="mt-4 text-sm font-semibold text-[var(--primary)]">{running}</p>
+          )}
 
           <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[var(--muted)]">
             {REASSURANCE.map(({ icon: Icon, text }) => (

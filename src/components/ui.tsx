@@ -5,6 +5,7 @@ import Link from "next/link"
 import { ArrowRight, Check } from "lucide-react"
 import { useCart } from "../cart"
 import { money } from "../lib/money"
+import { useShopSettings } from "../lib/shop-settings"
 import type { Product } from "../data"
 import {
   cardTag,
@@ -13,6 +14,7 @@ import {
   displayVisual,
   fromPrice,
   isSellable,
+  lowStockNote,
   subline,
 } from "../lib/product-view"
 
@@ -179,15 +181,19 @@ export function AddButton({ product, className = "" }: { product: Product; class
 }
 
 export function ProductCard({ product }: { product: Product }) {
+  const { lowStockAt } = useShopSettings()
   const tag = cardTag(product)
   const soldOut = !isSellable(product)
   const visual = displayVisual(product)
   const href = product.kind === "display" ? `/displays/${product.slug}` : `/shop/${product.slug}`
+  // Only worth saying on something you can still buy — a sold-out card already
+  // carries its own badge.
+  const running = soldOut ? null : lowStockNote(product, lowStockAt)
 
   return (
     <Link
       href={href}
-      className="mat-btn group flex flex-col overflow-hidden rounded-3xl bg-white shadow-[var(--shadow-1)] hover:-translate-y-1 hover:shadow-[var(--shadow-2)]"
+      className="mat-btn group flex h-full flex-col overflow-hidden rounded-3xl bg-white shadow-[var(--shadow-1)] hover:-translate-y-1 hover:shadow-[var(--shadow-2)]"
     >
       <div className="relative overflow-hidden">
         {visual.kind === "image" ? (
@@ -220,7 +226,7 @@ export function ProductCard({ product }: { product: Product }) {
           </span>
         )}
         <span className="absolute top-3 right-3 rounded-full bg-black/55 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur">
-          {product.category}
+          {product.category || "Display"}
         </span>
       </div>
       <div className="flex flex-1 flex-col p-4">
@@ -228,7 +234,10 @@ export function ProductCard({ product }: { product: Product }) {
           {product.name}
         </h3>
         <p className="mt-1 text-xs text-[var(--muted)]">{subline(product)}</p>
-        <div className="mt-4 flex items-center justify-between gap-2">
+        {running && (
+          <p className="mt-1.5 text-xs font-semibold text-[var(--primary)]">{running}</p>
+        )}
+        <div className="mt-auto flex items-center justify-between gap-2 pt-4">
           {/* A build nobody can buy doesn't get to advertise a price. */}
           {soldOut ? (
             <span className="text-sm font-semibold text-[var(--muted)]">Not available</span>
