@@ -72,12 +72,12 @@ function CartButton() {
       type="button"
       onClick={() => setOpen(true)}
       aria-label="Open cart"
-      className="mat-btn relative flex items-center gap-2 rounded-full bg-[var(--foreground)] px-4 py-2.5 text-sm font-medium text-white shadow-[var(--shadow-1)] hover:shadow-[var(--shadow-2)]"
+      className="mat-btn relative flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-medium text-[#0b0b0d] shadow-[var(--shadow-1)] hover:bg-white/90"
     >
       <ShoppingBag className="h-[18px] w-[18px]" />
       <span className="hidden sm:inline">Cart</span>
       {count > 0 && (
-        <span className="absolute -right-1.5 -top-1.5 grid h-6 min-w-6 place-items-center rounded-full bg-[var(--primary)] px-1.5 text-xs font-bold text-white ring-2 ring-white">
+        <span className="absolute -right-1.5 -top-1.5 grid h-6 min-w-6 place-items-center rounded-full bg-[var(--primary)] px-1.5 text-xs font-bold text-white ring-2 ring-[#0b0b0d]">
           {count}
         </span>
       )}
@@ -126,16 +126,20 @@ export function Nav() {
         </div>
       )}
 
+      {/* Dark, the same #0b0b0d the footer and the Best Sellers band use. The
+          lockup's wordmark is a pale metal drawn for exactly this — on the
+          light background it sat at 2:1. Scrolled, it goes translucent and
+          blurs so the page moves underneath it rather than behind a slab. */}
       <header
         className={`sticky top-0 z-40 border-b transition-all ${
           scrolled
-            ? "border-[var(--border)] bg-white/85 shadow-[var(--shadow-1)] backdrop-blur-md"
-            : "border-transparent bg-[var(--background)]"
+            ? "border-white/10 bg-[#0b0b0d]/90 shadow-[var(--shadow-2)] backdrop-blur-md"
+            : "border-transparent bg-[#0b0b0d]"
         }`}
       >
         <nav className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
           <Link href="/" className="flex items-center" aria-label="brikc.it — home">
-            <Logo className="h-12" />
+            <Logo className="h-12" onDark />
           </Link>
 
           <div className="mx-auto hidden items-center gap-1 lg:flex">
@@ -145,8 +149,8 @@ export function Nav() {
                 href={n.to}
                 className={`mat-btn rounded-full px-4 py-2 text-sm font-medium ${
                   isActive(n)
-                    ? "bg-[var(--surface-2)] text-[var(--foreground)]"
-                    : "text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--foreground)]"
+                    ? "bg-white/10 text-white"
+                    : "text-white/65 hover:bg-white/10 hover:text-white"
                 }`}
               >
                 {n.label}
@@ -163,7 +167,7 @@ export function Nav() {
               type="button"
               aria-label="Menu"
               onClick={() => setMenuOpen((v) => !v)}
-              className="mat-btn grid h-11 w-11 place-items-center rounded-full text-[var(--foreground)] hover:bg-[var(--surface-2)] lg:hidden"
+              className="mat-btn grid h-11 w-11 place-items-center rounded-full text-white hover:bg-white/10 lg:hidden"
             >
               {menuOpen ? <X className="h-[22px] w-[22px]" /> : <Menu className="h-[22px] w-[22px]" />}
             </button>
@@ -171,7 +175,7 @@ export function Nav() {
         </nav>
 
         {menuOpen && (
-          <div className="border-t border-[var(--border)] bg-white px-4 py-2 lg:hidden">
+          <div className="border-t border-white/10 bg-[#0b0b0d] px-4 py-2 lg:hidden">
             {NAV.map((n) => (
               <Link
                 key={n.to}
@@ -179,8 +183,8 @@ export function Nav() {
                 onClick={() => setMenuOpen(false)}
                 className={`block rounded-xl px-4 py-3 text-sm font-medium ${
                   isActive(n)
-                    ? "bg-[var(--surface-2)] text-[var(--foreground)]"
-                    : "text-[var(--foreground)] hover:bg-[var(--surface-2)]"
+                    ? "bg-white/10 text-white"
+                    : "text-white/80 hover:bg-white/10"
                 }`}
               >
                 {n.label}
@@ -364,8 +368,7 @@ export function Footer({ instagram = "@brikc.it" }: { instagram?: string }) {
         <div>
           <h4 className="text-sm font-bold tracking-wider text-white/50 uppercase">Explore</h4>
           <ul className="mt-4 space-y-2.5 text-sm">
-            {/* Sections only — a filtered view of the shop isn't somewhere to go. */}
-            {NAV.filter((n) => !n.shortcut).map((n) => (
+            {NAV.map((n) => (
               <li key={n.to}>
                 <Link href={n.to} className="text-white/85 hover:text-[var(--primary-2)]">
                   {n.label}
