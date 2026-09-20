@@ -35,30 +35,30 @@ function InstagramIcon({ className = "" }: { className?: string }) {
   )
 }
 
-function LogoMark({ className = "", onDark = false }: { className?: string; onDark?: boolean }) {
-  return (
-    /* eslint-disable-next-line @next/next/no-img-element */
-    <img
-      src={onDark ? "/brand/mark-light.webp" : "/brand/mark-dark.webp"}
-      alt=""
-      aria-hidden
-      className={`w-auto object-contain ${className}`}
-    />
-  )
-}
-
 /**
- * The full lockup, mark over wordmark.
+ * The wide lockup — mark beside wordmark. The header's logo.
  *
- * Its wordmark is a metallic grey gradient, which is handsome at size and
- * illegible small — so the header pairs the mark with type instead, and this
- * is used where there is room for it to be read.
+ * It carries its own name, so nothing is typed beside it. An earlier version of
+ * this header set the mark next to text in the page font, which meant the site
+ * showed a wordmark the brand doesn't have.
  */
 function Logo({ className = "", onDark = false }: { className?: string; onDark?: boolean }) {
   return (
     /* eslint-disable-next-line @next/next/no-img-element */
     <img
       src={onDark ? "/brand/logo-light.webp" : "/brand/logo-dark.webp"}
+      alt="brikc.it"
+      className={`w-auto object-contain ${className}`}
+    />
+  )
+}
+
+/** The stacked lockup — mark above wordmark. The footer's, where it has room. */
+function LogoStacked({ className = "", onDark = false }: { className?: string; onDark?: boolean }) {
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={onDark ? "/brand/logo-stacked-light.webp" : "/brand/logo-stacked-dark.webp"}
       alt="brikc.it"
       className={`w-auto object-contain ${className}`}
     />
@@ -134,11 +134,8 @@ export function Nav() {
         }`}
       >
         <nav className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
-          <Link href="/" className="flex items-center gap-2.5" aria-label="brikc.it — home">
-            <LogoMark className="h-11" />
-            <span className="font-display text-xl tracking-tight" style={{ fontWeight: 800 }}>
-              brikc.it
-            </span>
+          <Link href="/" className="flex items-center" aria-label="brikc.it — home">
+            <Logo className="h-12" />
           </Link>
 
           <div className="mx-auto hidden items-center gap-1 lg:flex">
@@ -340,32 +337,37 @@ const YEAR = new Date().getFullYear()
 export function Footer({ instagram = "@brikc.it" }: { instagram?: string }) {
   const handle = instagram.replace(/^@/, "")
   return (
-    <footer className="border-t border-[var(--border)] bg-white">
+    /* Dark, like the Best Sellers band — the same two literals, not tokens,
+       because this is a deliberate inversion rather than a surface the theme
+       decides. The logo's wordmark is a pale metal drawn to sit on dark: at
+       1.4:1 against the light background it could not be read at all, and at
+       12.9:1 here it is what it was made to be. */
+    <footer className="bg-[#0b0b0d] text-white">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
         <div>
-          <Link href="/" className="flex items-center gap-2.5" aria-label="brikc.it — home">
-            <Logo className="h-20" />
+          <Link href="/" className="inline-flex" aria-label="brikc.it — home">
+            <LogoStacked className="h-28" onDark />
           </Link>
-          <p className="mt-4 max-w-xs text-sm text-[var(--muted)]">
+          <p className="mt-4 max-w-xs text-sm text-white/60">
             Cars, bikes, F1 and collector builds — boxed, built, or mounted in a display frame.
           </p>
           <a
             href={`https://instagram.com/${handle}`}
             target="_blank"
             rel="noreferrer"
-            className="mat-btn mt-5 inline-flex items-center gap-2 rounded-full bg-[var(--surface-2)] px-4 py-2 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--primary)] hover:text-white"
+            className="mat-btn mt-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-[var(--primary)]"
           >
             <InstagramIcon className="h-4 w-4" />@{handle}
           </a>
         </div>
 
         <div>
-          <h4 className="text-sm font-bold tracking-wider text-[var(--muted)] uppercase">Explore</h4>
+          <h4 className="text-sm font-bold tracking-wider text-white/50 uppercase">Explore</h4>
           <ul className="mt-4 space-y-2.5 text-sm">
             {/* Sections only — a filtered view of the shop isn't somewhere to go. */}
             {NAV.filter((n) => !n.shortcut).map((n) => (
               <li key={n.to}>
-                <Link href={n.to} className="text-[var(--foreground)] hover:text-[var(--primary)]">
+                <Link href={n.to} className="text-white/85 hover:text-[var(--primary-2)]">
                   {n.label}
                 </Link>
               </li>
@@ -377,13 +379,13 @@ export function Footer({ instagram = "@brikc.it" }: { instagram?: string }) {
             mailing list here. Instagram is the one channel getSettings()
             actually gives the footer, so that's what this column offers. */}
         <div>
-          <h4 className="text-sm font-bold tracking-wider text-[var(--muted)] uppercase">Get in touch</h4>
-          <p className="mt-4 text-sm text-[var(--muted)]">Questions before you order? We reply fastest on Instagram.</p>
+          <h4 className="text-sm font-bold tracking-wider text-white/50 uppercase">Get in touch</h4>
+          <p className="mt-4 text-sm text-white/60">Questions before you order? We reply fastest on Instagram.</p>
           <a
             href={`https://instagram.com/${handle}`}
             target="_blank"
             rel="noreferrer"
-            className="mat-btn mt-3 inline-flex items-center gap-2 rounded-full bg-[var(--foreground)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-black"
+            className="mat-btn mt-3 inline-flex items-center gap-2 rounded-full bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-white hover:brightness-110"
           >
             <MessageCircle className="h-4 w-4" />
             Message us
@@ -391,14 +393,14 @@ export function Footer({ instagram = "@brikc.it" }: { instagram?: string }) {
         </div>
       </div>
 
-      <div className="border-t border-[var(--border)] px-4 py-6 sm:px-6">
+      <div className="border-t border-white/10 px-4 py-6 sm:px-6">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
-          <p className="text-xs whitespace-nowrap text-[var(--muted)]">© {YEAR} brikc.it — built by hand, framed with care.</p>
+          <p className="text-xs whitespace-nowrap text-white/45">© {YEAR} brikc.it — built by hand, framed with care.</p>
           {/* Kept from the previous chrome: the shop calls its models
               "LEGO-style" throughout, so saying plainly that the LEGO Group
               has nothing to do with us is what keeps that descriptive rather
               than a suggestion of endorsement. */}
-          <p className="max-w-2xl text-xs leading-relaxed text-[var(--muted)]">
+          <p className="max-w-2xl text-xs leading-relaxed text-white/45">
             LEGO&reg; is a trademark of the LEGO Group, which does not sponsor, authorise or endorse this
             site. brikc.it is not affiliated with the LEGO Group, nor with any vehicle manufacturer, racing
             team or championship whose car or livery a model may resemble — such names are used only to
