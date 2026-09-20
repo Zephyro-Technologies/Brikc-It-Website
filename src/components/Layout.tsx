@@ -347,7 +347,7 @@ export function Footer({ instagram = "@brikc.it" }: { instagram?: string }) {
             <Logo className="h-20" />
           </Link>
           <p className="mt-4 max-w-xs text-sm text-[var(--muted)]">
-            Cars, bikes, F1 and collector builds — boxed, built, or mounted in an LED-lit frame.
+            Cars, bikes, F1 and collector builds — boxed, built, or mounted in a display frame.
           </p>
           <a
             href={`https://instagram.com/${handle}`}

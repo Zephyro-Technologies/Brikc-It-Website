@@ -5,7 +5,17 @@ import Link from "next/link"
 import { Check, ChevronLeft, ChevronRight, Package, ShieldCheck, Truck, X } from "lucide-react"
 import { useCart } from "../cart"
 import { money } from "../lib/money"
-import { FORMAT_LABELS, embedUrl, priceOf, type FormatKey, type Product } from "../data"
+import {
+  FORMAT_LABELS,
+  FRAME_LABELS,
+  embedUrl,
+  frameChoices,
+  framePrice,
+  priceOf,
+  type FormatKey,
+  type FrameChoice,
+  type Product,
+} from "../data"
 import { Markdown } from "../lib/markdown"
 import { cardTag, lowStockNote, productImage, soldFormats, specs, subline } from "../lib/product-view"
 import { useShopSettings } from "../lib/shop-settings"
@@ -45,9 +55,9 @@ export default function ProductDetailView({
   const [lightbox, setLightbox] = useState(false)
   const closeRef = useRef<HTMLButtonElement>(null)
   const openerRef = useRef<HTMLElement | null>(null)
-  // Off until the shopper asks for it, so the price on screen is the base price
-  // until they choose otherwise.
-  const [framed, setFramed] = useState(false)
+  // "none" until the shopper asks for a frame, so the price on screen is the
+  // base price until they choose otherwise.
+  const [frame, setFrame] = useState<FrameChoice>("none")
   const [tab, setTab] = useState<"description" | "specs">("description")
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
@@ -144,9 +154,12 @@ export default function ProductDetailView({
   const tag = cardTag(product)
   const running = canAdd ? lowStockNote(product, lowStockAt) : null
   // A frame sits on top of whichever assembly was chosen, so an unassembled kit
-  // can be bought with the frame to put it in later.
-  const withFrame = framed && product.frame.offered
-  const total = priceOf(product, activeFormat, withFrame)
+  // can be bought with the frame to put it in later. Falls back to no frame if
+  // the one in state isn't sold on this build — the same defensiveness
+  // activeFormat uses, for the same reason.
+  const frames = frameChoices(product)
+  const activeFrame: FrameChoice = frames.includes(frame) ? frame : "none"
+  const total = priceOf(product, activeFormat, activeFrame)
 
   // Both assemblies come off the same kit, so one count caps the quantity
   // whichever is chosen — and a frame does not consume another one. place_order refuses more than this anyway; stopping the
@@ -155,7 +168,7 @@ export default function ProductDetailView({
 
   const onAdd = () => {
     if (!canAdd) return
-    add(product, { format: activeFormat, framed: withFrame }, qty)
+    add(product, { format: activeFormat, frame: activeFrame }, qty)
     setAdded(true)
     setQty(1)
   }
@@ -299,25 +312,52 @@ export default function ProductDetailView({
           )}
 
           {/* The frame is a separate question from how assembled it arrives, so
-              it gets its own control rather than a third chip above. Priced on
-              its own too, so what it costs is visible instead of buried in a
+              it gets its own control rather than more chips above. A frame can
+              be lit or not — different objects at different prices — so this is
+              a choice of three, and each price is shown rather than buried in a
               bundle. */}
-          {product.frame.offered && (
-            <label className="mt-3 flex cursor-pointer items-center gap-3 rounded-2xl border border-[var(--border)] bg-white p-3.5">
-              <input
-                type="checkbox"
-                checked={framed}
-                onChange={(e) => setFramed(e.target.checked)}
-                className="h-4 w-4 accent-[var(--primary)]"
-              />
-              <span className="flex-1 text-sm">
-                <span className="font-semibold">Add an LED display frame</span>
-                <span className="block text-[var(--muted)]">
-                  Mounted and lit, ready for the wall.
-                </span>
-              </span>
-              <span className="font-semibold whitespace-nowrap">+ {money(product.frame.price)}</span>
-            </label>
+          {frames.length > 0 && (
+            <fieldset className="mt-4 rounded-2xl border border-[var(--border)] bg-white p-1.5">
+              <legend className="sr-only">Display frame</legend>
+              {(["none", ...frames] as FrameChoice[]).map((f) => {
+                const on = activeFrame === f
+                return (
+                  <label
+                    key={f}
+                    className={`mat-btn flex cursor-pointer items-center gap-3 rounded-xl p-3 ${
+                      on ? "bg-[var(--surface-2)]" : "hover:bg-[var(--surface-2)]/60"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="frame"
+                      value={f}
+                      checked={on}
+                      onChange={() => setFrame(f)}
+                      className="h-4 w-4 accent-[var(--primary)]"
+                    />
+                    <span className="flex-1 text-sm">
+                      <span className="font-semibold">
+                        {f === "none" ? "No frame" : FRAME_LABELS[f]}
+                      </span>
+                      {f === "led" && (
+                        <span className="block text-[var(--muted)]">
+                          Backlit, ready for the wall.
+                        </span>
+                      )}
+                      {f === "plain" && (
+                        <span className="block text-[var(--muted)]">
+                          Mounted and ready to hang, unlit.
+                        </span>
+                      )}
+                    </span>
+                    <span className="font-semibold whitespace-nowrap">
+                      {f === "none" ? "—" : `+ ${money(framePrice(product, f))}`}
+                    </span>
+                  </label>
+                )
+              })}
+            </fieldset>
           )}
 
           <div className="mt-4 text-3xl font-bold">{money(total)}</div>
@@ -403,24 +443,31 @@ export default function ProductDetailView({
           </div>
         </div>
 
+        {/* Both panels are rendered and one is hidden, rather than the inactive
+            one not existing. The specification is part of what this page is
+            about — a crawler that only ever sees the description, and a reader
+            searching the page for a piece count, would both come up empty if the
+            other half only appeared on a click. */}
         <div className="pt-7">
-          {tab === "description" ? (
+          <div hidden={tab !== "description"}>
             <Markdown
               text={product.description}
               className="max-w-3xl text-lg leading-relaxed text-[var(--muted)]"
             />
-          ) : (
-            <dl className="grid max-w-3xl grid-cols-2 gap-px overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--border)]">
-              {specs(product).map((row) => (
-                <div key={row.label} className="bg-white p-4">
-                  <dt className="text-xs font-semibold tracking-wider text-[var(--muted)] uppercase">
-                    {row.label}
-                  </dt>
-                  <dd className="mt-1 font-semibold">{row.value}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
+          </div>
+          <dl
+            hidden={tab !== "specs"}
+            className="grid max-w-3xl grid-cols-2 gap-px overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--border)]"
+          >
+            {specs(product).map((row) => (
+              <div key={row.label} className="bg-white p-4">
+                <dt className="text-xs font-semibold tracking-wider text-[var(--muted)] uppercase">
+                  {row.label}
+                </dt>
+                <dd className="mt-1 font-semibold">{row.value}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </Reveal>
 

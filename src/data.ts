@@ -91,11 +91,12 @@ export type Product = {
   /** Whether it can be bought unassembled, assembled, or either. Unused for a display. */
   formats: Record<FormatKey, boolean>
   /**
-   * The LED frame, sold on top of whichever assembly is chosen rather than as a
-   * third bundle — so an unassembled kit can be bought with a frame to put it in
-   * later. `price` is the frame alone, not a total.
+   * The frame, sold on top of whichever assembly is chosen rather than as a
+   * bundle — so an unassembled kit can be bought with a frame to put it in
+   * later. Each price is the frame alone, never a total, and a zero means that
+   * kind of frame isn't offered on this build.
    */
-  frame: { offered: boolean; price: number }
+  frame: { offered: boolean; plain: number; led: number }
   /** At most two. Empty when none have been added. */
   videos: ProductVideo[]
   /** The sizes a display comes in, priced and stocked independently. Empty for a model. */
@@ -165,9 +166,37 @@ export function fromPrice(product: Product): number {
   return sold.length ? Math.min(...sold) : product.prices.boxed
 }
 
-/** What a build costs assembled that way, with the frame if it was asked for. */
-export function priceOf(product: Product, format: FormatKey, framed: boolean): number {
-  return product.prices[format] + (framed && product.frame.offered ? product.frame.price : 0)
+/**
+ * Which frame went with a line, if any.
+ *
+ * A frame can be had lit or unlit — they are different objects at different
+ * prices, so this is a choice of three rather than a yes/no.
+ */
+export type FrameChoice = "none" | "plain" | "led"
+
+/** What that kind of frame costs on this build. Zero when it isn't offered. */
+export function framePrice(product: Product, frame: FrameChoice): number {
+  if (!product.frame.offered || frame === "none") return 0
+  return frame === "led" ? product.frame.led : product.frame.plain
+}
+
+/** The frames this build actually sells, in the order they are offered. */
+export function frameChoices(product: Product): FrameChoice[] {
+  if (!product.frame.offered) return []
+  const out: FrameChoice[] = []
+  if (product.frame.plain > 0) out.push("plain")
+  if (product.frame.led > 0) out.push("led")
+  return out
+}
+
+export const FRAME_LABELS: Record<Exclude<FrameChoice, "none">, string> = {
+  plain: "Display frame",
+  led: "Display frame with LED",
+}
+
+/** What a build costs assembled that way, with whichever frame was asked for. */
+export function priceOf(product: Product, format: FormatKey, frame: FrameChoice): number {
+  return product.prices[format] + framePrice(product, frame)
 }
 
 /**

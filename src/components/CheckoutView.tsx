@@ -9,9 +9,11 @@ import { money } from "../lib/money"
 import {
   FORMAT_LABELS,
   cityQualifies,
+  framePrice,
   priceOf,
   type DeliveryOption,
   type FormatKey,
+  type FrameChoice,
   type Product,
   type ShippingMethod,
 } from "../data"
@@ -174,19 +176,19 @@ export default function CheckoutView({
         return { ...l, unitPrice, unavailable, changed: !unavailable && unitPrice !== l.unitPrice }
       }
       const format = l.format as FormatKey
-      const framed = Boolean(l.framed)
+      const frame: FrameChoice = l.frame ?? "none"
       const unavailable = !product.inStock
         ? "sold out"
         : !product.formats[format]
           ? `no longer sold ${FORMAT_LABELS[format].toLowerCase()}`
-          : framed && !product.frame.offered
-            ? "no longer sold with a frame"
+          : frame !== "none" && framePrice(product, frame) <= 0
+            ? "no longer sold with that frame"
             : l.qty > product.stock
               ? `down to ${product.stock} — lower the quantity`
               : null
       // Recomputed from the live catalogue, frame included. The stored unitPrice
       // is last week's; this is the number the database will actually charge.
-      const unitPrice = priceOf(product, format, framed)
+      const unitPrice = priceOf(product, format, frame)
       return { ...l, unitPrice, unavailable, changed: !unavailable && unitPrice !== l.unitPrice }
     })
   }, [lines, products])
@@ -222,7 +224,7 @@ export default function CheckoutView({
           lines: priced.map((l) =>
             l.kind === "display"
               ? { slug: l.slug, variant: l.variantId, qty: l.qty }
-              : { slug: l.slug, format: l.format, framed: Boolean(l.framed), qty: l.qty },
+              : { slug: l.slug, format: l.format, frame: l.frame ?? "none", qty: l.qty },
           ),
           shippingMethod: chosen?.id ?? "standard",
         }),

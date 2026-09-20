@@ -34,7 +34,7 @@ export const STEPS = [
   {
     n: "02",
     title: "Choose the format",
-    desc: "Boxed and sealed, built by hand, or mounted in an LED-lit frame — set per item.",
+    desc: "Unassembled in the box or built by hand, with a display frame — lit or plain — if you want one.",
   },
   {
     n: "03",

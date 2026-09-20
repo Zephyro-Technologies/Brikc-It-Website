@@ -97,6 +97,15 @@ A display shows its photograph when it has one and its `swatch` — a CSS colour
 when it doesn't, so a finish nobody has shot yet still reads as a material. A display with no
 priced variants renders and says it cannot be ordered, which is how every one of them arrives.
 
+**A frame is lit or unlit.** `price_frame_plain` and `price_frame_led` are the two prices, each the
+frame alone; a zero means that kind isn't offered, and `sells_framed` still means "a frame can be
+added at all". The shopper picks one of three — none, plain, led — and `order_lines.frame_led` records
+which, beside `with_frame`. `price_frame`, the single price that came before, is kept in step by the
+admin for the storefront still deployed during a changeover and read by `place_order` when a request
+arrives in the old `{"framed": true}` shape: that page could only ever have quoted `price_frame`, so
+that is what such a line is charged. Anything claiming a frame is LED has to check which kinds are
+actually priced — `frameChoices()` — or it will contradict the chooser on the same page.
+
 **A build is an assembly plus an optional frame.** A shopper chooses unassembled or assembled —
 stored as `boxed` and `built`, which already meant that; only the labels changed, because renaming
 them would rewrite what past orders say they sold — and separately ticks an LED frame, priced on its

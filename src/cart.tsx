@@ -1,7 +1,16 @@
 "use client"
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
-import { FORMAT_LABELS, type FormatKey, type Product, type ProductKind, type Variant } from "./data"
+import {
+  FORMAT_LABELS,
+  FRAME_LABELS,
+  priceOf,
+  type FormatKey,
+  type FrameChoice,
+  type Product,
+  type ProductKind,
+  type Variant,
+} from "./data"
 import { productImage } from "./lib/product-view"
 
 export type CartLine = {
@@ -13,8 +22,8 @@ export type CartLine = {
   kind: ProductKind
   /** Set for a model line. */
   format?: FormatKey
-  /** Set for a model line: whether an LED frame was added on top. */
-  framed?: boolean
+  /** Set for a model line: which frame was added on top, if any. */
+  frame?: FrameChoice
   /** Set for a display line. */
   variantId?: string
   /** Set for a display line — the size label, for the drawer and the summary. */
@@ -23,7 +32,7 @@ export type CartLine = {
   qty: number
 }
 
-type CartChoice = { format: FormatKey; framed?: boolean } | { variant: Variant }
+type CartChoice = { format: FormatKey; frame?: FrameChoice } | { variant: Variant }
 
 /**
  * What a line is, in words: "Assembled + LED frame", "Unassembled", "60×90cm".
@@ -36,7 +45,8 @@ type CartChoice = { format: FormatKey; framed?: boolean } | { variant: Variant }
 export function lineLabel(line: CartLine): string {
   if (line.kind === "display") return line.variantLabel ?? ""
   const base = line.format ? FORMAT_LABELS[line.format] : ""
-  return line.framed ? `${base} + LED frame` : base
+  if (!line.frame || line.frame === "none") return base
+  return `${base} + ${FRAME_LABELS[line.frame].toLowerCase()}`
 }
 
 type CartCtx = {
@@ -59,6 +69,11 @@ type CartCtx = {
 
 const Ctx = createContext<CartCtx | null>(null)
 
+// v4: a frame is lit or unlit now, so a line says WHICH frame rather than
+// whether there is one — an old line's `framed: true` has no room in the new
+// shape and would silently become "no frame", quietly dropping something the
+// shopper had chosen and paid attention to. Dropped rather than migrated.
+//
 // v3: the frame stopped being a third format and became an extra on top of an
 // assembly, so a line saved before that can be holding format:"framed" — a
 // choice the shop no longer sells and place_order now refuses. Bumping the key
@@ -66,7 +81,7 @@ const Ctx = createContext<CartCtx | null>(null)
 // checkout. A lost cart is better than one that fails at the last step.
 //
 // (v2 did the same when display lines started carrying a variant.)
-const STORAGE_KEY = "brikc.cart.v3"
+const STORAGE_KEY = "brikc.cart.v4"
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([])
@@ -100,15 +115,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const add: CartCtx["add"] = (product, choice, qty = 1, opts) => {
     const isVariant = "variant" in choice
-    // With and without a frame are different lines, so adding one of each keeps
-    // them apart in the drawer instead of merging into a quantity of two.
-    const framed = !isVariant && Boolean(choice.framed) && product.frame.offered
+    // A lit frame, an unlit one and none at all are three different lines, so
+    // adding more than one keeps them apart in the drawer instead of merging
+    // into a quantity of two.
+    const frame: FrameChoice = isVariant ? "none" : (choice.frame ?? "none")
     const key = isVariant
       ? `${product.slug}-${choice.variant.id}`
-      : `${product.slug}-${choice.format}${framed ? "-framed" : ""}`
+      : `${product.slug}-${choice.format}${frame === "none" ? "" : `-${frame}`}`
     const unitPrice = isVariant
       ? choice.variant.price
-      : product.prices[choice.format] + (framed ? product.frame.price : 0)
+      : priceOf(product, choice.format, frame)
     setLines((prev) => {
       const existing = prev.find((l) => l.key === key)
       if (existing) {
@@ -128,7 +144,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           kind: product.kind,
           ...(isVariant
             ? { variantId: choice.variant.id, variantLabel: choice.variant.label }
-            : { format: choice.format, framed }),
+            : { format: choice.format, frame }),
           unitPrice,
           qty,
         },

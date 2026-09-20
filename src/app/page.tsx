@@ -37,7 +37,7 @@ function Hero({ categories }: { categories: StoreCategory[] }) {
           </h1>
           <p className="mt-5 max-w-md text-lg leading-relaxed text-[var(--foreground)]/80">
             Museum-grade scale builds of the cars, bikes and F1 machines you love — sealed in the
-            box or assembled by hand, and an LED frame to put it in whenever you want one.
+            box or assembled by hand, and a display frame to put it in whenever you want one.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link
@@ -173,7 +173,7 @@ function ShopPreview({ products }: { products: Product[] }) {
         <Reveal>
           <SectionHead
             title="Shop"
-            desc="Assembled or in the box, with an optional LED frame — a taste of the collection."
+            desc="Assembled or in the box, with an optional display frame — a taste of the collection."
             action={<ExploreMore to="/shop" label="Explore the full shop" />}
           />
         </Reveal>

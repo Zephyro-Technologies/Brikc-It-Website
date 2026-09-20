@@ -25,7 +25,7 @@ import type {
 const PRODUCT_SELECT = `
   slug, name, team, category, kind, swatch, price_boxed, price_built, price_framed,
   scale, pieces, edition, blurb, description,
-  sells_boxed, sells_built, sells_framed, featured, stock, price_frame,
+  sells_boxed, sells_built, sells_framed, featured, stock, price_frame_plain, price_frame_led,
   product_images ( url, sort ),
   product_videos ( provider, src, title, sort )
 `
@@ -37,7 +37,7 @@ const PRODUCT_SELECT = `
 const DISPLAY_SELECT = `
   slug, name, team, category, kind, swatch, price_boxed, price_built, price_framed,
   scale, pieces, edition, blurb, description,
-  sells_boxed, sells_built, sells_framed, featured, stock, price_frame,
+  sells_boxed, sells_built, sells_framed, featured, stock, price_frame_plain, price_frame_led,
   product_images ( url, sort ),
   product_videos ( provider, src, title, sort ),
   product_variants ( id, label, price, stock, sort )
@@ -63,7 +63,8 @@ type ProductRow = {
   sells_framed: boolean
   featured: boolean
   stock: number
-  price_frame: number
+  price_frame_plain: number
+  price_frame_led: number
   product_images: { url: string; sort: number }[]
   product_videos: { provider: string; src: string; title: string; sort: number }[]
 }
@@ -94,7 +95,11 @@ function toProduct(row: ProductRow, variantRows: VariantRow[] = []): Product {
     // `formats` is what a shopper can choose, so the frame is not one of them
     // any more — it rides on the choice instead, in `frame` below.
     formats: { boxed: row.sells_boxed, built: row.sells_built, framed: false },
-    frame: { offered: row.sells_framed, price: row.price_frame },
+    frame: {
+      offered: row.sells_framed,
+      plain: row.price_frame_plain,
+      led: row.price_frame_led,
+    },
     videos: [...(row.product_videos ?? [])]
       .sort((a, b) => a.sort - b.sort)
       .map((v): ProductVideo => ({

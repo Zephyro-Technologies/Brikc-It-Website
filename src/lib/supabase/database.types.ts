@@ -168,6 +168,7 @@ export type Database = {
       order_lines: {
         Row: {
           format: Database["public"]["Enums"]["format_key"] | null
+          frame_led: boolean
           id: string
           image: string
           name: string
@@ -182,6 +183,7 @@ export type Database = {
         }
         Insert: {
           format?: Database["public"]["Enums"]["format_key"] | null
+          frame_led?: boolean
           id?: string
           image?: string
           name: string
@@ -196,6 +198,7 @@ export type Database = {
         }
         Update: {
           format?: Database["public"]["Enums"]["format_key"] | null
+          frame_led?: boolean
           id?: string
           image?: string
           name?: string
@@ -489,6 +492,8 @@ export type Database = {
           price_boxed: number
           price_built: number
           price_frame: number
+          price_frame_led: number
+          price_frame_plain: number
           price_framed: number
           scale: string
           sells_boxed: boolean
@@ -515,7 +520,9 @@ export type Database = {
           price_boxed: number
           price_built: number
           price_frame?: number
-          price_framed: number
+          price_frame_led?: number
+          price_frame_plain?: number
+          price_framed?: number
           scale?: string
           sells_boxed?: boolean
           sells_built?: boolean
@@ -541,6 +548,8 @@ export type Database = {
           price_boxed?: number
           price_built?: number
           price_frame?: number
+          price_frame_led?: number
+          price_frame_plain?: number
           price_framed?: number
           scale?: string
           sells_boxed?: boolean

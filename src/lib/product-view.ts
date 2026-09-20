@@ -1,4 +1,12 @@
-import { FORMAT_KEYS, FORMAT_LABELS, fromPrice, type FormatKey, type Product, type Variant } from "../data"
+import {
+  FORMAT_KEYS,
+  FORMAT_LABELS,
+  frameChoices,
+  fromPrice,
+  type FormatKey,
+  type Product,
+  type Variant,
+} from "../data"
 
 /**
  * Presentation helpers that turn a catalogue row into the strings the cards and
@@ -90,9 +98,13 @@ export function formatSummary(product: Product): string {
   if (sold.length === 0) return "Not currently sold"
   // The frame is not one of these any more — it is an extra on top of whichever
   // is chosen — so it is named separately rather than listed as a third way to
-  // buy the build.
+  // buy the build. Which frames, though: saying "LED" on a build that only
+  // sells an unlit one contradicts the chooser a few inches up the same page.
   const base = sold.map((f) => FORMAT_LABELS[f]).join(" · ")
-  return product.frame.offered ? `${base} · LED frame optional` : base
+  const frames = frameChoices(product)
+  if (frames.length === 0) return base
+  if (frames.length === 2) return `${base} · frame optional, lit or unlit`
+  return frames[0] === "led" ? `${base} · LED frame optional` : `${base} · frame optional`
 }
 
 /** "60×90cm · 90×140cm" — the sizes a display comes in. */
