@@ -244,8 +244,12 @@ reference). Tailwind v4 with no config file; everything lives in `src/app/global
   (`#b81022`). All three sit at the logo's hue, ~354°. White text clears AA on
   `--primary` and `--primary-deep` but not on `--primary-2`, so a gradient with text
   on it runs between the first two and `--primary-2` stays decorative. Reach for a
-  token, not a hex. The exceptions are deliberate literals: the dark Best Sellers band (`#0b0b0d`,
-  `#121114`) and the brand gradients.
+  token, not a hex. The exceptions are deliberate literals: the page's chrome (`#0b0b0d`) and
+  the brand gradients. The header, the footer and the Best Sellers band are all that one black,
+  so the page opens and closes on the same colour; `#121114` is the band's second stop.
+- The chrome being dark is what makes the lockup legible: its wordmark is a pale metal, and on
+  the light header it measured 2.03:1. The Cart button is `--primary`, the only red control in
+  the header, and its count badge inverts to white because red on red is not a badge.
 - Depth is the three-step `--shadow-1/2/3` scale, not borders. `.mat-btn` goes on anything
   clickable for the press feedback.
 - `.font-display` is Roboto Slab and needs an explicit `style={{ fontWeight: 700 | 800 }}`;
@@ -256,6 +260,14 @@ reference). Tailwind v4 with no config file; everything lives in `src/app/global
   so anything using that class must be inside a `Reveal` or it never appears.
 - Quick-add on a grid card confirms inline and does *not* open the cart drawer
   (`add(..., { open: false })`); the product page's deliberate add does open it.
+- **The brand assets are generated, not hand-edited.** `Logos/` holds the two lockups as
+  supplied; `scripts/brand-assets.py` cuts `public/brand/logo.webp` (horizontal, the header),
+  `logo-stacked.webp` (vertical, the footer) and `icon.png` from them. One file per lockup, not a
+  light/dark pair — both are drawn in metal on nothing. Re-run it when the logos change; read its
+  docstring first, because the horizontal lockup is a brick in a display frame and keying the
+  white out from the corners cannot reach the inside of that frame or the bowl of the "b". Left
+  opaque they are invisible on a white page and a lit slab on a dark one, which is how the header
+  shipped with a white box in it.
 
 ### Copy must be true
 

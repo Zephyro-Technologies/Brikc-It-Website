@@ -42,23 +42,29 @@ function InstagramIcon({ className = "" }: { className?: string }) {
  * this header set the mark next to text in the page font, which meant the site
  * showed a wordmark the brand doesn't have.
  */
-function Logo({ className = "", onDark = false }: { className?: string; onDark?: boolean }) {
+function Logo({ className = "" }: { className?: string }) {
   return (
     /* eslint-disable-next-line @next/next/no-img-element */
     <img
-      src={onDark ? "/brand/logo-light.webp" : "/brand/logo-dark.webp"}
+      src="/brand/logo.webp"
       alt="brikc.it"
       className={`w-auto object-contain ${className}`}
     />
   )
 }
 
-/** The stacked lockup — mark above wordmark. The footer's, where it has room. */
-function LogoStacked({ className = "", onDark = false }: { className?: string; onDark?: boolean }) {
+/**
+ * The stacked lockup — mark above wordmark. The footer's, where it has room.
+ *
+ * There is one file per lockup, not a pair for light and dark. Both are drawn
+ * in metal on nothing, and the one thing that would need a second version —
+ * this one's wordmark is white — is the reason the footer is dark to begin with.
+ */
+function LogoStacked({ className = "" }: { className?: string }) {
   return (
     /* eslint-disable-next-line @next/next/no-img-element */
     <img
-      src={onDark ? "/brand/logo-stacked-light.webp" : "/brand/logo-stacked-dark.webp"}
+      src="/brand/logo-stacked.webp"
       alt="brikc.it"
       className={`w-auto object-contain ${className}`}
     />
@@ -72,12 +78,13 @@ function CartButton() {
       type="button"
       onClick={() => setOpen(true)}
       aria-label="Open cart"
-      className="mat-btn relative flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-medium text-[#0b0b0d] shadow-[var(--shadow-1)] hover:bg-white/90"
+      className="mat-btn relative flex items-center gap-2 rounded-full bg-[var(--primary)] px-4 py-2.5 text-sm font-medium text-white shadow-[var(--shadow-1)] hover:bg-[var(--primary-deep)]"
     >
       <ShoppingBag className="h-[18px] w-[18px]" />
       <span className="hidden sm:inline">Cart</span>
+      {/* The count inverts, because red on red is not a badge. */}
       {count > 0 && (
-        <span className="absolute -right-1.5 -top-1.5 grid h-6 min-w-6 place-items-center rounded-full bg-[var(--primary)] px-1.5 text-xs font-bold text-white ring-2 ring-[#0b0b0d]">
+        <span className="absolute -right-1.5 -top-1.5 grid h-6 min-w-6 place-items-center rounded-full bg-white px-1.5 text-xs font-bold text-[var(--primary-deep)] ring-2 ring-[#0b0b0d]">
           {count}
         </span>
       )}
@@ -139,7 +146,7 @@ export function Nav() {
       >
         <nav className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
           <Link href="/" className="flex items-center" aria-label="brikc.it — home">
-            <Logo className="h-12" onDark />
+            <Logo className="h-12" />
           </Link>
 
           <div className="mx-auto hidden items-center gap-1 lg:flex">
@@ -350,7 +357,7 @@ export function Footer({ instagram = "@brikc.it" }: { instagram?: string }) {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
         <div>
           <Link href="/" className="inline-flex" aria-label="brikc.it — home">
-            <LogoStacked className="h-28" onDark />
+            <LogoStacked className="h-28" />
           </Link>
           <p className="mt-4 max-w-xs text-sm text-white/60">
             Cars, bikes, F1 and collector builds — boxed, built, or mounted in a display frame.
