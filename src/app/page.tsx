@@ -8,7 +8,6 @@ import { getCategories, getDisplays, getGuides, getProducts } from "../lib/shop"
 import { cardTag, fromPrice, productImage, subline } from "../lib/product-view"
 import { STEPS } from "../content/site"
 import type { Guide, StoreCategory } from "../data"
-import { PRICE_BANDS } from "../data"
 
 
 function Hero({ categories }: { categories: StoreCategory[] }) {
@@ -68,24 +67,6 @@ function Hero({ categories }: { categories: StoreCategory[] }) {
             ))}
           </div>
 
-          {/* Price brackets, kept visibly apart from the categories above and
-              labelled as what they are. They land on the same /shop grid with
-              the filter already applied — a way of reading the catalogue, not
-              another shelf in it. */}
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold tracking-[0.14em] text-[var(--muted)] uppercase">
-              By price
-            </span>
-            {PRICE_BANDS.map((b) => (
-              <Link
-                key={b.id}
-                href={`/shop?price=${b.id}`}
-                className="mat-btn rounded-full px-3.5 py-1.5 text-sm font-medium text-[var(--muted)] underline decoration-[var(--border)] underline-offset-4 hover:text-[var(--primary)] hover:decoration-[var(--primary)]"
-              >
-                {b.label}
-              </Link>
-            ))}
-          </div>
         </div>
       </div>
     </section>

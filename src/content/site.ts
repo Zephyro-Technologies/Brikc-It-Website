@@ -8,11 +8,17 @@
  * is free anywhere in Pakistan, and framed builds ship in reinforced crates.
  */
 
-export const NAV: { label: string; to: string }[] = [
+export const NAV: { label: string; to: string; shortcut?: boolean }[] = [
   { label: "Best Sellers", to: "/best-sellers" },
   { label: "Shop", to: "/shop" },
   { label: "Displays", to: "/displays" },
   { label: "Guides", to: "/booklets" },
+  // A shortcut into the shop rather than a section of the site, which is what
+  // `shortcut` marks: it stays out of the footer's list of places to go, and it
+  // never lights up as the current page — being under ten thousand rupees is a
+  // way of looking at the shop, and the Shop tab is already the right answer to
+  // "where am I".
+  { label: "Under 10k", to: "/shop?price=under-10k", shortcut: true },
 ]
 
 /** The dismissible bar above the header. */

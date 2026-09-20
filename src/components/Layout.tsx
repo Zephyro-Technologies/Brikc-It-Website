@@ -98,7 +98,12 @@ export function Nav() {
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
-  const isActive = (to: string) => (to === "/" ? pathname === "/" : pathname.startsWith(to))
+  // Matches on the path alone. A shortcut carries a query string, which
+  // usePathname() never sees, and reading it with useSearchParams() here would
+  // opt every prerendered page in the site into dynamic rendering for the sake
+  // of one highlight — so shortcuts simply never claim to be the current page.
+  const isActive = (item: { to: string; shortcut?: boolean }) =>
+    item.shortcut ? false : item.to === "/" ? pathname === "/" : pathname.startsWith(item.to)
 
   return (
     <>
@@ -142,7 +147,7 @@ export function Nav() {
                 key={n.to}
                 href={n.to}
                 className={`mat-btn rounded-full px-4 py-2 text-sm font-medium ${
-                  isActive(n.to)
+                  isActive(n)
                     ? "bg-[var(--surface-2)] text-[var(--foreground)]"
                     : "text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--foreground)]"
                 }`}
@@ -176,7 +181,7 @@ export function Nav() {
                 href={n.to}
                 onClick={() => setMenuOpen(false)}
                 className={`block rounded-xl px-4 py-3 text-sm font-medium ${
-                  isActive(n.to)
+                  isActive(n)
                     ? "bg-[var(--surface-2)] text-[var(--foreground)]"
                     : "text-[var(--foreground)] hover:bg-[var(--surface-2)]"
                 }`}
@@ -357,7 +362,8 @@ export function Footer({ instagram = "@brikc.it" }: { instagram?: string }) {
         <div>
           <h4 className="text-sm font-bold tracking-wider text-[var(--muted)] uppercase">Explore</h4>
           <ul className="mt-4 space-y-2.5 text-sm">
-            {NAV.map((n) => (
+            {/* Sections only — a filtered view of the shop isn't somewhere to go. */}
+            {NAV.filter((n) => !n.shortcut).map((n) => (
               <li key={n.to}>
                 <Link href={n.to} className="text-[var(--foreground)] hover:text-[var(--primary)]">
                   {n.label}
