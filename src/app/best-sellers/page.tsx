@@ -7,6 +7,9 @@ import { cardTag, fromPrice, productImage, soldFormats, subline } from "../../li
 import { money } from "../../lib/money"
 import { FORMAT_LABELS } from "../../data"
 
+/** A floor under the cache; see the note in src/app/page.tsx. */
+export const revalidate = 60
+
 export const metadata: Metadata = {
   title: "Best sellers — brikc.it",
   description: "The builds our collectors reach for most, unassembled or assembled, with an optional display frame.",

@@ -6,6 +6,9 @@ import { Faq } from "../../components/Faq"
 import { getFaqs, getGuides, getSettings } from "../../lib/shop"
 import type { Guide } from "../../data"
 
+/** A floor under the cache; see the note in src/app/page.tsx. */
+export const revalidate = 60
+
 export const metadata: Metadata = {
   title: "Booklet Guides — brikc.it",
   description: "Step-by-step build, framing, lighting and care guides — free with every model.",

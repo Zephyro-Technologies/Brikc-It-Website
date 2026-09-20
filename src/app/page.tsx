@@ -9,6 +9,20 @@ import { cardTag, fromPrice, productImage, subline } from "../lib/product-view"
 import { STEPS } from "../content/site"
 import type { Guide, StoreCategory } from "../data"
 
+/**
+ * A floor under the cache, not the way pages normally update.
+ *
+ * A save in the admin still rebuilds this page in seconds through
+ * /api/revalidate — that is the fast path and it is unchanged. But with no
+ * revalidate set at all, that call was the *only* thing that could ever change
+ * this page: one wrong REVALIDATE_SECRET and the shop served deploy-time prices
+ * for as long as nobody looked, while /checkout, which is dynamic, quoted the
+ * real ones. Sixty seconds turns "stale until someone notices" into "stale for
+ * a minute". Lower buys nothing — the KV cache takes about that long to reach
+ * every region anyway.
+ */
+export const revalidate = 60
+
 
 function Hero({ categories }: { categories: StoreCategory[] }) {
   return (

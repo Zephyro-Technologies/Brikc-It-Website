@@ -189,24 +189,56 @@ The placed order reaches `/checkout/confirmation` through `sessionStorage` under
 
 | Route | Mode | Why |
 | --- | --- | --- |
-| `/`, `/shop/[slug]`, `/booklets/[id]` | prerendered | static HTML, revalidated on demand |
+| `/`, `/shop/[slug]`, `/booklets/[id]` | prerendered, `revalidate = 60` | static HTML, rebuilt on demand — and at worst a minute behind anyway |
 | `/shop` | dynamic | awaits `searchParams` so `useSearchParams()` in `ShopView` resolves server-side and the grid ships as real HTML for any `?cat=`; also why a category change needs no revalidation here |
-| `/best-sellers`, `/displays`, `/displays/[slug]`, `/booklets` | prerendered | all read the database; a content or catalogue save has to revalidate them |
+| `/best-sellers`, `/displays`, `/displays/[slug]`, `/booklets` | prerendered, `revalidate = 60` | all read the database; a content or catalogue save rebuilds them |
 | `/frames` | redirect | `redirect("/displays")`, so old links don't 404 |
 | `/checkout`, `/checkout/confirmation` | `force-dynamic` | a stale copy could quote an old total or an old bank account |
-| `/api/revalidate` | `force-dynamic` | — |
+| `/api/revalidate`, `/api/revalidate/changed` | `force-dynamic` | — |
 
-The admin calls `POST /api/revalidate` with `x-revalidate-secret`. It **fails closed**: a missing
-`REVALIDATE_SECRET` returns 503 rather than leaving the endpoint open. It also caps one request at
-`MAX_PATHS` (50) and drops the rest **without saying so**, so the admin batches anything longer —
-`STOREFRONT_PATH_LIMIT` there mirrors this number and the two move together.
+**Every prerendered page carries `revalidate = 60`, and that is a floor, not the mechanism.** A
+save still rebuilds a page in about a second through the endpoints below; the floor exists because
+without one those calls were the *only* thing that could ever change a page. One wrong
+`REVALIDATE_SECRET` and the shop served deploy-time prices indefinitely — and kept taking orders,
+because `/checkout` is dynamic and quoted the real ones, so the page and the till disagreed. Sixty
+seconds is the smallest useful value: KV takes about that long to reach every region anyway.
 
-A page is only ever as fresh as the save that should have rebuilt it. Anything whose real effect is
-wider than the row it wrote — a trigger, a cascade, a rollup — has to revalidate the wider set:
-marking an order paid moves stock, so it rebuilds each line's build; a stocktake rebuilds the display
-a variant rolls up into; a settings save sweeps every build, and a display's page is
-`/displays/<slug>`, never `/shop/<slug>`. Paths are built from the **live** `products.slug`, never
-from `order_lines.slug`, which is a snapshot of what was sold and names a dead URL after a rename.
+**Two endpoints, and they are not interchangeable.**
+
+- `POST /api/revalidate` takes `{ paths }` and rebuilds exactly those. The right shape for a caller
+  that knows the site — the admin, or a person with curl. It caps one request at `MAX_PATHS` (50)
+  and drops the rest **without saying so**, so the admin batches anything longer;
+  `STOREFRONT_PATH_LIMIT` there mirrors this number and the two move together.
+- `POST /api/revalidate/changed` takes `{ table, op, kind, slug, oldSlug }` — *what changed*, not
+  what to rebuild — and works the pages out itself in `src/lib/revalidate-paths.ts`. This is what
+  Postgres calls.
+
+Both **fail closed**: a missing `REVALIDATE_SECRET` returns 503 rather than leaving them open.
+
+**The database announces its own writes.** Triggers on `products`, `product_variants`, `categories`,
+`settings`, `faqs`, `guides` and `guide_chapters` call `/api/revalidate/changed` through `pg_net`
+(`20260920190000_the_database_tells_the_storefront.sql` in the admin repo). That closes the hole the
+admin could never close: it only ever fired for writes *it* made, so marking an order paid, a
+variant rolling up into its parent, a category rename cascading, or anyone editing a row in the SQL
+editor all changed the shop and rebuilt nothing. The admin keeps its own call — it is synchronous
+and lands immediately, which is what an operator expects after pressing save. This is the net under
+it, and the floor above is the net under that.
+
+The route map is therefore the storefront's, not the caller's — which is the point. Anything whose
+real effect is wider than the row it wrote still has to reach the wider set, but that judgement now
+lives in one file next to the routes instead of in whichever caller happened to write the row: a
+display's page is `/displays/<slug>` and never `/shop/<slug>`; a rename rebuilds both slugs; a
+settings change sweeps everything. Paths come from the **live** `products.slug`, never from
+`order_lines.slug`, which is a snapshot of what was sold and names a dead URL after a rename.
+
+Whether any of it is working is one query, on the database:
+
+```sql
+select status_code, content, created from net._http_response order by created desc limit 20;
+```
+
+A 401 there means the secret does not match the storefront's. Vault holds `storefront_url` and
+`revalidate_secret`; unset, the triggers stay silent, which is what a local stack wants.
 
 On Cloudflare that path needs all three overrides in `open-next.config.ts` — KV incremental
 cache, D1 tag cache, Durable Object queue. Drop any one and the shop still serves but stops

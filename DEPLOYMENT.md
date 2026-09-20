@@ -54,6 +54,42 @@ You should see `revalidations`. To rebuild it from scratch:
 npx wrangler d1 execute brikc-it-tags --remote --file=./d1/tag-cache-schema.sql
 ```
 
+## 2b. Let the database tell the storefront
+
+The admin calls `/api/revalidate` after a save, but it only ever fires for writes
+the admin itself makes — not a trigger moving stock when an order is marked paid,
+not a variant rolling up into its parent, not a row edited in the SQL editor. So
+Postgres announces its own writes too, through `pg_net`, to
+`/api/revalidate/changed`.
+
+The triggers ship in the admin's migrations. What does *not* ship is where to
+send it, because one of the two values is the shared secret. Set both once, on
+each database, in the Supabase SQL editor:
+
+```sql
+select vault.create_secret('https://brikc.it', 'storefront_url');
+select vault.create_secret('<the storefront REVALIDATE_SECRET, exactly>', 'revalidate_secret');
+```
+
+To change one later, update rather than create — the name is unique:
+
+```sql
+select vault.update_secret(
+  (select id from vault.secrets where name = 'revalidate_secret'), '<new value>');
+```
+
+Leave both unset on a local stack and the triggers stay silent, which is what you
+want when there is no storefront to call.
+
+To check it is working — this is the one place that shows revalidation failing:
+
+```sql
+select status_code, content, created from net._http_response order by created desc limit 20;
+```
+
+`200` with a list of paths is a rebuilt page. `401` means the secret here and the
+storefront's `REVALIDATE_SECRET` are not the same string.
+
 ## 3. GitHub — already done
 
 The repo is `Zephyro-Technologies/Brikc-It-Website`, branch `master`, pushed and

@@ -4,6 +4,9 @@ import { notFound } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import { getGuide, getGuides } from "../../../lib/shop"
 
+/** A floor under the cache; see the note in src/app/page.tsx. */
+export const revalidate = 60
+
 export async function generateStaticParams() {
   const guides = await getGuides()
   return guides.map((g) => ({ id: g.slug }))

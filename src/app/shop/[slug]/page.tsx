@@ -2,6 +2,9 @@ import type { Metadata } from "next"
 import ProductDetailView from "../../../components/ProductDetailView"
 import { getCategories, getProduct, getProductSlugs, getProducts } from "../../../lib/shop"
 
+/** A floor under the cache; see the note in src/app/page.tsx. */
+export const revalidate = 60
+
 export async function generateStaticParams() {
   return (await getProductSlugs()).map((slug) => ({ slug }))
 }
