@@ -450,22 +450,27 @@ export default function ProductDetailView({
           is not a tab strip. */}
       {product.description.trim() && (
         <Reveal className="mt-16">
-          <h2 className="font-display mb-6 text-2xl" style={{ fontWeight: 700 }}>
-            Description
-          </h2>
-          {/* Two columns from lg up, rather than one narrow one with half the
-              page empty beside it. The cap is still there in spirit — a column
-              is about the same measure a single one was, which is the point of
-              capping it at all; a 1280px line is not more readable for being
-              wider. Prose flows across the gap on purpose: pinning whole blocks
-              left a one-paragraph description in the left column with the right
-              half empty, which is the thing being fixed. Only a list item or a
-              heading is held together, because those are what read as broken
-              when split. */}
-          <Markdown
-            text={product.description}
-            className="text-lg leading-relaxed text-[var(--muted)] lg:columns-2 lg:gap-12 [&_h3]:break-inside-avoid [&_li]:break-inside-avoid"
-          />
+          {/* One column, because reading order is the point: paragraph, then
+              the bullets under it, top to bottom. Setting it in two newspaper
+              columns did fill the width, but CSS columns run down the left and
+              continue at the top of the right — so a list got cut in half and
+              you had to jump back up to finish it.
+
+              The width is used by putting the heading beside the text instead
+              of above it. The measure stays what it was, which is the part that
+              was never wrong. */}
+          <div className="grid gap-x-12 gap-y-6 lg:grid-cols-[16rem_minmax(0,48rem)]">
+            <h2
+              className="font-display text-2xl lg:sticky lg:top-24 lg:self-start"
+              style={{ fontWeight: 700 }}
+            >
+              Description
+            </h2>
+            <Markdown
+              text={product.description}
+              className="text-lg leading-relaxed text-[var(--muted)]"
+            />
+          </div>
         </Reveal>
       )}
 
