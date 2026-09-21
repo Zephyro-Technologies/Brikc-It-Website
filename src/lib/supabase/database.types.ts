@@ -568,38 +568,98 @@ export type Database = {
           },
         ]
       }
+      review_media: {
+        Row: {
+          id: string
+          kind: Database["public"]["Enums"]["review_media_kind"]
+          review_id: string
+          sort: number
+          url: string
+        }
+        Insert: {
+          id?: string
+          kind: Database["public"]["Enums"]["review_media_kind"]
+          review_id: string
+          sort?: number
+          url: string
+        }
+        Update: {
+          id?: string
+          kind?: Database["public"]["Enums"]["review_media_kind"]
+          review_id?: string
+          sort?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_media_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           build: string
+          featured: boolean
           handle: string
           id: string
           name: string
+          order_id: string | null
           product_id: string | null
           quote: string
           rating: number
           sort: number
+          source: Database["public"]["Enums"]["review_source"]
+          status: Database["public"]["Enums"]["review_status"]
+          submitted_at: string | null
+          submitter_email: string | null
+          upload_token: string | null
         }
         Insert: {
           build: string
+          featured?: boolean
           handle: string
           id?: string
           name: string
+          order_id?: string | null
           product_id?: string | null
           quote: string
           rating?: number
           sort?: number
+          source?: Database["public"]["Enums"]["review_source"]
+          status?: Database["public"]["Enums"]["review_status"]
+          submitted_at?: string | null
+          submitter_email?: string | null
+          upload_token?: string | null
         }
         Update: {
           build?: string
+          featured?: boolean
           handle?: string
           id?: string
           name?: string
+          order_id?: string | null
           product_id?: string | null
           quote?: string
           rating?: number
           sort?: number
+          source?: Database["public"]["Enums"]["review_source"]
+          status?: Database["public"]["Enums"]["review_status"]
+          submitted_at?: string | null
+          submitter_email?: string | null
+          upload_token?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reviews_product_id_fkey"
             columns: ["product_id"]
@@ -698,6 +758,10 @@ export type Database = {
       }
     }
     Functions: {
+      attach_review_media: {
+        Args: { p_bucket: string; p_path: string; p_token: string }
+        Returns: undefined
+      }
       place_order: {
         Args: {
           p_city: string
@@ -710,6 +774,17 @@ export type Database = {
           p_postcode: string
           p_province: string
           p_shipping_method?: string
+        }
+        Returns: Json
+      }
+      submit_review: {
+        Args: {
+          p_email: string
+          p_name: string
+          p_order_number: string
+          p_quote: string
+          p_rating: number
+          p_slug: string
         }
         Returns: Json
       }
@@ -726,6 +801,9 @@ export type Database = {
         | "cancelled"
         | "refunded"
       product_kind: "model" | "display"
+      review_media_kind: "image" | "video"
+      review_source: "shop" | "customer"
+      review_status: "pending" | "published" | "rejected"
       shipping_method: "standard" | "teamhq"
     }
     CompositeTypes: {
@@ -869,6 +947,9 @@ export const Constants = {
         "refunded",
       ],
       product_kind: ["model", "display"],
+      review_media_kind: ["image", "video"],
+      review_source: ["shop", "customer"],
+      review_status: ["pending", "published", "rejected"],
       shipping_method: ["standard", "teamhq"],
     },
   },

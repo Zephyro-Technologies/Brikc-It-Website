@@ -1,10 +1,10 @@
 import Link from "next/link"
-import { ArrowRight, Star } from "lucide-react"
+import { ArrowRight, BadgeCheck, Star } from "lucide-react"
 import { ComingSoon, Reveal, SectionHead, ExploreMore, ProductCard } from "../components/ui"
 import { DisplayCard } from "../components/DisplayCard"
 import { money } from "../lib/money"
 import type { Product } from "../data"
-import { getCategories, getDisplays, getGuides, getProducts, getReviews } from "../lib/shop"
+import { getCategories, getDisplays, getGuides, getProducts, getFeaturedReviews } from "../lib/shop"
 import { cardTag, fromPrice, productImage, subline } from "../lib/product-view"
 import { STEPS } from "../content/site"
 import type { Guide, Review, StoreCategory } from "../data"
@@ -302,21 +302,44 @@ function Reviews({ reviews }: { reviews: Review[] }) {
 }
 
 function ReviewCard({ review }: { review: Review }) {
-  const card = (
+  // What the reviewer photographed beats the catalogue shot — it is the build
+  // in someone's actual room. The product image is the fallback for a review
+  // that came with nothing attached.
+  const video = review.media.find((m) => m.kind === "video")
+  const photo = review.media.find((m) => m.kind === "image")?.url ?? review.image
+
+  const hero = video ? (
+    // eslint-disable-next-line jsx-a11y/media-has-caption
+    <video
+      src={video.url}
+      controls
+      preload="metadata"
+      poster={photo}
+      className="h-48 w-full bg-black object-cover"
+    />
+  ) : photo ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={photo}
+      alt={review.build}
+      loading="lazy"
+      className="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-105"
+    />
+  ) : null
+
+  const body = (
     <>
-      {review.image && (
-        <div className="overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={review.image}
-            alt={review.build}
-            loading="lazy"
-            className="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        </div>
-      )}
+      {hero && <div className="relative overflow-hidden">{hero}</div>}
       <div className="flex flex-1 flex-col p-7">
-        <Stars rating={review.rating} />
+        <div className="flex items-center gap-2">
+          <Stars rating={review.rating} />
+          {review.verified && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[11px] font-semibold text-[var(--muted)]">
+              <BadgeCheck className="h-3.5 w-3.5 text-[var(--primary)]" />
+              Verified purchase
+            </span>
+          )}
+        </div>
         <blockquote className="mt-4 flex-1 text-lg leading-relaxed text-[var(--foreground)]">
           &ldquo;{review.text}&rdquo;
         </blockquote>
@@ -335,14 +358,17 @@ function ReviewCard({ review }: { review: Review }) {
   const shell =
     "group flex h-full flex-col overflow-hidden rounded-3xl bg-white shadow-[var(--shadow-1)]"
 
-  // A review of a build still on sale is a way into it. One whose build has gone
-  // is not a link to nowhere — it is the same card without the anchor.
-  return review.slug ? (
-    <Link href={`/shop/${review.slug}`} className={`mat-btn ${shell} hover:-translate-y-1 hover:shadow-[var(--shadow-2)]`}>
-      {card}
+  // A video needs its own clicks, so a card carrying one is not also a link —
+  // a play button inside an anchor is a fight the anchor wins.
+  return review.slug && !video ? (
+    <Link
+      href={`/shop/${review.slug}`}
+      className={`mat-btn ${shell} hover:-translate-y-1 hover:shadow-[var(--shadow-2)]`}
+    >
+      {body}
     </Link>
   ) : (
-    <div className={shell}>{card}</div>
+    <div className={shell}>{body}</div>
   )
 }
 
@@ -414,7 +440,7 @@ export default async function Home() {
     getCategories(),
     getDisplays(),
     getGuides(),
-    getReviews(),
+    getFeaturedReviews(),
   ])
 
   return (

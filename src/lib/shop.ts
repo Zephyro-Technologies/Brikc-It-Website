@@ -191,31 +191,64 @@ export async function getCategories(): Promise<StoreCategory[]> {
 }
 
 /**
- * Reviews, each with the build it is about.
+ * Reviews for the homepage: published, and the ones chosen to be featured.
  *
- * The photograph comes from the linked product rather than from an avatar —
- * what a shopper wants to see beside "it arrived immaculate" is the thing that
- * arrived. `product_id` is ON DELETE SET NULL, so a review outlives its build:
- * when that happens the embed is null, `build` still names what it was about,
- * and the card lays itself out without a photograph rather than showing a hole.
+ * The photograph beside a card comes from the build it is about rather than an
+ * avatar — what a shopper wants to see next to "it arrived immaculate" is the
+ * thing that arrived. A customer's own photographs come with the review itself.
+ *
+ * `status` is not a filter anybody can turn off: `anon` is only granted the
+ * published rows, and only the columns a card is made of. A pending review is
+ * invisible here because it is invisible over the API.
  */
-export async function getReviews(): Promise<Review[]> {
+export async function getFeaturedReviews(): Promise<Review[]> {
   const res = await supabase()
     .from("reviews")
-    .select("name, handle, quote, build, rating, sort, products ( slug, product_images ( url, sort ) )")
+    .select(
+      "name, handle, quote, build, rating, source, sort, review_media ( kind, url ), products ( slug, product_images ( url, sort ) )",
+    )
+    .eq("featured", true)
     .order("sort")
-  return unwrap("reviews", res).map((r) => {
-    const images = [...(r.products?.product_images ?? [])].sort((a, b) => a.sort - b.sort)
-    return {
-      name: r.name,
-      handle: r.handle,
-      text: r.quote,
-      build: r.build,
-      rating: r.rating,
-      image: images[0]?.url,
-      slug: r.products?.slug,
-    }
-  })
+  return unwrap("reviews", res).map(toReview)
+}
+
+function toReview(r: {
+  name: string
+  handle: string
+  quote: string
+  build: string
+  rating: number
+  source: string
+  review_media: { kind: string; url: string }[]
+  products: { slug: string; product_images: { url: string; sort: number }[] } | null
+}): Review {
+  const images = [...(r.products?.product_images ?? [])].sort((a, b) => a.sort - b.sort)
+  return {
+    name: r.name,
+    handle: r.handle,
+    text: r.quote,
+    build: r.build,
+    rating: r.rating,
+    image: images[0]?.url,
+    slug: r.products?.slug,
+    verified: r.source === "customer",
+    media: (r.review_media ?? []).map((m) => ({
+      kind: m.kind === "video" ? "video" : "image",
+      url: mediaUrl(m.url),
+    })),
+  }
+}
+
+/**
+ * A review's media is stored as "<bucket>/<path>", not a URL — the row says
+ * where the file is, and this is the only place that decides what that means.
+ */
+function mediaUrl(stored: string): string {
+  const slash = stored.indexOf("/")
+  if (slash < 0) return stored
+  const bucket = stored.slice(0, slash)
+  const path = stored.slice(slash + 1)
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`
 }
 
 export async function getFaqs(): Promise<FaqItem[]> {

@@ -72,6 +72,27 @@ price, and the screen has to agree with what the database will charge.
   the video's id are kept, and `embedUrl()` builds the player address from those, so nothing anybody
   types can reach an iframe. The database checks the same shapes, because a form check protects
   nobody who writes to the table another way.
+- **A customer can write a review, and that is the shop's only public write besides an order.**
+  It is built exactly like the checkout: `anon` has no INSERT on `reviews`, only EXECUTE on
+  `submit_review()`. Four things hold the abuse surface shut and none of them is in the browser:
+  the order number must match the email on that order (one message for both being wrong, so the
+  form is not an oracle for which order numbers exist); the order must actually have contained
+  the build; a unique index on `(order_id, product_id)` allows one review per build per order;
+  and nothing is visible until somebody publishes it — `anon` is granted only `status =
+  'published'` rows, **and only the columns a card is made of**, because RLS picks rows and a
+  column grant is the only thing that can keep `submitter_email` and `upload_token` off the API.
+- **Media rides on a token, not a login.** `submit_review()` returns an `upload_token`; the
+  browser puts files in `review-images/<token>/…` or `review-videos/<token>/…`. The storage
+  policy calls `private.review_upload_open()`, which says yes only while that review is still
+  pending, was submitted within the hour, and holds fewer than three photos or fewer than one
+  video. `attach_review_media()` then ties a file to the review, and refuses a path outside the
+  token or an object that is not actually in the bucket. This is `anon`'s only write anywhere in
+  storage. `src/lib/supabase/upload.ts` is the one place the *browser* talks to Supabase —
+  everywhere else `src/lib/shop.ts` reads it on the server — because a 50 MB video should not go
+  through the Worker twice.
+- **`featured` is what the homepage shows**, and it is separate from `published` on purpose: a
+  review can be on the site's record without being one of the ones on the front page. Both gate
+  independently.
 - A **review** carries a `rating` (1–5, CHECK-enforced) and an optional `product_id`. The card's
   photograph is that build's first image — never an avatar, because what belongs beside "it
   arrived immaculate" is the thing that arrived. `product_id` is ON DELETE SET NULL and `build`

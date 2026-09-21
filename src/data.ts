@@ -142,6 +142,15 @@ export type Review = {
   image?: string
   /** Set when the build is still on sale, so the card can link to it. */
   slug?: string
+  /** True when the review came from a customer whose order we matched. */
+  verified: boolean
+  /** Photographs and video the reviewer attached, in the order they sent them. */
+  media: ReviewMedia[]
+}
+
+export type ReviewMedia = {
+  kind: "image" | "video"
+  url: string
 }
 
 export type FaqItem = {

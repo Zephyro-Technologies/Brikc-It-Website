@@ -20,6 +20,7 @@ import { Markdown } from "../lib/markdown"
 import { cardTag, lowStockNote, productImage, soldFormats, specs, subline } from "../lib/product-view"
 import { useShopSettings } from "../lib/shop-settings"
 import { ProductCard, Reveal } from "./ui"
+import ReviewForm from "./ReviewForm"
 
 /**
  * Shop-wide promises this store actually keeps — sourced from the same facts
@@ -447,6 +448,15 @@ export default function ProductDetailView({
             text={product.description}
             className="max-w-3xl text-lg leading-relaxed text-[var(--muted)]"
           />
+        </Reveal>
+      )}
+
+      {/* Only on a build you could have bought. The database checks that far
+          better than this does — it wants the order number and the email on it —
+          but offering the form on something nobody can order is just a dead end. */}
+      {product.kind === "model" && (
+        <Reveal className="mt-16">
+          <ReviewForm slug={product.slug} name={product.name} />
         </Reveal>
       )}
 
