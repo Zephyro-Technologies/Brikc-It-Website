@@ -59,7 +59,6 @@ export default function ProductDetailView({
   // "none" until the shopper asks for a frame, so the price on screen is the
   // base price until they choose otherwise.
   const [frame, setFrame] = useState<FrameChoice>("none")
-  const [tab, setTab] = useState<"description" | "specs">("description")
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
   const { add } = useCart()
@@ -408,6 +407,21 @@ export default function ProductDetailView({
             <p className="mt-4 text-sm font-semibold text-[var(--primary)]">{running}</p>
           )}
 
+          {/* The specification sits with the buy controls rather than in a tab
+              below. Piece count, scale and what a build is sold as are things a
+              shopper weighs while deciding, not after — and behind a tab they
+              were a click away from the only place the decision happens. */}
+          <dl className="mt-6 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--border)] sm:grid-cols-2">
+            {specs(product).map((row) => (
+              <div key={row.label} className="bg-white p-4">
+                <dt className="text-xs font-semibold tracking-wider text-[var(--muted)] uppercase">
+                  {row.label}
+                </dt>
+                <dd className="mt-1 font-semibold">{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+
           <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[var(--muted)]">
             {REASSURANCE.map(({ icon: Icon, text }) => (
               <span key={text} className="inline-flex items-center gap-1.5">
@@ -420,57 +434,21 @@ export default function ProductDetailView({
         </Reveal>
       </div>
 
-      {/* Everything there is to read sits below the fold, behind two tabs, so
-          the top of the page stays about choosing and buying. */}
-      <Reveal className="mt-16">
-        <div className="border-b border-[var(--border)]">
-          <div className="flex gap-1">
-            {(["description", "specs"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setTab(t)}
-                aria-selected={tab === t}
-                role="tab"
-                className={`mat-btn -mb-px border-b-2 px-5 py-3 text-sm font-semibold ${
-                  tab === t
-                    ? "border-[var(--primary)] text-[var(--foreground)]"
-                    : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"
-                }`}
-              >
-                {t === "description" ? "Description" : "Specification"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Both panels are rendered and one is hidden, rather than the inactive
-            one not existing. The specification is part of what this page is
-            about — a crawler that only ever sees the description, and a reader
-            searching the page for a piece count, would both come up empty if the
-            other half only appeared on a click. */}
-        <div className="pt-7">
-          <div hidden={tab !== "description"}>
-            <Markdown
-              text={product.description}
-              className="max-w-3xl text-lg leading-relaxed text-[var(--muted)]"
-            />
-          </div>
-          <dl
-            hidden={tab !== "specs"}
-            className="grid max-w-3xl grid-cols-2 gap-px overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--border)]"
-          >
-            {specs(product).map((row) => (
-              <div key={row.label} className="bg-white p-4">
-                <dt className="text-xs font-semibold tracking-wider text-[var(--muted)] uppercase">
-                  {row.label}
-                </dt>
-                <dd className="mt-1 font-semibold">{row.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </Reveal>
+      {/* The description stays below the fold, so the top of the page is about
+          choosing and buying. It used to share a tab strip with the
+          specification; that moved up to the buy controls, and a single panel
+          is not a tab strip. */}
+      {product.description.trim() && (
+        <Reveal className="mt-16">
+          <h2 className="font-display mb-6 text-2xl" style={{ fontWeight: 700 }}>
+            Description
+          </h2>
+          <Markdown
+            text={product.description}
+            className="max-w-3xl text-lg leading-relaxed text-[var(--muted)]"
+          />
+        </Reveal>
+      )}
 
       {product.videos.length > 0 && (
         <Reveal className="mt-14">
