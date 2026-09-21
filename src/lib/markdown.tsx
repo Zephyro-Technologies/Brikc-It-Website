@@ -101,7 +101,10 @@ export function Markdown({ text, className = "" }: { text: string; className?: s
   const blocks = text.replace(/\r\n/g, "\n").split(/\n{2,}/)
 
   return (
-    <div className={`flex flex-col gap-4 ${className}`}>
+    // Block, not flex: a flex container ignores CSS columns entirely, and the
+    // product page sets the description in two on a wide screen. space-y gives
+    // the same stack this had.
+    <div className={`space-y-4 ${className}`}>
       {blocks.map((block, b) => {
         const lines = block.split("\n").filter((l) => l.trim() !== "")
         if (lines.length === 0) return null

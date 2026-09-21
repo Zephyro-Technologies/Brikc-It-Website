@@ -453,9 +453,18 @@ export default function ProductDetailView({
           <h2 className="font-display mb-6 text-2xl" style={{ fontWeight: 700 }}>
             Description
           </h2>
+          {/* Two columns from lg up, rather than one narrow one with half the
+              page empty beside it. The cap is still there in spirit — a column
+              is about the same measure a single one was, which is the point of
+              capping it at all; a 1280px line is not more readable for being
+              wider. Prose flows across the gap on purpose: pinning whole blocks
+              left a one-paragraph description in the left column with the right
+              half empty, which is the thing being fixed. Only a list item or a
+              heading is held together, because those are what read as broken
+              when split. */}
           <Markdown
             text={product.description}
-            className="max-w-3xl text-lg leading-relaxed text-[var(--muted)]"
+            className="text-lg leading-relaxed text-[var(--muted)] lg:columns-2 lg:gap-12 [&_h3]:break-inside-avoid [&_li]:break-inside-avoid"
           />
         </Reveal>
       )}
