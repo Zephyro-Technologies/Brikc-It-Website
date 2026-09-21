@@ -469,7 +469,7 @@ export default function ProductDetailView({
               The width is used by putting the heading beside the text instead
               of above it. The measure stays what it was, which is the part that
               was never wrong. */}
-          <div className="grid gap-x-12 gap-y-6 lg:grid-cols-[16rem_minmax(0,48rem)]">
+          <div className="grid gap-x-12 gap-y-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
             <h2
               className="font-display text-2xl lg:sticky lg:top-24 lg:self-start"
               style={{ fontWeight: 700 }}
@@ -490,7 +490,7 @@ export default function ProductDetailView({
           both just a dead end. */}
       {product.kind === "model" && (
         <Reveal className="mt-16">
-          <div className="grid gap-x-12 gap-y-6 lg:grid-cols-[16rem_minmax(0,48rem)]">
+          <div className="grid gap-x-12 gap-y-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
             <h2
               className="font-display text-2xl lg:sticky lg:top-24 lg:self-start"
               style={{ fontWeight: 700 }}
