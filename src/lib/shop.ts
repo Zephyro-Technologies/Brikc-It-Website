@@ -190,14 +190,32 @@ export async function getCategories(): Promise<StoreCategory[]> {
   }))
 }
 
+/**
+ * Reviews, each with the build it is about.
+ *
+ * The photograph comes from the linked product rather than from an avatar —
+ * what a shopper wants to see beside "it arrived immaculate" is the thing that
+ * arrived. `product_id` is ON DELETE SET NULL, so a review outlives its build:
+ * when that happens the embed is null, `build` still names what it was about,
+ * and the card lays itself out without a photograph rather than showing a hole.
+ */
 export async function getReviews(): Promise<Review[]> {
-  const res = await supabase().from("reviews").select("name, handle, quote, build, sort").order("sort")
-  return unwrap("reviews", res).map((r) => ({
-    name: r.name,
-    handle: r.handle,
-    text: r.quote,
-    build: r.build,
-  }))
+  const res = await supabase()
+    .from("reviews")
+    .select("name, handle, quote, build, rating, sort, products ( slug, product_images ( url, sort ) )")
+    .order("sort")
+  return unwrap("reviews", res).map((r) => {
+    const images = [...(r.products?.product_images ?? [])].sort((a, b) => a.sort - b.sort)
+    return {
+      name: r.name,
+      handle: r.handle,
+      text: r.quote,
+      build: r.build,
+      rating: r.rating,
+      image: images[0]?.url,
+      slug: r.products?.slug,
+    }
+  })
 }
 
 export async function getFaqs(): Promise<FaqItem[]> {

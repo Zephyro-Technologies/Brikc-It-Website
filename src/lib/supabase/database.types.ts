@@ -574,7 +574,9 @@ export type Database = {
           handle: string
           id: string
           name: string
+          product_id: string | null
           quote: string
+          rating: number
           sort: number
         }
         Insert: {
@@ -582,7 +584,9 @@ export type Database = {
           handle: string
           id?: string
           name: string
+          product_id?: string | null
           quote: string
+          rating?: number
           sort?: number
         }
         Update: {
@@ -590,10 +594,20 @@ export type Database = {
           handle?: string
           id?: string
           name?: string
+          product_id?: string | null
           quote?: string
+          rating?: number
           sort?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       settings: {
         Row: {

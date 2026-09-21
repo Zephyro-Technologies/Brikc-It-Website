@@ -1,13 +1,13 @@
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, Star } from "lucide-react"
 import { ComingSoon, Reveal, SectionHead, ExploreMore, ProductCard } from "../components/ui"
 import { DisplayCard } from "../components/DisplayCard"
 import { money } from "../lib/money"
 import type { Product } from "../data"
-import { getCategories, getDisplays, getGuides, getProducts } from "../lib/shop"
+import { getCategories, getDisplays, getGuides, getProducts, getReviews } from "../lib/shop"
 import { cardTag, fromPrice, productImage, subline } from "../lib/product-view"
 import { STEPS } from "../content/site"
-import type { Guide, StoreCategory } from "../data"
+import type { Guide, Review, StoreCategory } from "../data"
 
 /**
  * A floor under the cache, not the way pages normally update.
@@ -268,6 +268,103 @@ function HowItWorks() {
   )
 }
 
+/**
+ * What people said, with the build they said it about.
+ *
+ * The photograph is the product, never an avatar: the thing a shopper wants to
+ * see beside "it arrived immaculate" is the thing that arrived. A review whose
+ * build has since been deleted keeps its quote and its label and simply lays
+ * out without the photograph, rather than falling back to a stock face.
+ */
+function Reviews({ reviews }: { reviews: Review[] }) {
+  if (reviews.length === 0) return null
+
+  return (
+    <section className="bg-[var(--surface-2)] py-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <Reveal>
+          <SectionHead
+            kicker="Reviews"
+            title="Built to be shown off"
+            desc="What collectors say once the build is on the wall."
+          />
+        </Reveal>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {reviews.map((review, i) => (
+            <Reveal key={`${review.name}-${review.build}-${i}`} delay={i * 90}>
+              <ReviewCard review={review} />
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function ReviewCard({ review }: { review: Review }) {
+  const card = (
+    <>
+      {review.image && (
+        <div className="overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={review.image}
+            alt={review.build}
+            loading="lazy"
+            className="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        </div>
+      )}
+      <div className="flex flex-1 flex-col p-7">
+        <Stars rating={review.rating} />
+        <blockquote className="mt-4 flex-1 text-lg leading-relaxed text-[var(--foreground)]">
+          &ldquo;{review.text}&rdquo;
+        </blockquote>
+        <div className="mt-6 border-t border-[var(--border)] pt-4">
+          <p className="font-semibold">{review.name}</p>
+          <p className="mt-0.5 text-sm text-[var(--muted)]">
+            {review.handle}
+            {review.handle && review.build ? " · " : ""}
+            {review.build}
+          </p>
+        </div>
+      </div>
+    </>
+  )
+
+  const shell =
+    "group flex h-full flex-col overflow-hidden rounded-3xl bg-white shadow-[var(--shadow-1)]"
+
+  // A review of a build still on sale is a way into it. One whose build has gone
+  // is not a link to nowhere — it is the same card without the anchor.
+  return review.slug ? (
+    <Link href={`/shop/${review.slug}`} className={`mat-btn ${shell} hover:-translate-y-1 hover:shadow-[var(--shadow-2)]`}>
+      {card}
+    </Link>
+  ) : (
+    <div className={shell}>{card}</div>
+  )
+}
+
+/** Five stars, the earned ones filled. The count is 1–5; the database enforces it. */
+function Stars({ rating }: { rating: number }) {
+  return (
+    <div className="flex items-center gap-0.5" aria-label={`${rating} out of 5`}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          aria-hidden
+          className={`h-4 w-4 ${
+            n <= rating
+              ? "fill-[var(--primary)] text-[var(--primary)]"
+              : "fill-[var(--border)] text-[var(--border)]"
+          }`}
+        />
+      ))}
+    </div>
+  )
+}
+
 /** The guides, previewed. Their writing lives on /booklets/<slug>. */
 function BookletsPreview({ guides }: { guides: Guide[] }) {
   return (
@@ -312,11 +409,12 @@ function BookletsPreview({ guides }: { guides: Guide[] }) {
 
 export default async function Home() {
   // Independent reads — fire them together rather than in series.
-  const [products, categories, displays, guides] = await Promise.all([
+  const [products, categories, displays, guides, reviews] = await Promise.all([
     getProducts(),
     getCategories(),
     getDisplays(),
     getGuides(),
+    getReviews(),
   ])
 
   return (
@@ -326,6 +424,7 @@ export default async function Home() {
       <ShopPreview products={products} />
       <DisplaysPreview displays={displays} />
       <HowItWorks />
+      <Reviews reviews={reviews} />
       <BookletsPreview guides={guides} />
     </>
   )

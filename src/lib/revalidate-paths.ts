@@ -78,6 +78,10 @@ export async function pathsFor(change: Change): Promise<string[]> {
     case "faqs":
       return [BOOKLETS]
 
+    // Reviews are the homepage's social proof and render nowhere else.
+    case "reviews":
+      return [HOME]
+
     // A chapter is the writing itself, and it only appears on the guide's page.
     case "guides":
     case "guide_chapters": {

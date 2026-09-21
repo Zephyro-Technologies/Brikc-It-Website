@@ -134,7 +134,14 @@ export type Review = {
   name: string
   handle: string
   text: string
+  /** The build's name as the review was written against it — always set. */
   build: string
+  /** 1–5. The database refuses anything outside that, so it is safe to draw. */
+  rating: number
+  /** The linked build's first photograph, if it is still in the catalogue. */
+  image?: string
+  /** Set when the build is still on sale, so the card can link to it. */
+  slug?: string
 }
 
 export type FaqItem = {

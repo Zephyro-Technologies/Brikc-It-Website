@@ -72,6 +72,13 @@ price, and the screen has to agree with what the database will charge.
   the video's id are kept, and `embedUrl()` builds the player address from those, so nothing anybody
   types can reach an iframe. The database checks the same shapes, because a form check protects
   nobody who writes to the table another way.
+- A **review** carries a `rating` (1–5, CHECK-enforced) and an optional `product_id`. The card's
+  photograph is that build's first image — never an avatar, because what belongs beside "it
+  arrived immaculate" is the thing that arrived. `product_id` is ON DELETE SET NULL and `build`
+  stays as free text beside it, so a review outlives the build it is about: the embed comes back
+  null, the caption still names what it was, and the card lays out without a photograph rather
+  than showing a hole. Reviews render on `/` only, which is what `pathsFor()` says and what the
+  `reviews_announce` triggers rebuild.
 - `src/lib/product-view.ts` derives every string a card shows (`subline`, `cardTag`, `specs`,
   `isSellable`, `cheapestFormat`, `cheapestVariant`, `displayVisual`) from a catalogue row, and
   branches on the product's kind. The design came from a prototype whose products had one price
@@ -323,9 +330,10 @@ although it only ran locally it kept surfacing as real products on a shop that h
 A reset gives the schema, the settings singleton and the category rows — nothing else.
 
 Admin-editable content must not be stranded by a redesign — the FAQ lives on `/booklets`
-for that reason. Two things currently ARE stranded and want a decision: **reviews** have an
-admin screen and render nowhere since the homepage band was removed, and a **category's
-blurb and cover image** are editable but the storefront only renders the category name.
+for that reason, and **reviews** are back on the homepage under "Built to be shown off" after a
+spell with an admin screen and nowhere to render. One thing is still stranded and wants a
+decision: a **category's blurb and cover image** are editable but the storefront only renders the
+category name.
 
 ### Environment
 
