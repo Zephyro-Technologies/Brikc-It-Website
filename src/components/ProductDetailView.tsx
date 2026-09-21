@@ -269,7 +269,11 @@ export default function ProductDetailView({
           )}
         </Reveal>
 
-        <Reveal delay={80}>
+        {/* One gap between the blocks, set here rather than as an mt-* on each
+            of them. Eight separate margins had drifted to five different values
+            as things moved around; the name and its subline stay a tight pair
+            because they are one thing, not two. */}
+        <Reveal delay={80} className="space-y-6">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-[var(--surface-2)] px-3 py-1 text-xs font-semibold tracking-wider text-[var(--muted)] uppercase">
               {product.category}
@@ -283,19 +287,21 @@ export default function ProductDetailView({
                 {tag}
               </span>
             )}
+            <h1
+              className="font-display mt-4 w-full text-4xl tracking-tight sm:text-5xl"
+              style={{ fontWeight: 800 }}
+            >
+              {product.name}
+            </h1>
+            <p className="mt-2 w-full text-[var(--muted)]">{subline(product)}</p>
           </div>
-
-          <h1 className="font-display mt-4 text-4xl tracking-tight sm:text-5xl" style={{ fontWeight: 800 }}>
-            {product.name}
-          </h1>
-          <p className="mt-2 text-[var(--muted)]">{subline(product)}</p>
 
           {/* Above the choices, not below them. Pieces, scale and what a build
               is sold as are what you read to decide whether you want it at all;
               the assembly and the frame are what you pick once you have. It was
               behind a tab under the fold until recently, which put it a click
               away from the only place it matters. */}
-          <dl className="mt-6 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--border)] sm:grid-cols-2">
+          <dl className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--border)] sm:grid-cols-2">
             {specs(product).map((row, i, all) => (
               <div
                 key={row.label}
@@ -315,7 +321,7 @@ export default function ProductDetailView({
           </dl>
 
           {available.length > 0 && (
-            <div className="mt-6 flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2">
               {available.map((f) => {
                 const on = f === activeFormat
                 return (
@@ -342,7 +348,7 @@ export default function ProductDetailView({
               a choice of three, and each price is shown rather than buried in a
               bundle. */}
           {frames.length > 0 && (
-            <fieldset className="mt-4 rounded-2xl border border-[var(--border)] bg-white p-1.5">
+            <fieldset className="rounded-2xl border border-[var(--border)] bg-white p-1.5">
               <legend className="sr-only">Display frame</legend>
               {(["none", ...frames] as FrameChoice[]).map((f) => {
                 const on = activeFrame === f
@@ -385,9 +391,9 @@ export default function ProductDetailView({
             </fieldset>
           )}
 
-          <div className="mt-4 text-3xl font-bold">{money(total)}</div>
+          <div className="text-3xl font-bold">{money(total)}</div>
 
-          <div className="mt-7 flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center rounded-full border border-[var(--border)] bg-white">
               <button
                 type="button"
@@ -429,10 +435,10 @@ export default function ProductDetailView({
           </div>
 
           {running && (
-            <p className="mt-4 text-sm font-semibold text-[var(--primary)]">{running}</p>
+            <p className="text-sm font-semibold text-[var(--primary)]">{running}</p>
           )}
 
-          <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[var(--muted)]">
+          <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-[var(--muted)]">
             {REASSURANCE.map(({ icon: Icon, text }) => (
               <span key={text} className="inline-flex items-center gap-1.5">
                 <Icon className="h-4 w-4 text-[var(--primary)]" />
