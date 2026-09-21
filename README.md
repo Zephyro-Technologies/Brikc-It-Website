@@ -6,9 +6,8 @@ mounted in LED-lit display frames. Next.js 16 App Router.
 Originally ported from a Figma Make Vite prototype; that prototype is no longer the
 reference — this app is the source of truth for the storefront.
 
-The catalogue is kept in lockstep with the admin panel (`../BrickIt Admin`): same
-products, prices, format availability and stock flags. In phase 2 both read from one set
-of Supabase tables instead of their local data files.
+Supabase is the source of truth. The admin panel (`../Brikc-It-Admin`) writes to the same
+tables this app reads, and pokes `/api/revalidate` to rebuild the pages a save changed.
 
 ## Scripts
 
@@ -37,27 +36,30 @@ npm run start   # serve the production build
 | `src/app/checkout/page.tsx` + `src/components/CheckoutView.tsx` | Checkout form |
 | `src/app/checkout/confirmation/page.tsx` | Transfer details and the WhatsApp hand-off |
 | `src/app/api/orders/route.ts` | Takes the order — hands straight to `place_order` in Postgres |
-| `src/data.ts` | The catalogue |
-| `src/cart.tsx` | Cart context, `money()`, localStorage persistence |
+| `src/data.ts` | Catalogue types and the pure helpers — `fromPrice`, `priceOf`, `cityQualifies` |
+| `src/cart.tsx` | Cart context and localStorage persistence (`money()` is in `src/lib/money.ts`) |
 | `src/app/globals.css` | Brand tokens, fonts, LED glow, marquee/flicker keyframes |
 
 ## Catalogue rules
 
-Prices are **PKR**. Each build carries its own price for each of the three formats —
-`price_boxed`, `price_built`, `price_framed` — all typed in the admin. Nothing is
-derived: a framed F1 car and a framed collector trio cost what they cost.
+Prices are **PKR**. A build is an **assembly plus an optional frame**, and the two are
+priced separately: `price_boxed` (unassembled) and `price_built` (assembled) for the
+assembly, `price_frame_plain` and `price_frame_led` for the frame, each of them the frame
+alone rather than a total. Nothing is derived — there is no base price and no uplift, and
+a zero means that option isn't offered.
 
-Cards and sorting use `fromPrice()`, the cheapest format actually on sale, so a build
-that isn't sold boxed never advertises a boxed price. A format that is on sale must
-have a price above zero; a check constraint on the table enforces that, not just the
-form.
+Cards and sorting use `fromPrice()`, the cheapest assembly actually on sale, so a build
+that isn't sold unassembled never advertises an unassembled price. An assembly that is on
+sale must have a price above zero; a check constraint on the table enforces that, not just
+the form.
 
-Two per-product flags control availability, and the UI honours both:
+Two things gate availability, and the UI honours both:
 
-- `formats` — a build can have any of the three switched off. The product page only
-  offers the enabled ones (Podium Trio is built or framed only, never boxed).
-- `inStock` — false shows a "Sold out" badge on the card, a sold-out label on the
-  product page, and disables Add to cart.
+- `formats` — either assembly can be switched off. The product page offers the ones that
+  are on, falling back to the first available rather than trusting its own state.
+- `stock` — a count, not a switch. Zero shows "Sold out" and disables Add to cart; at or
+  under `settings.low_stock_at` a card says "Only 2 left". The count moves when an order
+  is marked paid, not when it is placed.
 
 ## Checkout
 

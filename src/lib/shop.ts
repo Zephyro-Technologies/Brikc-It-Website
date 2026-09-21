@@ -23,7 +23,7 @@ import type {
  */
 
 const PRODUCT_SELECT = `
-  slug, name, team, category, kind, swatch, price_boxed, price_built, price_framed,
+  slug, name, team, category, kind, swatch, price_boxed, price_built,
   scale, pieces, edition, blurb, description,
   sells_boxed, sells_built, sells_framed, featured, stock, price_frame_plain, price_frame_led,
   product_images ( url, sort ),
@@ -35,7 +35,7 @@ const PRODUCT_SELECT = `
 // because supabase-js reads the select string at the type level — only a
 // literal survives that.
 const DISPLAY_SELECT = `
-  slug, name, team, category, kind, swatch, price_boxed, price_built, price_framed,
+  slug, name, team, category, kind, swatch, price_boxed, price_built,
   scale, pieces, edition, blurb, description,
   sells_boxed, sells_built, sells_framed, featured, stock, price_frame_plain, price_frame_led,
   product_images ( url, sort ),
@@ -52,7 +52,6 @@ type ProductRow = {
   swatch: string
   price_boxed: number
   price_built: number
-  price_framed: number
   scale: string
   pieces: number
   edition: string
@@ -84,7 +83,7 @@ function toProduct(row: ProductRow, variantRows: VariantRow[] = []): Product {
     // everywhere a badge or a breadcrumb reads it.
     category: row.category ?? "",
     kind: row.kind,
-    prices: { boxed: row.price_boxed, built: row.price_built, framed: row.price_framed },
+    prices: { boxed: row.price_boxed, built: row.price_built },
     scale: row.scale,
     pieces: row.pieces,
     edition: row.edition,

@@ -112,12 +112,20 @@ them would rewrite what past orders say they sold — and separately ticks an LE
 own in `price_frame` and added on top. Four combinations from three numbers, and an unassembled kit
 can be bought with a frame to put it in later, which the old three-way pick made impossible.
 
-`FORMAT_KEYS` is therefore two long. `"framed"` survives in `FormatKey` only so order lines written
-before the change can still name what they sold; `place_order` refuses it for new lines and tells the
-shopper to re-add the item. `order_lines.with_frame` records whether a frame went with a line.
-`products.price_framed` is the old framed TOTAL, left in place by
+`FORMAT_KEYS` is therefore two long, and typed `SoldFormat[]` — `Exclude<FormatKey, "framed">`.
+`"framed"` survives in `FormatKey` only so order lines written before the change can still name what
+they sold, which is why `OrderLine.format` keeps it while `Product["prices"]` and the manual-order
+draft do not: history has to be able to say "framed", nothing being written now does. `place_order`
+refuses it for new lines and tells the shopper to re-add the item, and `priceOf()` returns 0 for it
+rather than indexing a price that no longer exists. `order_lines.with_frame` records whether a frame
+went with a line.
+
+`products.price_framed`, the old framed TOTAL, is **gone** —
+`20260921120000_drop_the_dead_framed_price.sql`. It was left in place by
 `20260920120000_frame_as_an_addon.sql` so the deployed shop kept quoting correctly across the
-changeover — it is dead now and a later migration should drop it.
+changeover, then sat at 0 on every row written afterwards. Dropping it was expand/contract: both
+apps stopped selecting it and shipped first, because `unwrap()` throws on a Supabase error on
+purpose, so a select naming a column that is gone is a 500 rather than an empty shop.
 
 Prices are PKR, and each assembly carries its own price — nothing is derived from a base price and
 there is no uplift on the assemblies. Cards and sorts use `fromPrice()`, the cheapest assembly

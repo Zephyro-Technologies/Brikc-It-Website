@@ -12,7 +12,7 @@ import {
   frameChoices,
   framePrice,
   priceOf,
-  type FormatKey,
+  type SoldFormat,
   type FrameChoice,
   type Product,
 } from "../data"
@@ -45,11 +45,12 @@ export default function ProductDetailView({
   const { lowStockAt } = useShopSettings()
   const available = product ? soldFormats(product) : []
 
-  // Falls back to the first sold format rather than trusting old state — a
-  // "framed" pick left over from another build must not stick on one that
-  // isn't sold framed.
-  const [format, setFormat] = useState<FormatKey>("framed")
-  const activeFormat = available.includes(format) ? format : (available[0] ?? "boxed")
+  // Nothing picked yet, rather than a format that might not be sold here: this
+  // component is reused across builds, so a pick left over from one must not
+  // stick on another that doesn't sell it.
+  const [format, setFormat] = useState<SoldFormat | null>(null)
+  const activeFormat: SoldFormat =
+    format && available.includes(format) ? format : (available[0] ?? "boxed")
 
   const [activeImg, setActiveImg] = useState(0)
   const [lightbox, setLightbox] = useState(false)

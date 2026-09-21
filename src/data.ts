@@ -25,8 +25,18 @@ export type Category = string
  */
 export type FormatKey = "built" | "boxed" | "framed"
 
+/**
+ * The assemblies a build is actually priced in.
+ *
+ * "framed" is a FormatKey so that an order line written before the frame became
+ * an extra can still name what it sold, but it never had a price of its own
+ * again once `price_framed` was retired — so it is not one of these, and
+ * `prices` below does not carry it.
+ */
+export type SoldFormat = Exclude<FormatKey, "framed">
+
 /** What a shopper can choose today. Never includes the retired "framed". */
-export const FORMAT_KEYS: FormatKey[] = ["boxed", "built"]
+export const FORMAT_KEYS: SoldFormat[] = ["boxed", "built"]
 
 export const FORMAT_LABELS: Record<FormatKey, string> = {
   boxed: "Unassembled",
@@ -78,7 +88,7 @@ export type Product = {
    * zero and is never shown. Unused for a display, which is priced through
    * `variants` instead.
    */
-  prices: Record<FormatKey, number>
+  prices: Record<SoldFormat, number>
   scale: string
   pieces: number
   edition: string
@@ -196,6 +206,10 @@ export const FRAME_LABELS: Record<Exclude<FrameChoice, "none">, string> = {
 
 /** What a build costs assembled that way, with whichever frame was asked for. */
 export function priceOf(product: Product, format: FormatKey, frame: FrameChoice): number {
+  // A line still carrying the retired "framed" is refused long before it reaches
+  // a total — CheckoutView marks it unavailable and place_order rejects it. This
+  // only stops the arithmetic turning into NaN on the way to being refused.
+  if (format === "framed") return 0
   return product.prices[format] + framePrice(product, frame)
 }
 

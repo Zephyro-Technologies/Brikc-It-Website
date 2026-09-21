@@ -5,6 +5,7 @@ import {
   fromPrice,
   type FormatKey,
   type Product,
+  type SoldFormat,
   type Variant,
 } from "../data"
 
@@ -44,7 +45,7 @@ export function lowVariantStockNote(variant: Variant, lowStockAt: number): strin
 }
 
 /** The formats this build is actually sold in, in display order. Empty for a display. */
-export function soldFormats(product: Product): FormatKey[] {
+export function soldFormats(product: Product): SoldFormat[] {
   if (product.kind === "display") return []
   return FORMAT_KEYS.filter((f) => product.formats[f])
 }

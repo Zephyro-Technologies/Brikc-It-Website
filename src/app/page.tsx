@@ -268,15 +268,8 @@ function HowItWorks() {
   )
 }
 
-/**
- * Real reviews, from the same table the admin edits.
- *
- * The prototype this design came from had no reviews section — its REVIEWS
- * export was dead code. Porting that faithfully would have left the shop owner
- * with a review screen whose contents appear nowhere, so the section stays.
- */
+/** The guides, previewed. Their writing lives on /booklets/<slug>. */
 function BookletsPreview({ guides }: { guides: Guide[] }) {
-
   return (
     <section className="border-t border-[var(--border)] bg-[var(--surface-2)] py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
