@@ -290,6 +290,22 @@ export default function ProductDetailView({
           </h1>
           <p className="mt-2 text-[var(--muted)]">{subline(product)}</p>
 
+          {/* Above the choices, not below them. Pieces, scale and what a build
+              is sold as are what you read to decide whether you want it at all;
+              the assembly and the frame are what you pick once you have. It was
+              behind a tab under the fold until recently, which put it a click
+              away from the only place it matters. */}
+          <dl className="mt-6 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--border)] sm:grid-cols-2">
+            {specs(product).map((row) => (
+              <div key={row.label} className="bg-white p-4">
+                <dt className="text-xs font-semibold tracking-wider text-[var(--muted)] uppercase">
+                  {row.label}
+                </dt>
+                <dd className="mt-1 font-semibold">{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+
           {available.length > 0 && (
             <div className="mt-6 flex flex-wrap gap-2">
               {available.map((f) => {
@@ -407,21 +423,6 @@ export default function ProductDetailView({
           {running && (
             <p className="mt-4 text-sm font-semibold text-[var(--primary)]">{running}</p>
           )}
-
-          {/* The specification sits with the buy controls rather than in a tab
-              below. Piece count, scale and what a build is sold as are things a
-              shopper weighs while deciding, not after — and behind a tab they
-              were a click away from the only place the decision happens. */}
-          <dl className="mt-6 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--border)] sm:grid-cols-2">
-            {specs(product).map((row) => (
-              <div key={row.label} className="bg-white p-4">
-                <dt className="text-xs font-semibold tracking-wider text-[var(--muted)] uppercase">
-                  {row.label}
-                </dt>
-                <dd className="mt-1 font-semibold">{row.value}</dd>
-              </div>
-            ))}
-          </dl>
 
           <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[var(--muted)]">
             {REASSURANCE.map(({ icon: Icon, text }) => (
