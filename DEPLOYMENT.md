@@ -71,6 +71,17 @@ select vault.create_secret('https://brikc.it', 'storefront_url');
 select vault.create_secret('<the storefront REVALIDATE_SECRET, exactly>', 'revalidate_secret');
 ```
 
+`create_secret` **returns the new row's UUID, not a generated key.** It looks like
+it handed you something to use and it did not — feeding that UUID back in as the
+second secret is a natural mistake and produces a `401` on every announcement.
+The second value is the storefront Worker's `REVALIDATE_SECRET`, which Cloudflare
+will not show you, so if it is not written down, rotate rather than hunt: set a
+new one in the storefront Worker, the admin Worker and here, all three the same.
+
+Do not use that UUID as the secret either. `vault.secrets.id` is a plaintext
+column — only `secret` is encrypted — so the shared secret would be sitting
+unencrypted in the row next to it.
+
 To change one later, update rather than create — the name is unique:
 
 ```sql
