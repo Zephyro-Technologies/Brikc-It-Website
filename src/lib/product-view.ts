@@ -93,20 +93,6 @@ export function cheapestVariant(product: Product): Variant | null {
   return inStock.reduce((best, v) => (v.price < best.price ? v : best), inStock[0])
 }
 
-/** "Boxed · Built · Framed + LED" — the ways this build can be had. */
-export function formatSummary(product: Product): string {
-  const sold = soldFormats(product)
-  if (sold.length === 0) return "Not currently sold"
-  // The frame is not one of these any more — it is an extra on top of whichever
-  // is chosen — so it is named separately rather than listed as a third way to
-  // buy the build. Which frames, though: saying "LED" on a build that only
-  // sells an unlit one contradicts the chooser a few inches up the same page.
-  const base = sold.map((f) => FORMAT_LABELS[f]).join(" · ")
-  const frames = frameChoices(product)
-  if (frames.length === 0) return base
-  if (frames.length === 2) return `${base} · frame optional, lit or unlit`
-  return frames[0] === "led" ? `${base} · LED frame optional` : `${base} · frame optional`
-}
 
 /** "60×90cm · 90×140cm" — the sizes a display comes in. */
 function variantSummary(product: Product): string {
@@ -168,11 +154,10 @@ export function specs(product: Product): { label: string; value: string }[] {
   if (product.pieces > 0) rows.push({ label: "Pieces", value: product.pieces.toLocaleString("en-PK") })
   if (product.scale) rows.push({ label: "Scale", value: product.scale })
   rows.push({ label: "Edition", value: product.edition })
-  rows.push(
-    product.kind === "display"
-      ? { label: "Sizes", value: variantSummary(product) }
-      : { label: "Available as", value: formatSummary(product) },
-  )
+  // A display's sizes are worth stating; a model's assemblies are not. The
+  // grid now sits directly above the Unassembled/Assembled toggle and the
+  // frame chooser, so "Available as" was reading the controls back out.
+  if (product.kind === "display") rows.push({ label: "Sizes", value: variantSummary(product) })
   return rows
 }
 

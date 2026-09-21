@@ -296,8 +296,16 @@ export default function ProductDetailView({
               behind a tab under the fold until recently, which put it a click
               away from the only place it matters. */}
           <dl className="mt-6 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--border)] sm:grid-cols-2">
-            {specs(product).map((row) => (
-              <div key={row.label} className="bg-white p-4">
+            {specs(product).map((row, i, all) => (
+              <div
+                key={row.label}
+                // An odd number of rows would otherwise leave the last cell
+                // half-width with the grid's own background showing beside it,
+                // which reads as a missing box rather than a deliberate gap.
+                className={`bg-white p-4 ${
+                  all.length % 2 === 1 && i === all.length - 1 ? "sm:col-span-2" : ""
+                }`}
+              >
                 <dt className="text-xs font-semibold tracking-wider text-[var(--muted)] uppercase">
                   {row.label}
                 </dt>
