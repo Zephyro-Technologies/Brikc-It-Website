@@ -36,7 +36,7 @@ export default async function BestSellersPage() {
       <div className="absolute inset-0 bg-[radial-gradient(120%_60%_at_50%_-10%,rgba(240,56,74,0.16),transparent)]" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
-        <header className="py-20 text-center sm:py-28">
+        <header className="pt-20 pb-12 text-center sm:pt-28 sm:pb-16">
           <Reveal>
             <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.25em] text-[var(--primary-2)]">
               ✦ Most loved
@@ -79,7 +79,12 @@ export default async function BestSellersPage() {
         </header>
 
         {featured.length === 0 ? (
-          <ComingSoon onDark note="The first best sellers land as soon as the catalogue opens." />
+          // This page has no padded wrapper — every branch brings its own
+          // bottom spacing, and this one was bringing none, so the card sat
+          // directly on the footer.
+          <Reveal className="pb-24">
+            <ComingSoon onDark note="The first best sellers land as soon as the catalogue opens." />
+          </Reveal>
         ) : (
           <>
             <div className="grid gap-7 pb-24 md:grid-cols-3">
