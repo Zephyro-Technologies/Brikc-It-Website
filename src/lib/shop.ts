@@ -27,7 +27,8 @@ const PRODUCT_SELECT = `
   scale, pieces, edition, blurb, description,
   sells_boxed, sells_built, sells_framed, featured, stock, price_frame_plain, price_frame_led,
   product_images ( url, sort ),
-  product_videos ( provider, src, title, sort )
+  product_videos ( provider, src, title, sort ),
+  product_categories ( category )
 `
 
 // Same columns as PRODUCT_SELECT, plus the variants a display is priced and
@@ -40,6 +41,7 @@ const DISPLAY_SELECT = `
   sells_boxed, sells_built, sells_framed, featured, stock, price_frame_plain, price_frame_led,
   product_images ( url, sort ),
   product_videos ( provider, src, title, sort ),
+  product_categories ( category ),
   product_variants ( id, label, price, stock, sort )
 `
 
@@ -65,6 +67,7 @@ type ProductRow = {
   price_frame_plain: number
   price_frame_led: number
   product_images: { url: string; sort: number }[]
+  product_categories: { category: string }[]
   product_videos: { provider: string; src: string; title: string; sort: number }[]
 }
 
@@ -82,6 +85,9 @@ function toProduct(row: ProductRow, variantRows: VariantRow[] = []): Product {
     // treats the empty string as "no category" rather than checking for null
     // everywhere a badge or a breadcrumb reads it.
     category: row.category ?? "",
+    // The junction is the truth; `category` is the first of these, kept in step
+    // by a trigger. Sorted so the chips a card shows are in a stable order.
+    categories: [...(row.product_categories ?? [])].map((c) => c.category).sort(),
     kind: row.kind,
     prices: { boxed: row.price_boxed, built: row.price_built },
     scale: row.scale,

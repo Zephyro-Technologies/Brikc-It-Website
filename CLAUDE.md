@@ -170,10 +170,21 @@ as "Not available", so what you filter by is always the number you then read; it
 dropdown on purpose — giving them the same shape is what makes someone file "Under 10k" as a
 category.
 
-**Categories are rows, not an enum.** `products.category` is text with a foreign key onto
-`categories(name)`, `ON UPDATE CASCADE ON DELETE RESTRICT` — so renaming a category moves every
-build carrying it in the same statement, and deleting one that still holds builds is refused
-rather than orphaning them. `categories.slug` is what `?cat=` carries and what `ShopView` filters
+**Categories are rows, not an enum — and a build sits in as many as it likes.**
+`product_categories` is the junction and the truth: one row per membership, `category` a foreign
+key onto `categories(name)` with `ON UPDATE CASCADE ON DELETE RESTRICT` — so renaming a category
+moves every build carrying it in the same statement, and deleting one that still holds builds is
+refused rather than orphaning them.
+
+`products.category` is still there and still true: a trigger keeps it as the **first** of a
+build's categories, ordered the way the chips are, so anything that can only name one — a card, a
+breadcrumb — names the one the shop would file it under first. It is also what
+`products_category_matches_kind` checks, which is why taking a model's last category away is
+refused with a message rather than a constraint error: a build under no chip is not a catalogue
+state anybody wants. A display sits in none and keeps NULL.
+
+`ShopView` filters on **membership**, not equality — a build in three categories answers to all
+three chips. `categories.slug` is what `?cat=` carries and what `ShopView` filters
 on, so a rename never breaks a shared link. Nothing is hardcoded: the chips on `/shop` and in the
 hero are whatever `getCategories()` returns, and a shop with no categories shows no chips.
 A display's category is **null** — it belongs to no shopper-facing category, and a CHECK enforces

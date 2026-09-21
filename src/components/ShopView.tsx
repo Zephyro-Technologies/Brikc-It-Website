@@ -66,7 +66,14 @@ export default function ShopView({
 
   const products = useMemo(() => {
     let list = [...all]
-    if (category) list = list.filter((p) => p.category === category.name)
+    // Membership, not equality — a build in three categories answers to all
+    // three chips. Falls back to the single column for anything that predates
+    // the junction being populated.
+    if (category) {
+      list = list.filter((p) =>
+        p.categories.length > 0 ? p.categories.includes(category.name) : p.category === category.name,
+      )
+    }
     if (band) list = list.filter((p) => inPriceBand(p, band))
 
     if (sort === "price-asc") list.sort((a, b) => fromPrice(a) - fromPrice(b))

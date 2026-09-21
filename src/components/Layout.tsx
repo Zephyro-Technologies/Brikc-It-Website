@@ -157,7 +157,13 @@ export function Nav() {
                 className={`mat-btn rounded-full px-4 py-2 text-sm font-medium ${
                   isActive(n)
                     ? "bg-white/10 text-white"
-                    : "text-white/65 hover:bg-white/10 hover:text-white"
+                    : n.shortcut
+                      ? // A price shortcut is an offer, not a section, so it is
+                        // the one nav item that carries colour. Tinted rather
+                        // than filled — the Cart is the only solid red in the
+                        // header and there is no point having two of those.
+                        "bg-[var(--primary)]/12 text-[var(--primary-2)] ring-1 ring-[var(--primary)]/40 hover:bg-[var(--primary)]/20 hover:text-white"
+                      : "text-white/65 hover:bg-white/10 hover:text-white"
                 }`}
               >
                 {n.label}
@@ -191,7 +197,9 @@ export function Nav() {
                 className={`block rounded-xl px-4 py-3 text-sm font-medium ${
                   isActive(n)
                     ? "bg-white/10 text-white"
-                    : "text-white/80 hover:bg-white/10"
+                    : n.shortcut
+                      ? "bg-[var(--primary)]/12 text-[var(--primary-2)] ring-1 ring-[var(--primary)]/40"
+                      : "text-white/80 hover:bg-white/10"
                 }`}
               >
                 {n.label}

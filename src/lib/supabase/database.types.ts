@@ -371,6 +371,36 @@ export type Database = {
         }
         Relationships: []
       }
+      product_categories: {
+        Row: {
+          category: string
+          product_id: string
+        }
+        Insert: {
+          category: string
+          product_id: string
+        }
+        Update: {
+          category?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_categories_category_fkey"
+            columns: ["category"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["name"]
+          },
+          {
+            foreignKeyName: "product_categories_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_images: {
         Row: {
           alt: string

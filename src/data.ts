@@ -80,7 +80,17 @@ export type Product = {
   slug: string
   name: string
   team: string
+  /**
+   * The first category the build sits in — what a card or a breadcrumb names
+   * when it can only name one. Empty for a display.
+   */
   category: Category
+  /**
+   * Every category it sits in. A build can be in several: an F1 car that is
+   * also a collector piece is both, and the chips have to agree. Always
+   * contains `category` when there is one.
+   */
+  categories: Category[]
   kind: ProductKind
   /**
    * What each format costs, in PKR. Every format is priced on its own — there
