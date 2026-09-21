@@ -1,6 +1,12 @@
 import type { Metadata } from "next"
 import ProductDetailView from "../../../components/ProductDetailView"
-import { getCategories, getProduct, getProductSlugs, getProducts } from "../../../lib/shop"
+import {
+  getCategories,
+  getProduct,
+  getProductReviews,
+  getProductSlugs,
+  getProducts,
+} from "../../../lib/shop"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
 export const revalidate = 60
@@ -26,10 +32,11 @@ export async function generateMetadata({
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const [product, all, categories] = await Promise.all([
+  const [product, all, categories, reviews] = await Promise.all([
     getProduct(slug),
     getProducts(),
     getCategories(),
+    getProductReviews(slug),
   ])
 
   if (!product) return <ProductDetailView product={undefined} suggestions={[]} />
@@ -51,6 +58,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       key={slug}
       product={product}
       suggestions={pool}
+      reviews={reviews}
       categorySlug={categorySlug}
     />
   )

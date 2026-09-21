@@ -78,9 +78,12 @@ export async function pathsFor(change: Change): Promise<string[]> {
     case "faqs":
       return [BOOKLETS]
 
-    // Reviews are the homepage's social proof and render nowhere else.
-    case "reviews":
-      return [HOME]
+    // The homepage's social proof, and now also the build's own page, which is
+    // why the trigger sends a slug rather than just the table name.
+    case "reviews": {
+      const slugs = [change.slug, change.oldSlug].filter((s): s is string => !!s)
+      return [HOME, ...slugs.map((s) => `/shop/${s}`)]
+    }
 
     // A chapter is the writing itself, and it only appears on the guide's page.
     case "guides":

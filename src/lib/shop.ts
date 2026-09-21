@@ -218,6 +218,26 @@ export async function getFeaturedReviews(): Promise<Review[]> {
   return unwrap("reviews", res).map(toReview)
 }
 
+/**
+ * The published reviews of one build, for its own page.
+ *
+ * `status` is not really a filter here — `anon` is only granted the published
+ * rows, so a pending one is invisible over the API whatever this asks for. It
+ * is written out anyway because the admin reads the same table with a wider
+ * view, and a query that only works because of who is asking is a trap.
+ */
+export async function getProductReviews(slug: string): Promise<Review[]> {
+  const res = await supabase()
+    .from("reviews")
+    .select(
+      "name, handle, quote, build, rating, source, sort, review_media ( kind, url ), products!inner ( slug, product_images ( url, sort ) )",
+    )
+    .eq("products.slug", slug)
+    .eq("status", "published")
+    .order("sort")
+  return unwrap("product reviews", res).map(toReview)
+}
+
 function toReview(r: {
   name: string
   handle: string

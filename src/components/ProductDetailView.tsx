@@ -15,12 +15,13 @@ import {
   type SoldFormat,
   type FrameChoice,
   type Product,
+  type Review,
 } from "../data"
 import { Markdown } from "../lib/markdown"
 import { cardTag, lowStockNote, productImage, soldFormats, specs, subline } from "../lib/product-view"
 import { useShopSettings } from "../lib/shop-settings"
 import { ProductCard, Reveal } from "./ui"
-import ReviewForm from "./ReviewForm"
+import ProductReviews from "./ProductReviews"
 
 /**
  * Shop-wide promises this store actually keeps — sourced from the same facts
@@ -36,10 +37,13 @@ const REASSURANCE = [
 export default function ProductDetailView({
   product,
   suggestions,
+  reviews = [],
   categorySlug = "",
 }: {
   product: Product | undefined
   suggestions: Product[]
+  /** This build's published reviews, in the order the admin arranged them. */
+  reviews?: Review[]
   /** Slug of the build's category, for the breadcrumb. Empty links to /shop. */
   categorySlug?: string
 }) {
@@ -482,10 +486,24 @@ export default function ProductDetailView({
 
       {/* Only on a build you could have bought. The database checks that far
           better than this does — it wants the order number and the email on it —
-          but offering the form on something nobody can order is just a dead end. */}
+          but reviews of something nobody can order, and a form to write one, are
+          both just a dead end. */}
       {product.kind === "model" && (
         <Reveal className="mt-16">
-          <ReviewForm slug={product.slug} name={product.name} />
+          <div className="grid gap-x-12 gap-y-6 lg:grid-cols-[16rem_minmax(0,48rem)]">
+            <h2
+              className="font-display text-2xl lg:sticky lg:top-24 lg:self-start"
+              style={{ fontWeight: 700 }}
+            >
+              Reviews
+              {reviews.length > 0 && (
+                <span className="mt-1 block text-sm font-normal text-[var(--muted)]">
+                  {reviews.length === 1 ? "1 review" : `${reviews.length} reviews`}
+                </span>
+              )}
+            </h2>
+            <ProductReviews slug={product.slug} name={product.name} reviews={reviews} />
+          </div>
         </Reveal>
       )}
 
