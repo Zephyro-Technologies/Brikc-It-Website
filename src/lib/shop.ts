@@ -26,6 +26,7 @@ const PRODUCT_SELECT = `
   slug, name, team, category, kind, swatch, price_boxed, price_built,
   scale, pieces, edition, blurb, description,
   sells_boxed, sells_built, sells_framed, featured, stock, price_frame_plain, price_frame_led,
+  manual_url, manual_name, manual_bytes,
   product_images ( url, sort ),
   product_videos ( provider, src, title, sort ),
   product_categories ( category )
@@ -39,6 +40,7 @@ const DISPLAY_SELECT = `
   slug, name, team, category, kind, swatch, price_boxed, price_built,
   scale, pieces, edition, blurb, description,
   sells_boxed, sells_built, sells_framed, featured, stock, price_frame_plain, price_frame_led,
+  manual_url, manual_name, manual_bytes,
   product_images ( url, sort ),
   product_videos ( provider, src, title, sort ),
   product_categories ( category ),
@@ -66,6 +68,9 @@ type ProductRow = {
   stock: number
   price_frame_plain: number
   price_frame_led: number
+  manual_url: string
+  manual_name: string
+  manual_bytes: number
   product_images: { url: string; sort: number }[]
   product_categories: { category: string }[]
   product_videos: { provider: string; src: string; title: string; sort: number }[]
@@ -121,6 +126,11 @@ function toProduct(row: ProductRow, variantRows: VariantRow[] = []): Product {
         stock: v.stock,
         inStock: v.stock > 0,
       })),
+    manual: {
+      url: row.manual_url,
+      name: row.manual_name,
+      bytes: row.manual_bytes,
+    },
     stock: row.stock,
     inStock: row.stock > 0,
     featured: row.featured,

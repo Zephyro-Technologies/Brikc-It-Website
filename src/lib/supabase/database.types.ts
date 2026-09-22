@@ -571,6 +571,9 @@ export type Database = {
           id: string
           in_stock: boolean | null
           kind: Database["public"]["Enums"]["product_kind"]
+          manual_bytes: number
+          manual_name: string
+          manual_url: string
           name: string
           pieces: number
           price_boxed: number
@@ -598,6 +601,9 @@ export type Database = {
           id?: string
           in_stock?: boolean | null
           kind?: Database["public"]["Enums"]["product_kind"]
+          manual_bytes?: number
+          manual_name?: string
+          manual_url?: string
           name: string
           pieces?: number
           price_boxed: number
@@ -625,6 +631,9 @@ export type Database = {
           id?: string
           in_stock?: boolean | null
           kind?: Database["public"]["Enums"]["product_kind"]
+          manual_bytes?: number
+          manual_name?: string
+          manual_url?: string
           name?: string
           pieces?: number
           price_boxed?: number

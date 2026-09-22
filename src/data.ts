@@ -119,6 +119,12 @@ export type Product = {
   frame: { offered: boolean; plain: number; led: number }
   /** At most two. Empty when none have been added. */
   videos: ProductVideo[]
+  /**
+   * The assembly PDF, listed on /guides. An empty `url` means there isn't one
+   * yet — the page still lists the build and says so, rather than pretending
+   * the build doesn't exist.
+   */
+  manual: { url: string; name: string; bytes: number }
   /** The sizes a display comes in, priced and stocked independently. Empty for a model. */
   variants: Variant[]
   /**

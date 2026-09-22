@@ -237,6 +237,39 @@ the checkout entirely unless a WhatsApp number *and* at least one account are co
 The placed order reaches `/checkout/confirmation` through `sessionStorage` under
 `CONFIRMATION_KEY`, not the URL — an order reference in a shareable link invites enumeration.
 
+### Assembly manuals
+
+**`/guides` is the PDF one build at a time; `/booklets` is the written ones.** The names are
+confusingly close and the database makes it worse — `guides` and `guide_chapters` are the
+*booklets*, prose with chapters belonging to nothing, rendered at `/booklets` and `/booklets/<slug>`.
+An assembly manual is three columns on `products`: `manual_url`, `manual_name`, `manual_bytes`.
+
+Three columns, not one, because a download is more than an address. The name is what the file
+saves as — nobody wants `8f3c1a92-….pdf` in their downloads folder — and the size is what the
+page shows before somebody taps 12 MB on mobile data. A CHECK keeps them whole: all three set or
+all three empty, so a row can never claim a manual it hasn't got. A second CHECK requires an
+`http`/`https` scheme — not https-only, because the local stack serves storage over
+`http://127.0.0.1` and a constraint nobody can satisfy locally is one that gets worked around.
+
+**The `download` attribute does nothing here.** The file is on Supabase storage, a different
+origin from the shop, and `download` is ignored cross-origin — left alone the browser opens the
+PDF in a tab. `downloadUrl()` in `src/lib/download.ts` appends `?download=<name>`, which is what
+makes Supabase answer with `Content-Disposition: attachment` *and* name the file.
+
+Uploads go through `src/lib/upload-manual.ts` in the admin, modelled on `uploadVideo` and **not**
+on `uploadImage` — the image path decodes and re-encodes to WebP, which is the wrong thing to do
+to a document. The bucket is `product-manuals`, public, `application/pdf`, 25 MB, with the same
+four policies the other buckets use.
+
+**Only a model has one.** A display arrives built, so there is nothing to assemble: the admin
+only offers the field on a model, `productColumns()` writes it empty for a display, and `/guides`
+lists models only. A model with no manual is still listed, saying one is coming — it is in the
+shop and somebody owns it, so a page that silently omits it is worse than one that admits the
+manual isn't written.
+
+`/guides` is in `productPages()` on both sides of the revalidation map, because it names every
+model.
+
 ### Coupons
 
 A code is a **percentage off the goods** or **an amount off the goods**, limited by any of a

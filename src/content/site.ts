@@ -16,7 +16,10 @@ export const NAV: { label: string; to: string; shortcut?: boolean }[] = [
   { label: "Best Sellers", to: "/best-sellers" },
   { label: "Shop", to: "/shop" },
   { label: "Displays", to: "/displays" },
-  { label: "Guides", to: "/booklets" },
+  // The assembly manuals, one per build. The written booklets are still at
+  // /booklets and are linked from the bottom of that page — they were what
+  // "Guides" meant before there was a PDF to download.
+  { label: "Guides", to: "/guides" },
   // A shortcut into the shop rather than a section of the site, which is what
   // `shortcut` marks: it stays out of the footer's list of places to go, and it
   // never lights up as the current page — being under ten thousand rupees is a
