@@ -21,6 +21,14 @@ export type PlacedOrder = {
   /** What delivery cost, and what it was called. Zero for standard. */
   shipping: number
   deliveryLabel: string
+  /**
+   * What a coupon took off, as `place_order` worked it out — not as the
+   * checkout was previewing it. Zero, with an empty code, when there was none.
+   * Optional because an order placed before coupons existed can still be
+   * sitting in sessionStorage when this page loads.
+   */
+  discount?: number
+  coupon?: string
 }
 
 /**

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { supabase } from "../../../lib/supabase/client"
+import { wireLines } from "../../../lib/order-lines"
 
 /**
  * Takes an order from the checkout form.
@@ -13,14 +14,6 @@ import { supabase } from "../../../lib/supabase/client"
  * So this route never sees a price and never computes a total. If it did, that
  * would be one more place a total could be wrong.
  */
-
-type IncomingLine = {
-  slug?: unknown
-  format?: unknown
-  frame?: unknown
-  variant?: unknown
-  qty?: unknown
-}
 
 /** Our own validation failures, raised with errcode 22023, are safe to show. */
 const USER_ERROR = "22023"
@@ -36,26 +29,13 @@ export async function POST(request: Request) {
   const str = (v: unknown) => (typeof v === "string" ? v : "")
   const customer = (body.customer ?? {}) as Record<string, unknown>
   const address = (body.address ?? {}) as Record<string, unknown>
-  const rawLines = Array.isArray(body.lines) ? (body.lines as IncomingLine[]) : []
+  // Shaped by the same function /api/coupon uses, so the cart a discount was
+  // quoted against is the cart that gets priced here.
+  const lines = wireLines(body)
 
-  if (rawLines.length === 0) {
+  if (lines.length === 0) {
     return NextResponse.json({ error: "Your cart is empty." }, { status: 400 })
   }
-
-  // Only slug, one of format/variant, which frame, and quantity cross the wire.
-  // Anything else the client might have sent about a line — a name, an image, a
-  // price — is dropped here. `frame` names a choice, never an amount: what a
-  // frame costs is the database's business, and place_order adds it from the
-  // product's own price. Anything other than the three it knows is refused
-  // there rather than guessed at. A model line carries format; a display line
-  // carries variant; never both, and place_order rejects the wrong one rather
-  // than ignoring it.
-  const lines = rawLines.slice(0, 20).map((l) => {
-    const base = { slug: str(l.slug), qty: Number(l.qty) || 0 }
-    return typeof l.variant === "string" && l.variant
-      ? { ...base, variant: l.variant }
-      : { ...base, format: str(l.format), frame: str(l.frame) }
-  })
 
   const { data, error } = await supabase().rpc("place_order", {
     p_name: str(customer.name),
@@ -70,6 +50,10 @@ export async function POST(request: Request) {
     // Which method is legitimate, and what it costs, is decided in the
     // database — this only carries the choice across.
     p_shipping_method: str(body.shippingMethod) || "standard",
+    // The code, never the discount. place_order runs the same check the
+    // preview ran and works the amount out again, so a code that expired
+    // while the form was open is caught here rather than honoured.
+    p_coupon: str(body.coupon),
   })
 
   if (error) {
@@ -85,7 +69,13 @@ export async function POST(request: Request) {
     )
   }
 
-  const result = data as { number?: string; total?: number; shipping?: number } | null
+  const result = data as {
+    number?: string
+    total?: number
+    shipping?: number
+    discount?: number
+    coupon?: string
+  } | null
   if (!result?.number) {
     console.error("place_order returned nothing usable", data)
     return NextResponse.json({ error: "We couldn't place that order." }, { status: 500 })
@@ -95,5 +85,7 @@ export async function POST(request: Request) {
     number: result.number,
     total: result.total ?? 0,
     shipping: result.shipping ?? 0,
+    discount: result.discount ?? 0,
+    coupon: result.coupon ?? "",
   })
 }

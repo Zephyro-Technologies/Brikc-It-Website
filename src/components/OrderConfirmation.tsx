@@ -118,6 +118,11 @@ export default function OrderConfirmation({ payment }: { payment: PaymentDetails
           <p className="font-display mt-1 text-2xl" style={{ fontWeight: 800 }}>
             {money(order.total)}
           </p>
+          {(order.discount ?? 0) > 0 && (
+            <p className="mt-1 text-xs font-medium text-[var(--primary)]">
+              {order.coupon} took off {money(order.discount ?? 0)}
+            </p>
+          )}
           {order.shipping > 0 && (
             <p className="mt-1 text-xs text-[var(--muted)]">
               Includes {money(order.shipping)} for {order.deliveryLabel.toLowerCase()}

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { AlertTriangle, ArrowLeft, ChevronDown, Loader2, ShoppingBag } from "lucide-react"
+import { AlertTriangle, ArrowLeft, ChevronDown, Loader2, ShoppingBag, Tag, X } from "lucide-react"
 import { lineLabel, useCart } from "../cart"
 import { money } from "../lib/money"
 import {
@@ -196,7 +196,65 @@ export default function CheckoutView({
   const blocked = priced.filter((l) => l.unavailable)
   const repriced = priced.filter((l) => l.changed)
   const subtotal = priced.reduce((n, l) => (l.unavailable ? n : n + l.unitPrice * l.qty), 0)
-  const total = subtotal + shipping
+
+  /**
+   * The cart as the server sees it — the one shape sent both to price a coupon
+   * and to place the order, so a discount can never be quoted against a
+   * different cart from the one that gets charged.
+   */
+  const wire = useMemo(
+    () =>
+      priced.map((l) =>
+        l.kind === "display"
+          ? { slug: l.slug, variant: l.variantId, qty: l.qty }
+          : { slug: l.slug, format: l.format, frame: l.frame ?? "none", qty: l.qty },
+      ),
+    [priced],
+  )
+
+  const [couponInput, setCouponInput] = useState("")
+  const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null)
+  const [couponError, setCouponError] = useState<string | null>(null)
+  const [checkingCoupon, setCheckingCoupon] = useState(false)
+
+  // Shown, but never the last word: place_order works the discount out again
+  // from the same function, so this is a preview of that number and not a
+  // second opinion about it.
+  const discount = coupon?.discount ?? 0
+  const total = subtotal - discount + shipping
+
+  async function applyCoupon(e: React.FormEvent) {
+    e.preventDefault()
+    const code = couponInput.trim()
+    if (!code || checkingCoupon) return
+    setCheckingCoupon(true)
+    setCouponError(null)
+    try {
+      const res = await fetch("/api/coupon", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        // The cart, not a total. What it is worth is the database's business.
+        body: JSON.stringify({ code, lines: wire }),
+      })
+      const body = (await res.json()) as { code?: string; discount?: number; error?: string }
+      if (!res.ok || !body.code) {
+        setCoupon(null)
+        setCouponError(body.error ?? "We couldn't check that code.")
+        return
+      }
+      setCoupon({ code: body.code, discount: body.discount ?? 0 })
+      setCouponInput("")
+    } catch {
+      setCouponError("Couldn't reach us just then.")
+    } finally {
+      setCheckingCoupon(false)
+    }
+  }
+
+  function dropCoupon() {
+    setCoupon(null)
+    setCouponError(null)
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -221,18 +279,19 @@ export default function CheckoutView({
           // one total and charges another — the exact disagreement the shop is
           // built to prevent. Still only a yes/no; the frame's price is the
           // database's business, not the browser's.
-          lines: priced.map((l) =>
-            l.kind === "display"
-              ? { slug: l.slug, variant: l.variantId, qty: l.qty }
-              : { slug: l.slug, format: l.format, frame: l.frame ?? "none", qty: l.qty },
-          ),
+          lines: wire,
           shippingMethod: chosen?.id ?? "standard",
+          // The code, never the amount. A code that expired while this form was
+          // open is refused at this point rather than honoured.
+          coupon: coupon?.code ?? "",
         }),
       })
       const body = (await res.json()) as {
         number?: string
         total?: number
         shipping?: number
+        discount?: number
+        coupon?: string
         error?: string
       }
       if (!res.ok || !body.number) {
@@ -250,6 +309,10 @@ export default function CheckoutView({
           total: body.total ?? total,
           name: form.name,
           shipping: body.shipping ?? shipping,
+          // What the order was actually given, which is what place_order
+          // decided — not what this page was showing a moment ago.
+          discount: body.discount ?? 0,
+          coupon: body.coupon ?? "",
           deliveryLabel: chosen?.label ?? "Standard delivery",
         }),
       )
@@ -493,7 +556,72 @@ export default function CheckoutView({
             </p>
           )}
 
+          {/* Above the totals, because it changes them. Its own form rather
+              than an input inside the checkout form: Enter here should price a
+              code, not place the order. */}
+          <div className="border-t border-[var(--border)] pt-4">
+            {coupon ? (
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/5 px-3 py-2.5">
+                <span className="inline-flex min-w-0 items-center gap-2 text-sm">
+                  <Tag className="h-4 w-4 shrink-0 text-[var(--primary)]" />
+                  <span className="truncate font-semibold">{coupon.code}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={dropCoupon}
+                  aria-label={`Remove code ${coupon.code}`}
+                  className="mat-btn grid h-6 w-6 shrink-0 place-items-center rounded-full hover:bg-[var(--primary)]/15"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") applyCoupon(e)
+                  }}
+                  placeholder="Discount code"
+                  aria-label="Discount code"
+                  autoComplete="off"
+                  spellCheck={false}
+                  maxLength={24}
+                  className={`${FIELD} font-mono text-sm uppercase`}
+                />
+                <button
+                  type="button"
+                  onClick={applyCoupon}
+                  disabled={!couponInput.trim() || checkingCoupon}
+                  className="mat-btn shrink-0 rounded-xl border border-[var(--border)] px-4 text-sm font-semibold hover:bg-[var(--surface-2)] disabled:opacity-50"
+                >
+                  {checkingCoupon ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
+                </button>
+              </div>
+            )}
+            {couponError && (
+              <p className="mt-2 text-xs text-[var(--primary-deep)]">{couponError}</p>
+            )}
+          </div>
+
           <div className="space-y-2 border-t border-[var(--border)] pt-4">
+            {discount > 0 && (
+              <>
+                <div className="flex items-center justify-between gap-3 text-sm text-[var(--muted)]">
+                  <span>Subtotal</span>
+                  <span className="shrink-0 text-[var(--foreground)]">{money(subtotal)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="min-w-0 truncate text-[var(--muted)]">
+                    Discount · {coupon?.code}
+                  </span>
+                  <span className="shrink-0 font-semibold text-[var(--primary)]">
+                    −{money(discount)}
+                  </span>
+                </div>
+              </>
+            )}
             <div className="flex items-center justify-between gap-3 text-sm text-[var(--muted)]">
               <span className="min-w-0 truncate">{chosen?.label ?? "Delivery"}</span>
               <span className="shrink-0 text-[var(--foreground)]">{shipping > 0 ? money(shipping) : "Free"}</span>

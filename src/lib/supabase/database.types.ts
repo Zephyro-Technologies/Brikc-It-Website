@@ -82,6 +82,54 @@ export type Database = {
         }
         Relationships: []
       }
+      coupons: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          ends_at: string | null
+          id: string
+          kind: Database["public"]["Enums"]["coupon_kind"]
+          max_uses: number | null
+          min_subtotal: number
+          note: string
+          starts_at: string | null
+          updated_at: string
+          uses: number
+          value: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["coupon_kind"]
+          max_uses?: number | null
+          min_subtotal?: number
+          note?: string
+          starts_at?: string | null
+          updated_at?: string
+          uses?: number
+          value: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["coupon_kind"]
+          max_uses?: number | null
+          min_subtotal?: number
+          note?: string
+          starts_at?: string | null
+          updated_at?: string
+          uses?: number
+          value?: number
+        }
+        Relationships: []
+      }
       faqs: {
         Row: {
           answer: string
@@ -301,10 +349,12 @@ export type Database = {
       }
       orders: {
         Row: {
+          coupon_code: string
           created_at: string
           customer_email: string
           customer_name: string
           customer_phone: string
+          discount: number
           id: string
           number: string
           ship_city: string
@@ -324,10 +374,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          coupon_code?: string
           created_at?: string
           customer_email: string
           customer_name: string
           customer_phone?: string
+          discount?: number
           id?: string
           number?: string
           ship_city: string
@@ -347,10 +399,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          coupon_code?: string
           created_at?: string
           customer_email?: string
           customer_name?: string
           customer_phone?: string
+          discount?: number
           id?: string
           number?: string
           ship_city?: string
@@ -798,6 +852,7 @@ export type Database = {
       place_order: {
         Args: {
           p_city: string
+          p_coupon?: string
           p_email: string
           p_line1: string
           p_line2: string
@@ -810,6 +865,7 @@ export type Database = {
         }
         Returns: Json
       }
+      quote_coupon: { Args: { p_code: string; p_lines: Json }; Returns: Json }
       submit_review: {
         Args: {
           p_email: string
@@ -823,6 +879,7 @@ export type Database = {
       }
     }
     Enums: {
+      coupon_kind: "percent" | "fixed"
       format_key: "boxed" | "built" | "framed"
       order_source: "storefront" | "manual"
       order_status:
@@ -968,6 +1025,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      coupon_kind: ["percent", "fixed"],
       format_key: ["boxed", "built", "framed"],
       order_source: ["storefront", "manual"],
       order_status: [
