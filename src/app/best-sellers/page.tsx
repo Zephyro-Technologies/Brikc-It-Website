@@ -36,13 +36,10 @@ export default async function BestSellersPage() {
       <div className="absolute inset-0 bg-[radial-gradient(120%_60%_at_50%_-10%,rgba(240,56,74,0.16),transparent)]" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
-        <header className="pt-20 pb-12 text-center sm:pt-28 sm:pb-16">
+        <header className="pt-12 pb-12 text-center sm:pt-16 sm:pb-16">
           <Reveal>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.25em] text-[var(--primary-2)]">
-              ✦ Most loved
-            </span>
             <h1
-              className="font-display mx-auto mt-6 max-w-3xl text-5xl leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl"
+              className="font-display mx-auto max-w-3xl text-5xl leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl"
               style={{ fontWeight: 800 }}
             >
               Best{" "}
