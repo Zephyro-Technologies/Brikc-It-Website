@@ -6,15 +6,12 @@ import type { StoreCategory } from "../data"
 
 /**
  * The homepage hero: the categories' own cover images, as a carousel you can
- * swipe.
- *
- * Those covers are set in the admin and, until recently, the storefront only
- * rendered a category's name — the image was editable and rendered nowhere.
+ * drag with a finger or a mouse.
  *
  * The whole hero is a client component rather than just the backdrop, because
- * a swipe has to be caught across the entire section. With the images sitting
- * in an absolutely-positioned layer behind the text, a drag that starts on the
- * headline — which on a phone is most of the width — would never reach them.
+ * a drag has to be caught across the entire section. With the images sitting
+ * in a layer behind the copy, a drag that starts on the headline — which on a
+ * phone is most of the width — would never reach them.
  */
 
 /** Long enough to look at, short enough that the next one is worth waiting for. */
@@ -27,7 +24,7 @@ const HOLD_MS = 5600
 const MAX_IMAGES = 5
 
 /** Past this much of the width, a drag counts as a swipe rather than a wobble. */
-const SWIPE_FRACTION = 0.18
+const SWIPE_FRACTION = 0.15
 
 export function Hero({ categories }: { categories: StoreCategory[] }) {
   const slides = useMemo(() => {
@@ -41,19 +38,19 @@ export function Hero({ categories }: { categories: StoreCategory[] }) {
   const [mounted, setMounted] = useState(false)
   const [drag, setDrag] = useState(0)
   const [dragging, setDragging] = useState(false)
-  /**
-   * The same number as `drag`, kept in a ref because state is not readable
-   * synchronously. A quick flick delivers its last touchmove and its touchend
-   * in one tick: React has not re-rendered in between, so the end handler
-   * still closes over the previous render's `drag` and a real swipe measures
-   * as a few pixels and springs back. The ref is what the decision reads; the
-   * state is only what the transform renders from.
-   */
-  const dragX = useRef(0)
 
   const frame = useRef<HTMLDivElement>(null)
-  const start = useRef<{ x: number; y: number; locked: "x" | "y" | null } | null>(null)
-  // Bumped to restart the timer, so an advance never lands right after a swipe.
+  const start = useRef<{ x: number; y: number; axis: "x" | "y" | null } | null>(null)
+  /**
+   * The same number as `drag`, kept in a ref because state is not readable
+   * synchronously. A quick flick delivers its last move and its release in one
+   * tick: React has not re-rendered in between, so the release handler still
+   * closes over the previous render's `drag`, and a real swipe measures as a
+   * few pixels and springs back. The ref is what the decision reads; the state
+   * is only what the transform renders from.
+   */
+  const dragX = useRef(0)
+  // Bumped to restart the timer, so an advance never lands right after a drag.
   const [nudge, setNudge] = useState(0)
 
   useEffect(() => setMounted(true), [])
@@ -74,39 +71,49 @@ export function Hero({ categories }: { categories: StoreCategory[] }) {
   }, [slides.length, nudge])
 
   // ── Dragging ──────────────────────────────────────────────────────────────
-  // The axis is decided once, on the first few pixels of movement, and then
-  // held: a hero that steals a downward flick because it drifted sideways is
-  // a hero nobody can scroll past.
-  function onTouchStart(e: React.TouchEvent) {
+  // Pointer events rather than touch events, so a mouse drags it too — on a
+  // desktop there is no other way to move it by hand, and a carousel you can
+  // only wait for is not one you control.
+  function onPointerDown(e: React.PointerEvent) {
     if (slides.length < 2) return
-    const t = e.touches[0]
-    start.current = { x: t.clientX, y: t.clientY, locked: null }
+    // A mouse drag that begins on a link should follow the link, not the
+    // carousel. Everywhere else is fair game.
+    if ((e.target as Element).closest?.("a, button")) return
+    if (e.pointerType === "mouse" && e.button !== 0) return
+    start.current = { x: e.clientX, y: e.clientY, axis: null }
   }
 
-  function onTouchMove(e: React.TouchEvent) {
+  function onPointerMove(e: React.PointerEvent) {
     const from = start.current
     if (!from) return
-    const t = e.touches[0]
-    const dx = t.clientX - from.x
-    const dy = t.clientY - from.y
+    const dx = e.clientX - from.x
+    const dy = e.clientY - from.y
 
-    if (from.locked === null) {
+    // The axis is decided once, on the first few pixels, and then held. A hero
+    // that steals a downward flick because it drifted sideways is a hero
+    // nobody can scroll past. A mouse has no scroll to steal, so it is always
+    // horizontal.
+    if (from.axis === null) {
       if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
-      from.locked = Math.abs(dx) > Math.abs(dy) ? "x" : "y"
-      if (from.locked === "x") setDragging(true)
+      from.axis = e.pointerType === "mouse" || Math.abs(dx) > Math.abs(dy) ? "x" : "y"
+      if (from.axis === "x") {
+        setDragging(true)
+        // Keeps the moves coming even if the cursor leaves the section.
+        ;(e.currentTarget as Element).setPointerCapture?.(e.pointerId)
+      }
     }
-    if (from.locked !== "x") return
+    if (from.axis !== "x") return
 
     dragX.current = dx
     setDrag(dx)
   }
 
-  function onTouchEnd() {
+  function onPointerUp() {
     const from = start.current
     const moved = dragX.current
     start.current = null
     dragX.current = 0
-    if (!from || from.locked !== "x") return
+    if (!from || from.axis !== "x") return
 
     const width = frame.current?.offsetWidth ?? 1
     if (Math.abs(moved) > width * SWIPE_FRACTION) go(index + (moved < 0 ? 1 : -1))
@@ -116,38 +123,56 @@ export function Hero({ categories }: { categories: StoreCategory[] }) {
 
   const offset = -index * 100
   const dragPercent = dragging && frame.current ? (drag / frame.current.offsetWidth) * 100 : 0
+  const many = slides.length > 1
 
   return (
     <section
       ref={frame}
-      className="relative isolate overflow-hidden"
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-      onTouchCancel={onTouchEnd}
+      /**
+       * The height is set here rather than left to the copy.
+       *
+       * A cover is about 2.4 wide to 1 tall. Let the section be as short as its
+       * text wants and it ends up nearer 3:1, and object-cover answers that by
+       * cutting the top and bottom off the photograph — which reads as the
+       * image being zoomed in. 42vw is 2.38:1, so on a wide screen almost
+       * nothing is cropped, and the clamp keeps it sane at both extremes.
+       */
+      className={`relative isolate min-h-[clamp(30rem,42vw,44rem)] overflow-hidden ${
+        many ? "cursor-grab touch-pan-y select-none active:cursor-grabbing" : ""
+      }`}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      onPointerLeave={onPointerUp}
     >
-      {/* The track slides; it does not fade. `touch-pan-y` lets the page keep
-          scrolling vertically while this owns the horizontal axis. */}
+      {/* The track slides; it does not fade. */}
       <div
         aria-hidden
-        className="absolute inset-0 flex touch-pan-y"
+        className="absolute inset-0 flex"
         style={{
           transform: `translate3d(${offset + dragPercent}%, 0, 0)`,
           transition: dragging ? "none" : "transform 600ms cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       >
         {slides.map((src, i) => (
-          // Only the first is rendered on the server and in the first client
-          // pass, so the hero's largest paint is one image loading alone
-          // rather than five racing it. Both passes render the same markup,
-          // so hydration has nothing to disagree about.
           <div key={src} className="h-full w-full shrink-0">
+            {/* Only the first is rendered on the server and in the first client
+                pass, so the hero's largest paint is one image loading alone
+                rather than five racing it. Both passes render the same markup,
+                so hydration has nothing to disagree about. */}
             {(mounted || i === 0) && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={src}
                 alt=""
-                loading={i === 0 ? "eager" : "lazy"}
+                // Eager, all of them, and this is not an oversight. A slide
+                // sits translated off to the side, which a lazy image reads as
+                // "not needed yet" — so it starts loading only as it slides in
+                // and the first advance lands on an empty frame. That was
+                // happening on the live site. The `mounted` gate above is what
+                // protects the largest paint.
+                loading="eager"
                 fetchPriority={i === 0 ? "high" : "low"}
                 draggable={false}
                 style={{ backgroundColor: "#eceae7" }}
@@ -160,20 +185,18 @@ export function Hero({ categories }: { categories: StoreCategory[] }) {
 
       {/*
         A scrim over the copy, and only over the copy.
-        
-        The old one ran at 0.93 out to 42% and still had 0.34 left at 72%, which
-        is why the whole photograph looked washed. This holds 0.88 where the
-        headline is, is down to 0.62 by the right-hand edge of the text column,
-        and is gone entirely by 80% — so the cars on the right keep their
-        colour.
-        
+
+        The old one ran at 0.93 out to 42% and still had 0.34 left at 72%,
+        which is why the whole photograph looked bleached. This holds 0.88
+        where the headline is, is down to 0.62 by the right-hand edge of the
+        text column, and is gone entirely by 80%.
+
         0.62 is not an arbitrary floor. #1c1b1f body copy over the darkest part
         of a photograph needs about 0.48 of this scrim to clear AA at 4.5:1;
         0.62 gives 7:1 there and better everywhere else.
-        
+
         On a phone the copy is the full width, so there is no left and right to
-        separate — it runs top to bottom instead, and stays at 0.60 down at the
-        category chips.
+        separate — it runs top to bottom instead.
       */}
       <div
         aria-hidden
@@ -183,7 +206,7 @@ export function Hero({ categories }: { categories: StoreCategory[] }) {
       {/* The blend into the next section. */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-[var(--background)]" />
 
-      <div className="pointer-events-none relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:py-28">
+      <div className="pointer-events-none relative mx-auto flex min-h-[inherit] max-w-7xl items-center px-4 py-20 sm:px-6 lg:py-28">
         <div className="max-w-xl" style={{ animation: "fade-up .6s ease both" }}>
           <h1
             className="font-display text-5xl leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl"
@@ -198,7 +221,7 @@ export function Hero({ categories }: { categories: StoreCategory[] }) {
             box or assembled by hand, and a display frame to put it in whenever you want one.
           </p>
           {/* The panel is pointer-events-none so a drag can start anywhere over
-              it; the controls inside put them back, so links still click. */}
+              it; the controls put pointer events back, so links still click. */}
           <div className="pointer-events-auto mt-8 flex flex-wrap items-center gap-3">
             <Link
               href="/shop"
@@ -213,21 +236,8 @@ export function Hero({ categories }: { categories: StoreCategory[] }) {
               Best sellers
             </Link>
           </div>
-          <div className="pointer-events-auto mt-8 flex flex-wrap gap-2">
-            {/* Linked by slug, not name: renaming a category in the admin
-                cascades to its builds but must not break a link in the wild. */}
-            {categories.map((c) => (
-              <Link
-                key={c.slug}
-                href={`/shop?cat=${c.slug}`}
-                className="mat-btn rounded-full border border-[var(--border)] bg-white/70 px-4 py-2 text-sm font-medium text-[var(--muted)] backdrop-blur hover:border-[var(--primary)] hover:text-[var(--primary)]"
-              >
-                {c.name}
-              </Link>
-            ))}
-          </div>
 
-          {slides.length > 1 && (
+          {many && (
             <div className="pointer-events-auto mt-10 flex items-center gap-2">
               {slides.map((src, i) => (
                 <button
