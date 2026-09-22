@@ -79,14 +79,21 @@ export function Reveal({
 }
 
 /** Heading block with an optional action on the right. `dark` for the black bands. */
+/**
+ * A section's title and the line under it.
+ *
+ * There is deliberately no eyebrow — the small uppercase label some of these
+ * used to carry above the heading. It never said anything the heading beneath
+ * it did not, and it cost a line of height before the page got to its own
+ * title. The prop is gone rather than merely unused, so it cannot quietly come
+ * back one page at a time.
+ */
 export function SectionHead({
-  kicker,
   title,
   desc,
   dark = false,
   action,
 }: {
-  kicker?: string
   title: string
   desc: string
   dark?: boolean
@@ -94,15 +101,6 @@ export function SectionHead({
 }) {
   return (
     <div className="mb-8">
-      {kicker && (
-        <span
-          className={`text-xs font-bold tracking-[0.2em] uppercase ${
-            dark ? "text-[var(--primary-2)]" : "text-[var(--primary)]"
-          }`}
-        >
-          {kicker}
-        </span>
-      )}
       {/* The action sits on the title's line, not down beside the description. */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
         <h2 className="font-display text-4xl tracking-tight sm:text-5xl" style={{ fontWeight: 800 }}>

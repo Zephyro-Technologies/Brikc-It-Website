@@ -32,7 +32,6 @@ export default async function GuidesPage() {
     <div className="mx-auto max-w-7xl px-4 pt-10 pb-24 sm:px-6">
       <Reveal>
         <SectionHead
-          kicker="Assembly guides"
           title="Build it step by step"
           desc="Every manual we've written, free to download. Find your build and take the PDF with you — you don't need to be online to follow it."
         />

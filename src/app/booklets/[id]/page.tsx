@@ -48,8 +48,7 @@ export default async function BookletPage({ params }: { params: Promise<{ id: st
           </span>
         )}
         <div>
-          <span className="text-xs font-bold tracking-[0.2em] text-[var(--primary)] uppercase">Booklet guide</span>
-          <h1 className="font-display mt-1 text-4xl tracking-tight sm:text-5xl" style={{ fontWeight: 800 }}>
+          <h1 className="font-display text-4xl tracking-tight sm:text-5xl" style={{ fontWeight: 800 }}>
             {guide.title}
           </h1>
           <p className="mt-2 text-[var(--muted)]">

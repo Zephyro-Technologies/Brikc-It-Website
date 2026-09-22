@@ -12,7 +12,6 @@ export function Faq({ items }: { items: FaqItem[] }) {
   return (
     <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
       <SectionHead
-        kicker="FAQ"
         title="Good to know"
         desc="Answers to the questions shoppers ask most before they order."
       />

@@ -99,8 +99,7 @@ export default function OrderConfirmation({ payment }: { payment: PaymentDetails
 
   return (
     <div className="mx-auto max-w-2xl px-5 pt-28 pb-24 md:pt-36">
-      <span className="text-xs font-bold tracking-[0.2em] text-[var(--primary)] uppercase">Order placed</span>
-      <h1 className="font-display mt-3 text-4xl tracking-tight md:text-5xl" style={{ fontWeight: 800 }}>
+      <h1 className="font-display text-4xl tracking-tight md:text-5xl" style={{ fontWeight: 800 }}>
         Thanks{firstName ? `, ${firstName}` : ""} — one step left.
       </h1>
 

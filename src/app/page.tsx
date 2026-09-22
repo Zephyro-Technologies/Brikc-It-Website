@@ -284,7 +284,6 @@ function Reviews({ reviews }: { reviews: Review[] }) {
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <Reveal>
           <SectionHead
-            kicker="Reviews"
             title="Built to be shown off"
             desc="What collectors say once the build is on the wall."
           />
