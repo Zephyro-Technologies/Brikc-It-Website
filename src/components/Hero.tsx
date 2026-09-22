@@ -200,7 +200,7 @@ export function Hero({ categories }: { categories: StoreCategory[] }) {
       */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(250,248,246,0.90)_0%,rgba(250,248,246,0.82)_60%,rgba(250,248,246,0.60)_100%)] sm:bg-[linear-gradient(100deg,rgba(250,248,246,0.88)_0%,rgba(250,248,246,0.80)_35%,rgba(250,248,246,0.62)_48%,rgba(250,248,246,0.18)_65%,rgba(250,248,246,0)_80%)]"
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(250,248,246,0.82)_0%,rgba(250,248,246,0.74)_60%,rgba(250,248,246,0.52)_100%)] sm:bg-[linear-gradient(100deg,rgba(250,248,246,0.80)_0%,rgba(250,248,246,0.72)_35%,rgba(250,248,246,0.55)_48%,rgba(250,248,246,0.15)_65%,rgba(250,248,246,0)_78%)]"
       />
 
       {/* The blend into the next section. */}
