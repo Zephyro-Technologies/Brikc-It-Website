@@ -73,7 +73,12 @@ export function DisplayCard({ product }: { product: Product }) {
         </h3>
         <p className="mt-1 text-xs text-[var(--muted)]">{subline(product)}</p>
         {running && <p className="mt-1.5 text-xs font-semibold text-[var(--primary)]">{running}</p>}
-        <div className="mt-auto flex items-center justify-between gap-2 pt-4">
+        {/* Stacked on a narrow card, side by side once there is room. In a
+            two-up grid on a phone this row gets about 100px: laid out as a row
+            it does not wrap as a row, it wraps INSIDE both children — "from Rs"
+            over "19,000", and "+" over "Add". Stacking is the same information
+            and reads as a decision rather than a fault. */}
+        <div className="mt-auto flex flex-col items-stretch gap-2 pt-4 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
           {/* No sellable size means no price to advertise. */}
           {sellable ? (
             <span className="font-bold">

@@ -24,7 +24,11 @@ function Copyable({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between gap-3 px-4 py-3">
       <div className="min-w-0">
         <p className="text-[10px] font-semibold tracking-widest text-[var(--muted)] uppercase">{label}</p>
-        <p className="mt-0.5 truncate text-sm font-medium">{value}</p>
+        {/* Wrapped, never truncated. These are the numbers somebody has to type
+          into their banking app, and the note above says the value is on screen
+          to be read when the clipboard is blocked — truncate made that untrue.
+          A 24-character IBAN was cut by 30px at 320px. */}
+        <p className="mt-0.5 text-sm font-medium break-all">{value}</p>
       </div>
       <button
         type="button"

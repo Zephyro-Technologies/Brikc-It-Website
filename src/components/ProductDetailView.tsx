@@ -200,7 +200,13 @@ export default function ProductDetailView({
         <span className="text-[var(--foreground)]">{product.name}</span>
       </nav>
 
-      <div className="grid gap-10 lg:grid-cols-2">
+      {/* [&>*]:min-w-0 is load-bearing. A grid item defaults to min-width:auto,
+          so it cannot shrink below its content's minimum — and a row holding a
+          long build name pushed this column 29px past a 320px screen, taking
+          the whole page into horizontal scroll. The `truncate` on those rows
+          could never engage, because truncation only happens once the box is
+          allowed to be narrower than its text. */}
+      <div className="grid gap-10 lg:grid-cols-2 [&>*]:min-w-0">
         <Reveal>
           <div className="group relative overflow-hidden rounded-[28px] shadow-[var(--shadow-2)]">
             {/* A build with no photograph has nothing to enlarge, and opening
@@ -250,15 +256,19 @@ export default function ProductDetailView({
               </>
             )}
           </div>
+          {/* Scrolls rather than squashes. Flex children shrink by default, so
+              a fourth photograph turned every 80px thumbnail into a 61px sliver
+              and an eighth into 25px — the object-cover image re-cropped to a
+              vertical strip, and the tap target fell under 44px. */}
           {product.images.length > 1 && (
-            <div className="mt-4 flex gap-3">
+            <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
               {product.images.map((img, i) => (
                 <button
                   key={img + i}
                   type="button"
                   onClick={() => setActiveImg(i)}
                   aria-label={`Show image ${i + 1}`}
-                  className={`mat-btn h-20 w-20 overflow-hidden rounded-2xl border-2 ${
+                  className={`mat-btn h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 ${
                     activeImg === i
                       ? "border-[var(--primary)]"
                       : "border-transparent hover:border-[var(--border)]"
@@ -297,7 +307,7 @@ export default function ProductDetailView({
               </span>
             )}
             <h1
-              className="font-display mt-4 w-full text-4xl tracking-tight sm:text-5xl"
+              className="font-display mt-4 w-full text-4xl tracking-tight break-words sm:text-5xl"
               style={{ fontWeight: 800 }}
             >
               {product.name}

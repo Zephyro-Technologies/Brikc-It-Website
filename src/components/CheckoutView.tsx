@@ -390,7 +390,14 @@ export default function CheckoutView({
 
   return (
     <Shell>
-      <form onSubmit={submit} className="grid gap-10 lg:grid-cols-[1fr_22rem] lg:items-start">
+      {/* [&>*]:min-w-0 again: the province <select> has a min-content of 248px,
+          set by its longest option ("Islamabad Capital Territory"), and a grid
+          item cannot shrink below that — so every section was laid out 18px
+          wider than the form at 300px and the page scrolled sideways. */}
+      <form
+        onSubmit={submit}
+        className="grid gap-10 lg:grid-cols-[1fr_22rem] lg:items-start [&>*]:min-w-0"
+      >
         <div className="space-y-8">
           <section className="rounded-3xl bg-white p-6 shadow-[var(--shadow-1)] sm:p-8">
             <h2 className="font-display text-lg" style={{ fontWeight: 700 }}>

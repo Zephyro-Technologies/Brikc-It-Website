@@ -219,18 +219,23 @@ export function ProductCard({ product }: { product: Product }) {
             }`}
           />
         )}
+        <div className="pointer-events-none absolute inset-x-3 top-3 flex items-start justify-between gap-2">
         {tag && (
           <span
-            className={`absolute top-3 left-3 rounded-full px-2.5 py-1 text-xs font-bold shadow-[var(--shadow-1)] ${
+            className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold shadow-[var(--shadow-1)] ${
               soldOut ? "bg-[var(--foreground)] text-white" : "bg-white/90 text-[var(--primary)]"
             }`}
           >
             {tag}
           </span>
         )}
-        <span className="absolute top-3 right-3 rounded-full bg-black/55 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur">
+        {/* The category gives way, never the badge: "Sold out" is the thing a
+            shopper has to see. Two separately-positioned pills used to sit at
+            opposite corners and overlapped by 23px on a 320px two-up card. */}
+        <span className="min-w-0 truncate rounded-full bg-black/55 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur">
           {product.category || "Display"}
         </span>
+        </div>
       </div>
       <div className="flex flex-1 flex-col p-4">
         <h3 className="font-display text-base leading-snug" style={{ fontWeight: 700 }}>
@@ -240,7 +245,12 @@ export function ProductCard({ product }: { product: Product }) {
         {running && (
           <p className="mt-1.5 text-xs font-semibold text-[var(--primary)]">{running}</p>
         )}
-        <div className="mt-auto flex items-center justify-between gap-2 pt-4">
+        {/* Stacked on a narrow card, side by side once there is room. In a
+            two-up grid on a phone this row gets about 100px: laid out as a row
+            it does not wrap as a row, it wraps INSIDE both children — "from Rs"
+            over "19,000", and "+" over "Add". Stacking is the same information
+            and reads as a decision rather than a fault. */}
+        <div className="mt-auto flex flex-col items-stretch gap-2 pt-4 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
           {/* A build nobody can buy doesn't get to advertise a price. */}
           {soldOut ? (
             <span className="text-sm font-semibold text-[var(--muted)]">Not available</span>

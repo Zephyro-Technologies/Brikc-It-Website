@@ -217,6 +217,22 @@ export function Nav({ banner = "" }: { banner?: string }) {
 export function CartDrawer() {
   const { lines, open, setOpen, subtotal, remove, setQty, count, clear } = useCart()
 
+  /**
+   * The page behind the drawer must not scroll under it.
+   *
+   * On a phone the drawer is the full width, so a flick that carried on into
+   * the page meant closing it and finding yourself somewhere else entirely.
+   * The lightbox on the product page already does this; the drawer did not.
+   */
+  useEffect(() => {
+    if (!open) return
+    const previous = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = previous
+    }
+  }, [open])
+
   return (
     <>
       <div
@@ -260,7 +276,7 @@ export function CartDrawer() {
           </div>
         ) : (
           <>
-            <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
+            <div className="flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 py-5">
               {lines.map((l) => (
                 <div
                   key={l.key}

@@ -76,7 +76,13 @@ export default function DisplayDetailView({
         <span className="text-[var(--foreground)]">{product.name}</span>
       </nav>
 
-      <div className="grid gap-10 lg:grid-cols-2">
+      {/* [&>*]:min-w-0 is load-bearing. A grid item defaults to min-width:auto,
+          so it cannot shrink below its content's minimum — and a row holding a
+          long build name pushed this column 29px past a 320px screen, taking
+          the whole page into horizontal scroll. The `truncate` on those rows
+          could never engage, because truncation only happens once the box is
+          allowed to be narrower than its text. */}
+      <div className="grid gap-10 lg:grid-cols-2 [&>*]:min-w-0">
         <Reveal>
           <div className="overflow-hidden rounded-[28px] shadow-[var(--shadow-2)]">
             {visual.kind === "image" ? (
@@ -93,14 +99,14 @@ export default function DisplayDetailView({
             )}
           </div>
           {product.images.length > 1 && (
-            <div className="mt-4 flex gap-3">
+            <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
               {product.images.map((img, i) => (
                 <button
                   key={img + i}
                   type="button"
                   onClick={() => setActiveImg(i)}
                   aria-label={`Show image ${i + 1}`}
-                  className={`mat-btn h-20 w-20 overflow-hidden rounded-2xl border-2 ${
+                  className={`mat-btn h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 ${
                     activeImg === i
                       ? "border-[var(--primary)]"
                       : "border-transparent hover:border-[var(--border)]"

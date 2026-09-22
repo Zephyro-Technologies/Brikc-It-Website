@@ -43,7 +43,10 @@ export default async function GuidesPage() {
         <ComingSoon note="The catalogue is being filled in — manuals will follow it." />
       ) : (
         <>
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* min-w-0 on the items: a grid item defaults to min-width:auto, so a
+              card holding a `truncate` name could not shrink and the whole track
+              grew instead — 172px of page scroll on a long build name. */}
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 [&>li]:min-w-0">
             {ready.map((product, i) => (
               <li key={product.slug}>
                 <Reveal delay={i * 40}>
