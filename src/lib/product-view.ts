@@ -46,7 +46,9 @@ export function lowVariantStockNote(variant: Variant, lowStockAt: number): strin
 
 /** The formats this build is actually sold in, in display order. Empty for a display. */
 export function soldFormats(product: Product): SoldFormat[] {
-  if (product.kind === "display") return []
+  // Neither a display nor a bundle is sold by assembly — a bundle's members
+  // had theirs fixed when it was built.
+  if (product.kind !== "model") return []
   return FORMAT_KEYS.filter((f) => product.formats[f])
 }
 
@@ -66,6 +68,18 @@ export function variantsInStock(product: Product): Variant[] {
  */
 export function isSellable(product: Product): boolean {
   if (product.kind === "display") return product.inStock && variantsInStock(product).length > 0
+  if (product.kind === "bundle") {
+    // Priced, filled, in stock, and every member still orderable. The stock
+    // already accounts for the members' counts — it is derived from them —
+    // but a member that has stopped being sold in the format the bundle
+    // fixed is in stock and unbuyable, which place_order would refuse.
+    return (
+      product.inStock &&
+      product.bundlePrice > 0 &&
+      product.bundleItems.length > 0 &&
+      product.bundleItems.every((i) => i.available)
+    )
+  }
   return product.inStock && soldFormats(product).length > 0
 }
 
@@ -131,6 +145,10 @@ export function displayVisual(product: Product): { kind: "image" | "swatch"; val
 /** The small muted line under a product name. Real fields only, no filler. */
 export function subline(product: Product): string {
   if (product.kind === "display") return [product.team, product.blurb].filter(Boolean).join(" · ")
+  if (product.kind === "bundle") {
+    const count = product.bundleItems.reduce((n, i) => n + i.qty, 0)
+    return [product.team, count > 0 ? `${count} builds together` : ""].filter(Boolean).join(" · ")
+  }
   return [product.team, product.scale].filter(Boolean).join(" · ")
 }
 
@@ -140,9 +158,18 @@ export function subline(product: Product): string {
  */
 export function cardTag(product: Product): string | null {
   const hasAnythingToSell =
-    product.kind === "display" ? variantsInStock(product).length > 0 : soldFormats(product).length > 0
+    product.kind === "display"
+      ? variantsInStock(product).length > 0
+      : product.kind === "bundle"
+        ? product.bundlePrice > 0 &&
+          product.bundleItems.length > 0 &&
+          product.bundleItems.every((i) => i.available)
+        : soldFormats(product).length > 0
   if (!hasAnythingToSell) return "Unavailable"
   if (!product.inStock) return "Sold out"
+  // A bundle says what it is before it says how popular it is: "Bundle" is
+  // what makes the price on the card make sense.
+  if (product.kind === "bundle") return "Bundle"
   if (product.featured) return "Best seller"
   return null
 }
@@ -158,6 +185,14 @@ export function specs(product: Product): { label: string; value: string }[] {
   // grid now sits directly above the Unassembled/Assembled toggle and the
   // frame chooser, so "Available as" was reading the controls back out.
   if (product.kind === "display") rows.push({ label: "Sizes", value: variantSummary(product) })
+  // A bundle's own piece count and scale are meaningless — they belong to its
+  // members, which the page lists in full underneath.
+  if (product.kind === "bundle") {
+    return [
+      { label: "In the bundle", value: `${product.bundleItems.reduce((n, i) => n + i.qty, 0)} builds` },
+      { label: "Edition", value: product.edition },
+    ]
+  }
   return rows
 }
 

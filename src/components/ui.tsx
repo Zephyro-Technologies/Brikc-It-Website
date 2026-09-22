@@ -146,9 +146,14 @@ export function AddButton({ product, className = "" }: { product: Product; class
   if (!isSellable(product)) return null
 
   // isSellable() already guarantees a sold format (model) or an in-stock
-  // variant (display) exists, so the non-null assertion here can't fire.
+  // variant (display) exists, so the non-null assertion here can't fire. A
+  // bundle has nothing to choose at all.
   const choice =
-    product.kind === "display" ? { variant: cheapestVariant(product)! } : { format: cheapestFormat(product) }
+    product.kind === "bundle"
+      ? ({ bundle: true } as const)
+      : product.kind === "display"
+        ? { variant: cheapestVariant(product)! }
+        : { format: cheapestFormat(product) }
 
   return (
     <button

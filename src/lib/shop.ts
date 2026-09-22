@@ -1,6 +1,8 @@
 import { supabase } from "./supabase/client"
 import { normaliseWhatsapp } from "./checkout"
+import { FORMAT_LABELS, FRAME_LABELS } from "../data"
 import type {
+  BundleItem,
   Category,
   DeliveryOption,
   FaqItem,
@@ -26,7 +28,15 @@ const PRODUCT_SELECT = `
   slug, name, team, category, kind, swatch, price_boxed, price_built,
   scale, pieces, edition, blurb, description,
   sells_boxed, sells_built, sells_framed, featured, stock, price_frame_plain, price_frame_led,
-  manual_url, manual_name, manual_bytes,
+  manual_url, manual_name, manual_bytes, bundle_price,
+  bundle_items!bundle_items_bundle_id_fkey (
+    qty, format, with_frame, frame_led, sort,
+    product_variants ( label, price, stock ),
+    products!bundle_items_product_id_fkey (
+      slug, name, kind, stock, price_boxed, price_built,
+      price_frame_plain, price_frame_led, sells_boxed, sells_built, sells_framed,
+      product_images ( url, sort ) )
+  ),
   product_images ( url, sort ),
   product_videos ( provider, src, title, sort ),
   product_categories ( category )
@@ -40,7 +50,15 @@ const DISPLAY_SELECT = `
   slug, name, team, category, kind, swatch, price_boxed, price_built,
   scale, pieces, edition, blurb, description,
   sells_boxed, sells_built, sells_framed, featured, stock, price_frame_plain, price_frame_led,
-  manual_url, manual_name, manual_bytes,
+  manual_url, manual_name, manual_bytes, bundle_price,
+  bundle_items!bundle_items_bundle_id_fkey (
+    qty, format, with_frame, frame_led, sort,
+    product_variants ( label, price, stock ),
+    products!bundle_items_product_id_fkey (
+      slug, name, kind, stock, price_boxed, price_built,
+      price_frame_plain, price_frame_led, sells_boxed, sells_built, sells_framed,
+      product_images ( url, sort ) )
+  ),
   product_images ( url, sort ),
   product_videos ( provider, src, title, sort ),
   product_categories ( category ),
@@ -71,9 +89,34 @@ type ProductRow = {
   manual_url: string
   manual_name: string
   manual_bytes: number
+  bundle_price: number
+  bundle_items: BundleItemRow[]
   product_images: { url: string; sort: number }[]
   product_categories: { category: string }[]
   product_videos: { provider: string; src: string; title: string; sort: number }[]
+}
+
+type BundleItemRow = {
+  qty: number
+  format: string | null
+  with_frame: boolean
+  frame_led: boolean
+  sort: number
+  product_variants: { label: string; price: number; stock: number } | null
+  products: {
+    slug: string
+    name: string
+    kind: ProductKind
+    stock: number
+    price_boxed: number
+    price_built: number
+    price_frame_plain: number
+    price_frame_led: number
+    sells_boxed: boolean
+    sells_built: boolean
+    sells_framed: boolean
+    product_images: { url: string; sort: number }[]
+  } | null
 }
 
 type VariantRow = { id: string; label: string; price: number; stock: number; sort: number }
@@ -81,6 +124,54 @@ type VariantRow = { id: string; label: string; price: number; stock: number; sor
 type DisplayRow = ProductRow & { product_variants: VariantRow[] }
 
 /** Shared by every reader, model or display, so they all return the same Product shape. */
+/**
+ * One line of a bundle's contents, priced as it will actually be sold.
+ *
+ * The assembly and the frame were fixed when the bundle was built, so this
+ * reads the member's own current prices for exactly that combination — which
+ * is what makes the saving shown on the page arithmetic rather than a claim.
+ */
+function toBundleItem(row: BundleItemRow): BundleItem | null {
+  const p = row.products
+  if (!p) return null
+
+  if (row.product_variants) {
+    const v = row.product_variants
+    return {
+      slug: p.slug,
+      name: p.name,
+      image: firstImage(p.product_images),
+      qty: row.qty,
+      label: v.label,
+      available: v.stock > 0,
+      unitPrice: v.price,
+    }
+  }
+
+  const format = (row.format ?? "boxed") as FormatKey
+  const frameCost = row.frame_led ? p.price_frame_led : row.with_frame ? p.price_frame_plain : 0
+  const base = format === "built" ? p.price_built : p.price_boxed
+  const sold = format === "built" ? p.sells_built : p.sells_boxed
+
+  return {
+    slug: p.slug,
+    name: p.name,
+    image: firstImage(p.product_images),
+    qty: row.qty,
+    label: row.frame_led
+      ? `${FORMAT_LABELS[format]} + ${FRAME_LABELS.led.toLowerCase()}`
+      : row.with_frame
+        ? `${FORMAT_LABELS[format]} + ${FRAME_LABELS.plain.toLowerCase()}`
+        : FORMAT_LABELS[format],
+    available: p.stock > 0 && sold && (!row.with_frame || frameCost > 0),
+    unitPrice: base + frameCost,
+  }
+}
+
+function firstImage(images: { url: string; sort: number }[]): string {
+  return [...(images ?? [])].sort((a, b) => a.sort - b.sort)[0]?.url ?? ""
+}
+
 function toProduct(row: ProductRow, variantRows: VariantRow[] = []): Product {
   return {
     slug: row.slug,
@@ -131,6 +222,14 @@ function toProduct(row: ProductRow, variantRows: VariantRow[] = []): Product {
       name: row.manual_name,
       bytes: row.manual_bytes,
     },
+    bundlePrice: row.bundle_price,
+    bundleItems: [...(row.bundle_items ?? [])]
+      .sort((a, b) => a.sort - b.sort)
+      .map(toBundleItem)
+      // A member whose build has been deleted comes back with no product. The
+      // database refuses that deletion while the bundle holds it, so this is
+      // belt and braces — but a line with no name is worse than no line.
+      .filter((i): i is BundleItem => i !== null),
     stock: row.stock,
     inStock: row.stock > 0,
     featured: row.featured,
@@ -150,7 +249,9 @@ export async function getProducts(): Promise<Product[]> {
   const res = await supabase()
     .from("products")
     .select(PRODUCT_SELECT)
-    .eq("kind", "model")
+    // Bundles sit in the shop grid beside the builds, so they come back with
+    // them. A display does not — it has its own page and its own grid.
+    .in("kind", ["model", "bundle"])
     .order("created_at")
   return (unwrap("products", res) as unknown as ProductRow[]).map((r) => toProduct(r))
 }

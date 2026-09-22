@@ -32,7 +32,16 @@ export type CartLine = {
   qty: number
 }
 
-type CartChoice = { format: FormatKey; frame?: FrameChoice } | { variant: Variant }
+/**
+ * How a line was chosen.
+ *
+ * A bundle is `{ bundle: true }` — there is nothing to choose, because the
+ * assembly and frame of every member were fixed when the bundle was built.
+ */
+type CartChoice =
+  | { format: FormatKey; frame?: FrameChoice }
+  | { variant: Variant }
+  | { bundle: true }
 
 /**
  * What a line is, in words: "Assembled + LED frame", "Unassembled", "60×90cm".
@@ -44,6 +53,9 @@ type CartChoice = { format: FormatKey; frame?: FrameChoice } | { variant: Varian
  */
 export function lineLabel(line: CartLine): string {
   if (line.kind === "display") return line.variantLabel ?? ""
+  // A bundle's own line says nothing about options; the drawer shows what is
+  // in it underneath, which is the useful thing to read.
+  if (line.kind === "bundle") return "Bundle"
   const base = line.format ? FORMAT_LABELS[line.format] : ""
   if (!line.frame || line.frame === "none") return base
   return `${base} + ${FRAME_LABELS[line.frame].toLowerCase()}`
@@ -114,17 +126,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [lines, restored])
 
   const add: CartCtx["add"] = (product, choice, qty = 1, opts) => {
+    const isBundle = "bundle" in choice
     const isVariant = "variant" in choice
     // A lit frame, an unlit one and none at all are three different lines, so
     // adding more than one keeps them apart in the drawer instead of merging
     // into a quantity of two.
-    const frame: FrameChoice = isVariant ? "none" : (choice.frame ?? "none")
-    const key = isVariant
-      ? `${product.slug}-${choice.variant.id}`
-      : `${product.slug}-${choice.format}${frame === "none" ? "" : `-${frame}`}`
-    const unitPrice = isVariant
-      ? choice.variant.price
-      : priceOf(product, choice.format, frame)
+    const frame: FrameChoice = isVariant || isBundle ? "none" : (choice.frame ?? "none")
+    // A bundle comes one way, so its slug is the whole key — two of it is a
+    // quantity of two, never two lines.
+    const key = isBundle
+      ? product.slug
+      : isVariant
+        ? `${product.slug}-${choice.variant.id}`
+        : `${product.slug}-${choice.format}${frame === "none" ? "" : `-${frame}`}`
+    const unitPrice = isBundle
+      ? product.bundlePrice
+      : isVariant
+        ? choice.variant.price
+        : priceOf(product, choice.format, frame)
     setLines((prev) => {
       const existing = prev.find((l) => l.key === key)
       if (existing) {
@@ -142,9 +161,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
           // hands back a neutral tile instead.
           image: productImage(product),
           kind: product.kind,
-          ...(isVariant
-            ? { variantId: choice.variant.id, variantLabel: choice.variant.label }
-            : { format: choice.format, frame }),
+          ...(isBundle
+            ? {}
+            : isVariant
+              ? { variantId: choice.variant.id, variantLabel: choice.variant.label }
+              : { format: choice.format, frame }),
           unitPrice,
           qty,
         },

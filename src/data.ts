@@ -49,7 +49,7 @@ export const FORMAT_LABELS: Record<FormatKey, string> = {
  * size instead, through `variants` — the two kinds share a catalogue row shape
  * but never the same pricing path.
  */
-export type ProductKind = "model" | "display"
+export type ProductKind = "model" | "display" | "bundle"
 
 /**
  * A video on a build's page: one you uploaded, or one already on YouTube or
@@ -128,6 +128,17 @@ export type Product = {
   /** The sizes a display comes in, priced and stocked independently. Empty for a model. */
   variants: Variant[]
   /**
+   * What a bundle sells for. Zero for anything else, and zero on a bundle
+   * means it has not been priced and is not offered.
+   */
+  bundlePrice: number
+  /**
+   * What is in a bundle, as it will be sold — the assembly and frame were
+   * fixed when the bundle was built, not left for the shopper. Empty for
+   * anything else.
+   */
+  bundleItems: BundleItem[]
+  /**
    * How many can be sold. One number per build: a model's two assemblies both come
    * off the same kit, and a display's is the sum of its variants. Goes negative
    * only when two orders for the last unit are both marked paid.
@@ -136,6 +147,25 @@ export type Product = {
   /** `stock > 0`, and never anything else — the database generates it. */
   inStock: boolean
   featured: boolean
+}
+
+/**
+ * One line of a bundle's contents.
+ *
+ * `unitPrice` is what this member would cost bought on its own, today — which
+ * is what makes the saving arithmetic rather than a claim. It moves when the
+ * member's price moves; the bundle's own price does not.
+ */
+export type BundleItem = {
+  slug: string
+  name: string
+  image: string
+  qty: number
+  /** What it reads as: "Assembled + LED frame", or a display's size label. */
+  label: string
+  /** Still in the catalogue and orderable. A bundle holding one that is not is not sellable. */
+  available: boolean
+  unitPrice: number
 }
 
 export type StoreCategory = {
@@ -206,12 +236,30 @@ export type Guide = {
  * and reads as free-to-quote (0) when none are.
  */
 export function fromPrice(product: Product): number {
+  // A bundle has one price and no "from" about it.
+  if (product.kind === "bundle") return product.bundlePrice
   if (product.kind === "display") {
     const inStock = product.variants.filter((v) => v.stock > 0).map((v) => v.price)
     return inStock.length ? Math.min(...inStock) : 0
   }
   const sold = FORMAT_KEYS.filter((f) => product.formats[f]).map((f) => product.prices[f])
   return sold.length ? Math.min(...sold) : product.prices.boxed
+}
+
+/**
+ * What a bundle's contents would cost bought one at a time, today.
+ *
+ * Computed rather than stored, so it follows the members' own prices. The
+ * bundle's price is a commercial decision and does not move with them; the
+ * saving it advertises is arithmetic and does.
+ */
+export function bundleWorth(product: Product): number {
+  return product.bundleItems.reduce((sum, i) => sum + i.unitPrice * i.qty, 0)
+}
+
+/** What a bundle saves against buying its contents separately. Never negative. */
+export function bundleSaving(product: Product): number {
+  return Math.max(0, bundleWorth(product) - product.bundlePrice)
 }
 
 /**

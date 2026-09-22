@@ -25,6 +25,8 @@ export type IncomingLine = {
 export type WireLine =
   | { slug: string; qty: number; variant: string }
   | { slug: string; qty: number; format: string; frame: string }
+  /** A bundle: nothing to choose, so nothing to send but which one and how many. */
+  | { slug: string; qty: number }
 
 const str = (v: unknown) => (typeof v === "string" ? v : "")
 
@@ -33,8 +35,12 @@ export function wireLines(body: Record<string, unknown>): WireLine[] {
   const raw = Array.isArray(body.lines) ? (body.lines as IncomingLine[]) : []
   return raw.slice(0, 20).map((l) => {
     const base = { slug: str(l.slug), qty: Number(l.qty) || 0 }
-    return typeof l.variant === "string" && l.variant
-      ? { ...base, variant: l.variant }
-      : { ...base, format: str(l.format), frame: str(l.frame) }
+    if (typeof l.variant === "string" && l.variant) return { ...base, variant: l.variant }
+    // No variant and no format is a bundle. Sending an empty format instead
+    // would work — Postgres reads "" as absent — but a line that says nothing
+    // about options is clearer than one that says "" twice, and `place_order`
+    // refuses a bundle that arrives carrying either.
+    if (!str(l.format)) return base
+    return { ...base, format: str(l.format), frame: str(l.frame) }
   })
 }

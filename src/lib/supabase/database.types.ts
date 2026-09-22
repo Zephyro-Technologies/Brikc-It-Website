@@ -52,6 +52,64 @@ export type Database = {
         }
         Relationships: []
       }
+      bundle_items: {
+        Row: {
+          bundle_id: string
+          format: Database["public"]["Enums"]["format_key"] | null
+          frame_led: boolean
+          id: string
+          product_id: string
+          qty: number
+          sort: number
+          variant_id: string | null
+          with_frame: boolean
+        }
+        Insert: {
+          bundle_id: string
+          format?: Database["public"]["Enums"]["format_key"] | null
+          frame_led?: boolean
+          id?: string
+          product_id: string
+          qty?: number
+          sort?: number
+          variant_id?: string | null
+          with_frame?: boolean
+        }
+        Update: {
+          bundle_id?: string
+          format?: Database["public"]["Enums"]["format_key"] | null
+          frame_led?: boolean
+          id?: string
+          product_id?: string
+          qty?: number
+          sort?: number
+          variant_id?: string | null
+          with_frame?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bundle_items_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           blurb: string
@@ -213,8 +271,79 @@ export type Database = {
         }
         Relationships: []
       }
+      order_line_members: {
+        Row: {
+          format: Database["public"]["Enums"]["format_key"] | null
+          frame_led: boolean
+          id: string
+          image: string
+          name: string
+          order_line_id: string
+          product_id: string | null
+          qty: number
+          slug: string
+          sort: number
+          variant_id: string | null
+          variant_label: string
+          with_frame: boolean
+        }
+        Insert: {
+          format?: Database["public"]["Enums"]["format_key"] | null
+          frame_led?: boolean
+          id?: string
+          image?: string
+          name: string
+          order_line_id: string
+          product_id?: string | null
+          qty?: number
+          slug: string
+          sort?: number
+          variant_id?: string | null
+          variant_label?: string
+          with_frame?: boolean
+        }
+        Update: {
+          format?: Database["public"]["Enums"]["format_key"] | null
+          frame_led?: boolean
+          id?: string
+          image?: string
+          name?: string
+          order_line_id?: string
+          product_id?: string | null
+          qty?: number
+          slug?: string
+          sort?: number
+          variant_id?: string | null
+          variant_label?: string
+          with_frame?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_line_members_order_line_id_fkey"
+            columns: ["order_line_id"]
+            isOneToOne: false
+            referencedRelation: "order_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_line_members_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_line_members_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_lines: {
         Row: {
+          bundle: boolean
           format: Database["public"]["Enums"]["format_key"] | null
           frame_led: boolean
           id: string
@@ -230,6 +359,7 @@ export type Database = {
           with_frame: boolean
         }
         Insert: {
+          bundle?: boolean
           format?: Database["public"]["Enums"]["format_key"] | null
           frame_led?: boolean
           id?: string
@@ -245,6 +375,7 @@ export type Database = {
           with_frame?: boolean
         }
         Update: {
+          bundle?: boolean
           format?: Database["public"]["Enums"]["format_key"] | null
           frame_led?: boolean
           id?: string
@@ -563,6 +694,7 @@ export type Database = {
       products: {
         Row: {
           blurb: string
+          bundle_price: number
           category: string | null
           created_at: string
           description: string
@@ -593,6 +725,7 @@ export type Database = {
         }
         Insert: {
           blurb: string
+          bundle_price?: number
           category?: string | null
           created_at?: string
           description: string
@@ -623,6 +756,7 @@ export type Database = {
         }
         Update: {
           blurb?: string
+          bundle_price?: number
           category?: string | null
           created_at?: string
           description?: string
@@ -903,7 +1037,7 @@ export type Database = {
         | "delivered"
         | "cancelled"
         | "refunded"
-      product_kind: "model" | "display"
+      product_kind: "model" | "display" | "bundle"
       review_media_kind: "image" | "video"
       review_source: "shop" | "customer"
       review_status: "pending" | "published" | "rejected"
@@ -1050,7 +1184,7 @@ export const Constants = {
         "cancelled",
         "refunded",
       ],
-      product_kind: ["model", "display"],
+      product_kind: ["model", "display", "bundle"],
       review_media_kind: ["image", "video"],
       review_source: ["shop", "customer"],
       review_status: ["pending", "published", "rejected"],

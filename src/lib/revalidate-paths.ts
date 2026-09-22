@@ -17,7 +17,7 @@ export type Change = {
   table: string
   op?: "INSERT" | "UPDATE" | "DELETE"
   /** Which kind of product, for the tables that carry products. */
-  kind?: "model" | "display" | null
+  kind?: "model" | "display" | "bundle" | null
   slug?: string | null
   /** The slug before a rename — its page has to go too, or the old URL lingers. */
   oldSlug?: string | null
@@ -53,12 +53,18 @@ async function everything(): Promise<string[]> {
 
 function productPages(change: Change): string[] {
   const slugs = [change.slug, change.oldSlug].filter((s): s is string => !!s)
-  return change.kind === "display"
-    ? [HOME, DISPLAYS, ...slugs.map((s) => `/displays/${s}`)]
-    : // GUIDES lists every model by name and photograph whether or not it has a
-      // manual yet, so a build arriving, being renamed, or having its PDF
-      // swapped changes that page as surely as it changes the catalogue.
-      [HOME, BEST_SELLERS, GUIDES, ...slugs.map((s) => `/shop/${s}`)]
+  if (change.kind === "display") {
+    return [HOME, DISPLAYS, ...slugs.map((s) => `/displays/${s}`)]
+  }
+  // A bundle lives in the shop grid and has a page there, but it is not a
+  // build you assemble, so it never appears on /guides.
+  if (change.kind === "bundle") {
+    return [HOME, BEST_SELLERS, ...slugs.map((s) => `/shop/${s}`)]
+  }
+  // GUIDES lists every model by name and photograph whether or not it has a
+  // manual yet, so a build arriving, being renamed, or having its PDF swapped
+  // changes that page as surely as it changes the catalogue.
+  return [HOME, BEST_SELLERS, GUIDES, ...slugs.map((s) => `/shop/${s}`)]
 }
 
 export async function pathsFor(change: Change): Promise<string[]> {

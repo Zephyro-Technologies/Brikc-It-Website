@@ -10,6 +10,8 @@ import {
   FRAME_LABELS,
   embedUrl,
   frameChoices,
+  bundleSaving,
+  bundleWorth,
   framePrice,
   priceOf,
   type SoldFormat,
@@ -18,7 +20,7 @@ import {
   type Review,
 } from "../data"
 import { Markdown } from "../lib/markdown"
-import { cardTag, lowStockNote, productImage, soldFormats, specs, subline } from "../lib/product-view"
+import { cardTag, isSellable, lowStockNote, productImage, soldFormats, specs, subline } from "../lib/product-view"
 import { useShopSettings } from "../lib/shop-settings"
 import { ProductCard, Reveal } from "./ui"
 import ProductReviews from "./ProductReviews"
@@ -155,7 +157,10 @@ export default function ProductDetailView({
     )
   }
 
-  const canAdd = product.inStock && available.length > 0
+  const isBundle = product.kind === "bundle"
+  // A bundle has nothing to pick, so "can it be added" is exactly "is it
+  // sellable" — priced, filled, in stock, every member still orderable.
+  const canAdd = isBundle ? isSellable(product) : product.inStock && available.length > 0
   const tag = cardTag(product)
   const running = canAdd ? lowStockNote(product, lowStockAt) : null
   // A frame sits on top of whichever assembly was chosen, so an unassembled kit
@@ -164,7 +169,7 @@ export default function ProductDetailView({
   // activeFormat uses, for the same reason.
   const frames = frameChoices(product)
   const activeFrame: FrameChoice = frames.includes(frame) ? frame : "none"
-  const total = priceOf(product, activeFormat, activeFrame)
+  const total = isBundle ? product.bundlePrice : priceOf(product, activeFormat, activeFrame)
 
   // Both assemblies come off the same kit, so one count caps the quantity
   // whichever is chosen — and a frame does not consume another one. place_order refuses more than this anyway; stopping the
@@ -173,7 +178,7 @@ export default function ProductDetailView({
 
   const onAdd = () => {
     if (!canAdd) return
-    add(product, { format: activeFormat, frame: activeFrame }, qty)
+    add(product, isBundle ? { bundle: true } : { format: activeFormat, frame: activeFrame }, qty)
     setAdded(true)
     setQty(1)
   }
@@ -329,7 +334,38 @@ export default function ProductDetailView({
             ))}
           </dl>
 
-          {available.length > 0 && (
+          {isBundle && product.bundleItems.length > 0 && (
+            <ul className="divide-y divide-[var(--border)] overflow-hidden rounded-2xl border border-[var(--border)] bg-white">
+              {product.bundleItems.map((item, i) => (
+                <li key={`${item.slug}-${i}`} className="flex items-center gap-3 p-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={item.image || productImage(product)}
+                    alt=""
+                    loading="lazy"
+                    className={`h-12 w-12 shrink-0 rounded-xl object-cover ${item.available ? "" : "opacity-40 grayscale"}`}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">
+                      {item.qty > 1 && <span className="text-[var(--muted)]">{item.qty} × </span>}
+                      {item.name}
+                    </p>
+                    <p className="truncate text-xs text-[var(--muted)]">
+                      {item.label}
+                      {!item.available && " · not available right now"}
+                    </p>
+                  </div>
+                  {/* What it would cost on its own — which is what makes the
+                      saving above something you can check rather than trust. */}
+                  <span className="shrink-0 text-sm text-[var(--muted)]">
+                    {money(item.unitPrice * item.qty)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {!isBundle && available.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {available.map((f) => {
                 const on = f === activeFormat
@@ -356,7 +392,7 @@ export default function ProductDetailView({
               be lit or not — different objects at different prices — so this is
               a choice of three, and each price is shown rather than buried in a
               bundle. */}
-          {frames.length > 0 && (
+          {!isBundle && frames.length > 0 && (
             <fieldset className="rounded-2xl border border-[var(--border)] bg-white p-1.5">
               <legend className="sr-only">Display frame</legend>
               {(["none", ...frames] as FrameChoice[]).map((f) => {
@@ -400,7 +436,18 @@ export default function ProductDetailView({
             </fieldset>
           )}
 
-          <div className="text-3xl font-bold">{money(total)}</div>
+          <div>
+            <div className="text-3xl font-bold">{money(total)}</div>
+            {isBundle && bundleSaving(product) > 0 && (
+              <p className="mt-1 text-sm text-[var(--muted)]">
+                <span className="line-through">{money(bundleWorth(product))}</span>{" "}
+                <span className="font-semibold text-[var(--primary)]">
+                  save {money(bundleSaving(product))}
+                </span>{" "}
+                against buying them separately
+              </p>
+            )}
+          </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center rounded-full border border-[var(--border)] bg-white">

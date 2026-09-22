@@ -16,10 +16,12 @@ export const metadata: Metadata = {
 }
 
 export default async function GuidesPage() {
-  // Models only. A display arrives built, so there is nothing to assemble and
-  // no manual to write — which is also why the admin only offers the field on
-  // a model.
-  const products = await getProducts()
+  // Models only. A display arrives built and a bundle is a way of buying
+  // several builds rather than a thing you assemble — each of its members has
+  // its own manual, listed here under its own name. getProducts() returns
+  // models and bundles together because they share the shop grid, so the
+  // filter belongs here.
+  const products = (await getProducts()).filter((p) => p.kind === "model")
 
   // The ones you can actually download first. A build whose manual is still
   // being written is listed rather than hidden — it is in the shop, somebody

@@ -17,6 +17,7 @@ import {
   type Product,
   type ShippingMethod,
 } from "../data"
+import { isSellable } from "../lib/product-view"
 import { CONFIRMATION_KEY } from "../lib/checkout"
 import { OTHER_CITY, PROVINCES, citiesIn } from "../lib/pakistan"
 
@@ -159,6 +160,21 @@ export default function CheckoutView({
       if (!product) {
         return { ...l, unitPrice: l.unitPrice, unavailable: "no longer in the catalogue", changed: false }
       }
+      if (l.kind === "bundle") {
+        // Priced from the bundle's own number, and unavailable the moment any
+        // member stops being orderable — which is what isSellable() checks and
+        // what place_order would refuse. Catching it here turns a server error
+        // at the last step into something the shopper can fix in the cart.
+        const unavailable = !product.inStock
+          ? "sold out"
+          : !isSellable(product)
+            ? "no longer available as a bundle"
+            : l.qty > product.stock
+              ? `down to ${product.stock} — lower the quantity`
+              : null
+        const unitPrice = product.bundlePrice
+        return { ...l, unitPrice, unavailable, changed: !unavailable && unitPrice !== l.unitPrice }
+      }
       if (l.kind === "display") {
         const variant = product.variants.find((v) => v.id === l.variantId)
         // A cart can sit in localStorage for a week while the shelf empties, so
@@ -205,9 +221,11 @@ export default function CheckoutView({
   const wire = useMemo(
     () =>
       priced.map((l) =>
-        l.kind === "display"
-          ? { slug: l.slug, variant: l.variantId, qty: l.qty }
-          : { slug: l.slug, format: l.format, frame: l.frame ?? "none", qty: l.qty },
+        l.kind === "bundle"
+          ? { slug: l.slug, qty: l.qty }
+          : l.kind === "display"
+            ? { slug: l.slug, variant: l.variantId, qty: l.qty }
+            : { slug: l.slug, format: l.format, frame: l.frame ?? "none", qty: l.qty },
       ),
     [priced],
   )
