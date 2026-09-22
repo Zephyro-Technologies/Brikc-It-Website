@@ -59,10 +59,15 @@ price, and the screen has to agree with what the database will charge.
   the shapes in `src/data.ts`, so the components never see database column names.
 - `src/data.ts` holds the types and the pure helpers (`fromPrice`, `cityQualifies`,
   `canCheckout`). It is no longer a catalogue and no longer holds copy.
-- `src/content/` is what is left of copy with no admin screen: `site.ts` (nav, banner, the
+- `src/content/` is what is left of copy with no admin screen: `site.ts` (nav and the
   how-it-works steps) and `displays.ts` (only the three promises under the `/displays` grid).
-  The frame finishes and the booklet guides used to live here and are now admin-managed —
-  check the database before assuming a page's content is in the repo.
+  The frame finishes, the booklet guides and the announcement bar used to live here and are
+  now admin-managed — check the database before assuming a page's content is in the repo.
+- **The announcement bar is `settings.banner`**, passed to `<Nav>` by the root layout.
+  Empty means no bar at all, which is this table's idiom for off — the same way clearing the
+  hand-delivery towns withdraws that option — so there is no second `banner_on` to disagree
+  with the text. A CHECK caps it at 160 characters because it is one centred line in a thin
+  strip, and the admin's counter mirrors that number.
 - `src/lib/markdown.tsx` draws a product description. It is Markdown now — paragraphs, headings,
   bullet and numbered lists, bold, links and images, and nothing else. Written by hand rather than
   pulled in, because a library is a lot of code running over text from the admin. React escapes text

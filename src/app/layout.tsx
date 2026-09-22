@@ -15,9 +15,9 @@ export const metadata: Metadata = {
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  // The footer's Instagram handle, and the threshold the cards use to decide
-  // when to say "Only 2 left". Prices live on the product, so the cart still
-  // depends on no store setting.
+  // The announcement bar's text, the footer's Instagram handle, and the
+  // threshold the cards use to decide when to say "Only 2 left". Prices live
+  // on the product, so the cart still depends on no store setting.
   const settings = await getSettings()
 
   return (
@@ -29,7 +29,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               <ScrollToTop />
             </Suspense>
             <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-              <Nav />
+              <Nav banner={settings.banner} />
               <CartDrawer />
               <main>{children}</main>
               <Footer instagram={settings.instagram} />

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { Menu, MessageCircle, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react"
 import { lineLabel, useCart } from "../cart"
 import { money } from "../lib/money"
-import { BANNER, NAV } from "../content/site"
+import { NAV } from "../content/site"
 
 /**
  * The light, Material-leaning chrome every page sits inside: a dismissible
@@ -92,7 +92,7 @@ function CartButton() {
   )
 }
 
-export function Nav() {
+export function Nav({ banner = "" }: { banner?: string }) {
   const pathname = usePathname()
   const [bannerOpen, setBannerOpen] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -114,13 +114,15 @@ export function Nav() {
 
   return (
     <>
-      {bannerOpen && (
+      {/* Empty is how the admin turns the bar off, so there is nothing to
+          dismiss and nothing to lay out — not an empty red strip. */}
+      {banner !== "" && bannerOpen && (
         <div className="relative bg-[linear-gradient(90deg,var(--primary),var(--primary-deep))] text-white">
           {/* Wider gutters than the site's usual px-4 sm:px-6, and symmetric, so
               the centred text clears the absolutely-positioned close button at
               every width instead of running under it. */}
           <div className="mx-auto flex max-w-7xl items-center justify-center gap-3 px-12 py-2.5 text-center text-sm font-medium sm:px-14">
-            <span>{BANNER}</span>
+            <span>{banner}</span>
             <button
               type="button"
               aria-label="Dismiss banner"

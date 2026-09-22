@@ -172,6 +172,12 @@ export type Settings = {
   leadTimes: { standard: string; framed: string }
   instagram: string
   /**
+   * The dismissible bar above the header. Empty means there is no bar — the
+   * same idiom as clearing the hand-delivery towns to withdraw the option,
+   * rather than a second switch to keep in step with the text.
+   */
+  banner: string
+  /**
    * At or below this many left, a card says so. Set in the admin; zero turns the
    * nudge off entirely rather than showing it on the last one.
    */

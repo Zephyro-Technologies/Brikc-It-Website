@@ -285,7 +285,7 @@ export async function getFaqs(): Promise<FaqItem[]> {
 export async function getSettings(): Promise<Settings> {
   const res = await supabase()
     .from("settings")
-    .select("lead_time_standard, lead_time_framed, instagram, low_stock_at")
+    .select("lead_time_standard, lead_time_framed, instagram, low_stock_at, banner")
     .limit(1)
     .maybeSingle()
   if (res.error) throw new Error(`Supabase: failed to load settings — ${res.error.message}`)
@@ -295,6 +295,7 @@ export async function getSettings(): Promise<Settings> {
     leadTimes: { standard: res.data.lead_time_standard, framed: res.data.lead_time_framed },
     instagram: res.data.instagram,
     lowStockAt: res.data.low_stock_at,
+    banner: res.data.banner,
   }
 }
 

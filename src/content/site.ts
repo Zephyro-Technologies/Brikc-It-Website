@@ -4,8 +4,12 @@
  * Every claim here has to be one the shop can stand behind. The design this was
  * ported from carried a prototype's placeholder marketing — UK shipping
  * thresholds, sold counts, an app that doesn't exist — and none of it survived
- * the move. Figures below match what the shop actually does: standard courier
- * is free anywhere in Pakistan, and framed builds ship in reinforced crates.
+ * the move. What is left is navigation and the how-it-works steps, both of
+ * which describe the site rather than make a claim about an offer.
+ *
+ * The announcement bar used to live here and is now `settings.banner`: it was
+ * the one string in this file that made a promise with a date on it, and
+ * changing it should not need a deploy.
  */
 
 export const NAV: { label: string; to: string; shortcut?: boolean }[] = [
@@ -20,10 +24,6 @@ export const NAV: { label: string; to: string; shortcut?: boolean }[] = [
   // "where am I".
   { label: "Under 10k", to: "/shop?price=under-10k", shortcut: true },
 ]
-
-/** The dismissible bar above the header. */
-export const BANNER = "Free delivery across Pakistan · Framed builds ship in reinforced crates"
-
 
 export const STEPS = [
   {

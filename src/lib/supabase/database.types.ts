@@ -705,6 +705,7 @@ export type Database = {
           bank_account_title: string
           bank_iban: string
           bank_name: string
+          banner: string
           contact_email: string
           currency: string
           easypaisa_number: string
@@ -728,6 +729,7 @@ export type Database = {
           bank_account_title?: string
           bank_iban?: string
           bank_name?: string
+          banner?: string
           contact_email?: string
           currency?: string
           easypaisa_number?: string
@@ -751,6 +753,7 @@ export type Database = {
           bank_account_title?: string
           bank_iban?: string
           bank_name?: string
+          banner?: string
           contact_email?: string
           currency?: string
           easypaisa_number?: string
