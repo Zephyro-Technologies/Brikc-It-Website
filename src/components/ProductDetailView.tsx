@@ -297,7 +297,12 @@ export default function ProductDetailView({
             >
               {product.name}
             </h1>
-            <p className="mt-2 w-full text-[var(--muted)]">{subline(product)}</p>
+            {/* Red here and muted on a card: on the grid this line is one of
+                twenty and should stay quiet, but on the page it is the only
+                thing between the name and the price, and it is what tells you
+                what you are looking at. --primary clears AA on --background at
+                4.95:1, which --primary-2 would not. */}
+            <p className="mt-2 w-full font-medium text-[var(--primary)]">{subline(product)}</p>
           </div>
 
           {/* Above the choices, not below them. Pieces, scale and what a build
