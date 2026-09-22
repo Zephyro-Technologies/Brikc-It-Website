@@ -158,9 +158,29 @@ export function Hero({ categories }: { categories: StoreCategory[] }) {
         ))}
       </div>
 
-      {/* Only the blend into the next section is left. The wash that used to
-          sit over the whole image has gone — it was there to lift dark text
-          off the photograph, and it was taking the photograph with it. */}
+      {/*
+        A scrim over the copy, and only over the copy.
+        
+        The old one ran at 0.93 out to 42% and still had 0.34 left at 72%, which
+        is why the whole photograph looked washed. This holds 0.88 where the
+        headline is, is down to 0.62 by the right-hand edge of the text column,
+        and is gone entirely by 80% — so the cars on the right keep their
+        colour.
+        
+        0.62 is not an arbitrary floor. #1c1b1f body copy over the darkest part
+        of a photograph needs about 0.48 of this scrim to clear AA at 4.5:1;
+        0.62 gives 7:1 there and better everywhere else.
+        
+        On a phone the copy is the full width, so there is no left and right to
+        separate — it runs top to bottom instead, and stays at 0.60 down at the
+        category chips.
+      */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(250,248,246,0.90)_0%,rgba(250,248,246,0.82)_60%,rgba(250,248,246,0.60)_100%)] sm:bg-[linear-gradient(100deg,rgba(250,248,246,0.88)_0%,rgba(250,248,246,0.80)_35%,rgba(250,248,246,0.62)_48%,rgba(250,248,246,0.18)_65%,rgba(250,248,246,0)_80%)]"
+      />
+
+      {/* The blend into the next section. */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-[var(--background)]" />
 
       <div className="pointer-events-none relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:py-28">
