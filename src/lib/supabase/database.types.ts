@@ -845,6 +845,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_coupon_discount: {
+        Args: { p_code: string; p_subtotal: number }
+        Returns: Json
+      }
       attach_review_media: {
         Args: { p_bucket: string; p_path: string; p_token: string }
         Returns: undefined

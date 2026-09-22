@@ -237,6 +237,50 @@ the checkout entirely unless a WhatsApp number *and* at least one account are co
 The placed order reaches `/checkout/confirmation` through `sessionStorage` under
 `CONFIRMATION_KEY`, not the URL — an order reference in a shareable link invites enumeration.
 
+### Coupons
+
+A code is a **percentage off the goods** or **an amount off the goods**, limited by any of a
+date window, a redemption cap and a minimum spend. Never off the shipping — standard courier is
+free already and hand delivery is money paid to a person.
+
+**There is one implementation of what a code is worth**, and that is the whole design.
+`private.coupon_discount(code, subtotal)` decides it; `quote_coupon()` (the preview) and
+`place_order()` (the charge) both call it and neither does that arithmetic itself. A coupon is
+the first thing in the shop that has to be shown before it is committed, and two implementations
+of a discount means the screen quotes one number and the till charges another.
+
+`quote_coupon` takes the **cart, not a total**. A subtotal sent up from the browser is a price
+crossing the wire, which is the thing the checkout exists to prevent — so it reprices every line
+with `private.price_line()`, the same function `place_order` uses. `price_line` is `place_order`'s
+own pricing and validation, lifted out whole in
+`20260922165000_one_place_that_prices_a_line.sql`; `src/lib/order-lines.ts` is the matching
+single shape a cart line takes on the wire, so `/api/coupon` and `/api/orders` cannot disagree
+about what is in the cart.
+
+**The preview is never the last word.** Only the code travels with the order, never the amount,
+and `place_order` checks it again — a code that expired, sold out or was switched off while the
+form sat open is refused at the button rather than honoured.
+
+`anon` has **no select on `coupons`** and no policy granting one: otherwise every code on the
+shop is one query away, and the ones nobody was given are worth more than the ones they were.
+"No such code" and "switched off" share one message for the same reason. A shopper reaches a
+coupon only through `quote_coupon`, one code at a time.
+
+**A redemption is counted when the order is paid, not when it is placed** — the trade stock
+already makes, in the same trigger's shape, because orders settle by bank transfer and an
+abandoned cart would otherwise eat one of a fifty-use code. It comes back if the order is
+cancelled. Two shoppers can take the last use before either pays, which is the same accepted
+trade as the last unit of stock.
+
+`orders.coupon_code` is **text, not a foreign key**: an order records what was sold, so deleting
+a coupon must not rewrite it.
+
+A **manual order** is written straight to `orders` by the admin rather than through
+`place_order`, so it gets its own door into the same function —
+`admin_coupon_discount(code, subtotal)`, gated on `private.is_admin()`. It takes a subtotal
+rather than a cart because the operator is trusted with the numbers, and because
+`quote_coupon` refuses an out-of-stock line, which a hand-entered order is often for.
+
 ### Rendering and revalidation
 
 | Route | Mode | Why |
