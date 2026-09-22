@@ -2,6 +2,7 @@ import Link from "next/link"
 import { ArrowRight, BadgeCheck, Star } from "lucide-react"
 import { ComingSoon, Reveal, SectionHead, ExploreMore, ProductCard } from "../components/ui"
 import { DisplayCard } from "../components/DisplayCard"
+import { HeroBackdrop } from "../components/HeroBackdrop"
 import { money } from "../lib/money"
 import type { Product } from "../data"
 import { getCategories, getDisplays, getGuides, getProducts, getFeaturedReviews } from "../lib/shop"
@@ -27,14 +28,12 @@ export const revalidate = 60
 function Hero({ categories }: { categories: StoreCategory[] }) {
   return (
     <section className="relative isolate overflow-hidden">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/brand/hero.jpg"
-        alt=""
-        aria-hidden
-        loading="lazy"
-        style={{ backgroundColor: "#eceae7" }}
-        className="absolute inset-0 h-full w-full object-cover brightness-[0.78]"
+      {/* The categories' own cover images, set in the admin. /brand/hero.jpg is
+          what a shop with no covers yet falls back to — the page has to open on
+          something, and an empty hero is worse than a stock one. */}
+      <HeroBackdrop
+        images={categories.map((c) => c.image)}
+        fallback="/brand/hero.jpg"
       />
       <div className="absolute inset-0 bg-[linear-gradient(100deg,rgba(250,248,246,0.98)_0%,rgba(250,248,246,0.93)_42%,rgba(250,248,246,0.34)_72%,rgba(250,248,246,0.02)_100%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(60%_80%_at_85%_20%,rgba(211,31,46,0.09),transparent)]" />
