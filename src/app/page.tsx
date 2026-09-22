@@ -2,7 +2,7 @@ import Link from "next/link"
 import { ArrowRight, BadgeCheck, Star } from "lucide-react"
 import { ComingSoon, Reveal, SectionHead, ExploreMore, ProductCard } from "../components/ui"
 import { DisplayCard } from "../components/DisplayCard"
-import { HeroBackdrop } from "../components/HeroBackdrop"
+import { Hero } from "../components/Hero"
 import { money } from "../lib/money"
 import type { Product } from "../data"
 import { getCategories, getDisplays, getGuides, getProducts, getFeaturedReviews } from "../lib/shop"
@@ -24,67 +24,6 @@ import type { Guide, Review, StoreCategory } from "../data"
  */
 export const revalidate = 60
 
-
-function Hero({ categories }: { categories: StoreCategory[] }) {
-  return (
-    <section className="relative isolate overflow-hidden">
-      {/* The categories' own cover images, set in the admin. /brand/hero.jpg is
-          what a shop with no covers yet falls back to — the page has to open on
-          something, and an empty hero is worse than a stock one. */}
-      <HeroBackdrop
-        images={categories.map((c) => c.image)}
-        fallback="/brand/hero.jpg"
-      />
-      <div className="absolute inset-0 bg-[linear-gradient(100deg,rgba(250,248,246,0.98)_0%,rgba(250,248,246,0.93)_42%,rgba(250,248,246,0.34)_72%,rgba(250,248,246,0.02)_100%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(60%_80%_at_85%_20%,rgba(211,31,46,0.09),transparent)]" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-[var(--background)]" />
-
-      <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:py-28">
-        <div className="max-w-xl" style={{ animation: "fade-up .6s ease both" }}>
-          <h1
-            className="font-display text-5xl leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl"
-            style={{ fontWeight: 800 }}
-          >
-            Buy it <span className="text-[var(--primary)]">built</span><br />
-            or build it yourself.
-          </h1>
-          <p className="mt-5 max-w-md text-lg leading-relaxed text-[var(--foreground)]/80">
-            Museum-grade scale builds of the cars, bikes and F1 machines you love — sealed in the
-            box or assembled by hand, and a display frame to put it in whenever you want one.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link
-              href="/shop"
-              className="mat-btn sheen rounded-full bg-[var(--primary)] px-7 py-3.5 text-sm font-semibold text-white shadow-[var(--shadow-2)] hover:brightness-105 hover:shadow-[var(--shadow-3)]"
-            >
-              Shop the collection
-            </Link>
-            <Link
-              href="/best-sellers"
-              className="mat-btn rounded-full bg-white/80 px-7 py-3.5 text-sm font-semibold text-[var(--foreground)] backdrop-blur hover:bg-white"
-            >
-              Best sellers
-            </Link>
-          </div>
-          <div className="mt-8 flex flex-wrap gap-2">
-            {/* Linked by slug, not name: renaming a category in the admin
-                cascades to its builds but must not break a link in the wild. */}
-            {categories.map((c) => (
-              <Link
-                key={c.slug}
-                href={`/shop?cat=${c.slug}`}
-                className="mat-btn rounded-full border border-[var(--border)] bg-white/70 px-4 py-2 text-sm font-medium text-[var(--muted)] backdrop-blur hover:border-[var(--primary)] hover:text-[var(--primary)]"
-              >
-                {c.name}
-              </Link>
-            ))}
-          </div>
-
-        </div>
-      </div>
-    </section>
-  )
-}
 
 function BestSellers({ products }: { products: Product[] }) {
   const featured = products.filter((p) => p.featured).slice(0, 3)
