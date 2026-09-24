@@ -208,6 +208,9 @@ OUTPUTS = [
     (OUT, "logo.webp", "wide", HEIGHT_WIDE),
     (OUT, "logo-stacked.webp", "tall", HEIGHT_STACKED),
     (OUT, "icon.png", "mark", ICON),
+    # The payment email's header. PNG because Outlook on Windows can't show WebP,
+    # and 96 tall because it's shown at 40 — sharp on a phone's 2x screen.
+    (OUT, "logo-email.png", "wide", 96),
 ]
 ADMIN_OUTPUTS = [
     (ADMIN, "logo.png", "wide", 96),

@@ -454,7 +454,8 @@ reference). Tailwind v4 with no config file; everything lives in `src/app/global
   (`add(..., { open: false })`); the product page's deliberate add does open it.
 - **The brand assets are generated, not hand-edited.** `Logos/` holds the two lockups as
   supplied; `scripts/brand-assets.py` cuts `public/brand/logo.webp` (horizontal, the header),
-  `logo-stacked.webp` (vertical, the footer) and `icon.png` from them. One file per lockup, not a
+  `logo-stacked.webp` (vertical, the footer), `icon.png`, and `logo-email.png` — the payment
+  email's header, PNG because Outlook on Windows can't show WebP — from them. One file per lockup, not a
   light/dark pair — both are drawn in metal on nothing. Re-run it when the logos change; read its
   docstring first, because the horizontal lockup is a brick in a display frame and keying the
   white out from the corners cannot reach the inside of that frame or the bowl of the "b". Left
