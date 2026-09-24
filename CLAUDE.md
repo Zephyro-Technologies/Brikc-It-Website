@@ -237,6 +237,37 @@ the checkout entirely unless a WhatsApp number *and* at least one account are co
 The placed order reaches `/checkout/confirmation` through `sessionStorage` under
 `CONFIRMATION_KEY`, not the URL — an order reference in a shareable link invites enumeration.
 
+**Once an order is placed, the shopper gets one email and the owners get one push.**
+`announceOrder()` in `src/lib/order-notifications.ts` sends the payment details through Brevo,
+then pushes the order to both owners' phones through a Pushover delivery group. It runs inside
+`after()` in `/api/orders` — on this stack `after()` really is wired to the Worker's `waitUntil`
+— so the shopper's button never waits on either provider, and the order is committed before it
+starts.
+
+- **From the route, not a trigger**, unlike revalidation. A manual order is three separate
+  writes from the admin, so a trigger on `orders` would fire before its lines existed; and this
+  app holds only the publishable key, so it could not have written the outcome down anyway.
+  Site orders only — a manual order sends nothing.
+- **The push is the record.** It says whether the email went, and why not — "Payment email NOT
+  sent — Brevo 401" on both phones is how anybody finds out, since nothing can write a note onto
+  the order from here.
+- **At most once.** Nothing retries: a second payment email is worse than a missing one, and the
+  confirmation page has already shown the same details.
+- **The email says what the page says.** `src/lib/payment-email.ts` repeats
+  `OrderConfirmation.tsx` sentence for sentence, and both list accounts from `paymentAccounts()`
+  in `src/lib/checkout.ts` — change the copy in both, and an account added there reaches both.
+  Built as HTML here rather than as a Brevo template, because a second copy of the bank details
+  in another dashboard is one nobody would update. Everything interpolated goes through `esc()`:
+  the name is whatever the shopper typed.
+- **Every key is optional** (`BREVO_API_KEY`, `PUSHOVER_APP_TOKEN`, `PUSHOVER_GROUP_KEY`); unset,
+  that half is off. Keep them out of `.env.local` so a test order never emails a real address.
+  They are Worker secrets and never `settings` columns — `settings` is public.
+- It sends as `orders@brikc.it`, the address on the domain authenticated with Brevo; Brevo
+  refuses any other. Replies reach an owner through Cloudflare Email Routing. The domain side —
+  DKIM, DMARC, Brevo's IP blocking, which must stay off — is DEPLOYMENT.md §5b.
+- The push links to `admin.brikc.it/orders/<number>`; the admin's `useOrder()` answers to the
+  number as well as the id, because the id never leaves the database on this path.
+
 ### Assembly manuals
 
 **`/guides` is the PDF one build at a time; `/booklets` is the written ones.** The names are

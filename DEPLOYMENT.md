@@ -145,6 +145,9 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY  sb_publishable_…
 
 ```
 REVALIDATE_SECRET                     (the same value the admin uses)
+BREVO_API_KEY                         (optional — the payment email, §5b)
+PUSHOVER_APP_TOKEN                    (optional — the owners' push, §5b)
+PUSHOVER_GROUP_KEY                    (optional — the owners' push, §5b)
 ```
 
 Generate one if you haven't:
@@ -152,6 +155,61 @@ Generate one if you haven't:
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 ```
+
+## 5b. Order notifications — Brevo, Pushover and the domain
+
+When an order is placed on the site the shopper gets one email with the payment
+details, and the owners get a push. Both are off until their secrets are set.
+Most of the work is outside this repo, and the order below matters: the domain
+has to be able to send before the first real email goes out.
+
+**1. Authenticate brikc.it in Brevo.** Create the account, then Senders,
+Domains & Dedicated IPs → Domains → add `brikc.it`. Brevo can write its records
+into Cloudflare for you; by hand it is three — a `brevo-code` TXT, the DKIM
+record, and DMARC. No SPF is needed for Brevo. The code sends as
+`orders@brikc.it` (`SENDER` in `src/lib/order-notifications.ts`), and Brevo
+refuses a sender on a domain it hasn't verified.
+
+**2. Turn off Brevo's IP blocking.** Settings → Security → Authorised IPs →
+deactivate for API. A Worker calls out from a large, unpublished, changing pool
+of addresses, and Brevo switches blocking on *by itself* once 30 days pass
+without a new IP — after which the next order from an unseen address is refused.
+
+**3. Fix DMARC, don't loosen it.** `_dmarc.brikc.it` was already
+`p=quarantine`, with reports going to `onsecureserver.net` — GoDaddy's default,
+read by nobody. Keep `p=quarantine`: this email carries bank account numbers,
+which is exactly the email somebody would want to forge from this domain, and
+brikc.it sends nothing else for it to catch. Point `rua` somewhere real —
+Brevo suggests `mailto:rua@dmarc.brevo.com`. Brevo's DKIM signature is what
+passes DMARC, so it must be verified before step 6.
+
+**4. Give `orders@brikc.it` an inbox.** The domain has no MX record, so a reply
+to the payment email bounces. Cloudflare → brikc.it → Email → Email Routing →
+enable, then route `orders@brikc.it` to an owner's inbox. Cloudflare emails that
+inbox a verification link, which has to be clicked before anything forwards.
+
+**5. The API key.** Brevo → SMTP & API → API keys → create, and set it as
+`BREVO_API_KEY`.
+
+**6. Send one real test** to a Gmail inbox before trusting it: check it lands
+in the inbox rather than spam, that the WhatsApp link isn't rewritten through a
+tracking domain, and whether the free plan stamps "Sent with Brevo" on it —
+Brevo's documentation doesn't say for transactional mail.
+
+**7. Pushover.** Each owner installs the app and makes an account. The trial is
+30 days; the licence is a one-time $4.99 per platform per person. **Buy it before
+the trial ends** — a lapsed licence stops delivery and the API still reports
+success, so nothing tells you. Then on pushover.net: create an application
+(its token is `PUSHOVER_APP_TOKEN`) and a delivery group holding both owners'
+user keys (its key is `PUSHOVER_GROUP_KEY`). Owners are added and removed in
+that group, not in code.
+
+**How it fails.** The order is committed before any of this runs and nothing
+here can undo it, and nothing retries — so a failure is one missing email, never
+two. The push says whether the email went: "Payment email NOT sent — Brevo 401:
+Key not found" on both phones is the record, because this app cannot write a
+note onto the order. The shopper has the same details on the confirmation page
+either way. Worker logs carry the same lines.
 
 ## 6. Attach the domain
 

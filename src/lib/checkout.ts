@@ -1,3 +1,5 @@
+import type { PaymentDetails } from "../data"
+
 /**
  * wa.me rejects a local number — 03001234567 gives a dead link rather than an
  * error. The admin normalises on save; this repeats it on read so a number
@@ -42,4 +44,31 @@ export function receiptLink(whatsapp: string, order: { number: string; total: nu
     `for Rs ${Math.round(order.total).toLocaleString("en-PK")}. ` +
     `Here's my transfer receipt:`
   return `https://wa.me/${whatsapp}?text=${encodeURIComponent(text)}`
+}
+
+export type PaymentAccount = { title: string; rows: [string, string][] }
+
+/**
+ * The accounts a shopper can pay into, in the order the confirmation page lists
+ * them — and the payment email repeats them from here too, so the two can never
+ * disagree about which accounts exist. A bank needs a title and something to pay
+ * into before it is worth showing; a wallet needs a number.
+ */
+export function paymentAccounts(p: PaymentDetails): PaymentAccount[] {
+  const accounts: PaymentAccount[] = []
+  const { bank, jazzcash, easypaisa } = p
+
+  if (bank.title && (bank.number || bank.iban)) {
+    const rows: [string, string][] = [["Account title", bank.title]]
+    if (bank.number) rows.push(["Account number", bank.number])
+    if (bank.iban) rows.push(["IBAN", bank.iban])
+    accounts.push({ title: bank.name || "Bank transfer", rows })
+  }
+  if (jazzcash.number) {
+    accounts.push({ title: "JazzCash", rows: [["Account title", jazzcash.title], ["Number", jazzcash.number]] })
+  }
+  if (easypaisa.number) {
+    accounts.push({ title: "Easypaisa", rows: [["Account title", easypaisa.title], ["Number", easypaisa.number]] })
+  }
+  return accounts
 }

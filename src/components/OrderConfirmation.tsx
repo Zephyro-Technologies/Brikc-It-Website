@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Check, Copy, MessageCircle } from "lucide-react"
 import { money } from "../lib/money"
 import type { PaymentDetails } from "../data"
-import { CONFIRMATION_KEY, receiptLink, type PlacedOrder } from "../lib/checkout"
+import { CONFIRMATION_KEY, paymentAccounts, receiptLink, type PlacedOrder } from "../lib/checkout"
 
 function Copyable({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false)
@@ -98,7 +98,7 @@ export default function OrderConfirmation({ payment }: { payment: PaymentDetails
     )
   }
 
-  const { bank, jazzcash, easypaisa, whatsapp } = payment
+  const { whatsapp } = payment
   const firstName = order.name.trim().split(/\s+/)[0]
 
   return (
@@ -142,49 +142,31 @@ export default function OrderConfirmation({ payment }: { payment: PaymentDetails
       </p>
 
       <div className="mt-8 space-y-4">
-        {bank.title && (bank.number || bank.iban) && (
-          <Account
-            title={bank.name || "Bank transfer"}
-            rows={[
-              ["Account title", bank.title],
-              ...(bank.number ? ([["Account number", bank.number]] as [string, string][]) : []),
-              ...(bank.iban ? ([["IBAN", bank.iban]] as [string, string][]) : []),
-            ]}
-          />
-        )}
-        {jazzcash.number && (
-          <Account
-            title="JazzCash"
-            rows={[
-              ["Account title", jazzcash.title],
-              ["Number", jazzcash.number],
-            ]}
-          />
-        )}
-        {easypaisa.number && (
-          <Account
-            title="Easypaisa"
-            rows={[
-              ["Account title", easypaisa.title],
-              ["Number", easypaisa.number],
-            ]}
-          />
-        )}
+        {paymentAccounts(payment).map((a, i) => (
+          <Account key={i} title={a.title} rows={a.rows} />
+        ))}
       </div>
 
-      <a
-        href={receiptLink(whatsapp, order)}
-        target="_blank"
-        rel="noreferrer"
-        className="mat-btn font-display mt-8 flex w-full items-center justify-center gap-2.5 rounded-full bg-[var(--primary)] py-4 text-lg text-white shadow-[var(--shadow-2)] hover:brightness-105"
-        style={{ fontWeight: 700 }}
-      >
-        <MessageCircle className="h-5 w-5" />
-        Send the receipt on WhatsApp
-      </a>
-      <p className="mt-3 text-center text-xs text-[var(--muted)]">
-        Opens WhatsApp with your order number already written out. Attach the screenshot and send.
-      </p>
+      {/* canCheckout() needs a WhatsApp number to open the checkout, but only
+        when the page loads — clear it while somebody is mid-checkout and this
+        would link to a wa.me page with nobody on it. The email has the same guard. */}
+      {whatsapp && (
+        <>
+          <a
+            href={receiptLink(whatsapp, order)}
+            target="_blank"
+            rel="noreferrer"
+            className="mat-btn font-display mt-8 flex w-full items-center justify-center gap-2.5 rounded-full bg-[var(--primary)] py-4 text-lg text-white shadow-[var(--shadow-2)] hover:brightness-105"
+            style={{ fontWeight: 700 }}
+          >
+            <MessageCircle className="h-5 w-5" />
+            Send the receipt on WhatsApp
+          </a>
+          <p className="mt-3 text-center text-xs text-[var(--muted)]">
+            Opens WhatsApp with your order number already written out. Attach the screenshot and send.
+          </p>
+        </>
+      )}
 
       <div className="mt-12 rounded-3xl bg-white p-5 shadow-[var(--shadow-1)]">
         <p className="mb-3 text-[11px] font-semibold tracking-widest text-[var(--muted)] uppercase">
