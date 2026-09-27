@@ -69,10 +69,17 @@ price, and the screen has to agree with what the database will charge.
   with the text. A CHECK caps it at 160 characters because it is one centred line in a thin
   strip, and the admin's counter mirrors that number.
 - `src/lib/markdown.tsx` draws a product description. It is Markdown now — paragraphs, headings,
-  bullet and numbered lists, bold, links and images, and nothing else. Written by hand rather than
-  pulled in, because a library is a lot of code running over text from the admin. React escapes text
-  nodes but **not** `href` and `src`, so every URL goes through `safeUrl()`, which allows only http,
-  https, mailto and real paths — `//host/x` is not a path, it is protocol-relative, and is refused.
+  bullet and numbered lists, rules, bold, italic, links and images, and nothing else. Written by hand
+  rather than pulled in, because a library is a lot of code running over text from the admin. React
+  escapes text nodes but **not** `href` and `src`, so every URL goes through `safeUrl()`, which allows
+  only http, https, mailto and real paths — `//host/x` is not a path, it is protocol-relative, and is
+  refused. It reads **line by line**, as Markdown does: a heading or a list can follow a paragraph or
+  an image with no blank line between. `repairSplitEmphasis()` mends "**Headline\n**" and
+  "## **Title\n## **" — what the admin's buttons wrote before `markdown-edit.ts` there kept markers on
+  the words — so descriptions saved that way still render. Closers and link brackets are indexed once
+  per block, never scanned for from each opener: unclosed markers made that quadratic, and 20,000 of
+  them took seven seconds. **No regex lookbehind** — it runs in the browser, and Safari before 16.4
+  can't parse one, which would take the product page down.
 - A product may carry up to two videos. A pasted link is never stored as a link: only the provider and
   the video's id are kept, and `embedUrl()` builds the player address from those, so nothing anybody
   types can reach an iframe. The database checks the same shapes, because a form check protects
