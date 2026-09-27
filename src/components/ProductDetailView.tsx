@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Check, ChevronLeft, ChevronRight, Package, ShieldCheck, Truck, X } from "lucide-react"
 import { useCart } from "../cart"
-import { useViewContent } from "../lib/pixel"
+import { useViewContent } from "../lib/use-view-content"
 import { money } from "../lib/money"
 import {
   FORMAT_LABELS,

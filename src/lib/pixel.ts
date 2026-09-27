@@ -1,5 +1,3 @@
-import { useEffect, useRef } from "react"
-import { fromPrice, type Product } from "../data"
 
 /**
  * The Meta Pixel, from the page's side: the events the shop reports and the
@@ -7,6 +5,10 @@ import { fromPrice, type Product } from "../data"
  *
  * PageView is not here: Meta's snippet counts the first page and fbevents.js
  * counts every navigation after it — see MetaPixel.
+ *
+ * No hooks in this file: MetaPixel, a Server Component, imports PIXEL_ID from
+ * it, and Next refuses to build a server module whose imports touch React's
+ * client hooks. useViewContent lives in its own file for that reason.
  *
  * Every call is a no-op unless the pixel is on. `window.fbq` exists only when
  * `settings.meta_pixel_id` holds an id and MetaPixel has put Meta's snippet in
@@ -57,27 +59,4 @@ export function lineParams(lines: PixelLine[]) {
     content_type: "product",
     num_items: lines.reduce((n, l) => n + l.qty, 0),
   }
-}
-
-/**
- * One ViewContent per build a shopper opens — keyed on the slug, because the
- * detail views are reused when a shopper follows a suggestion to another build.
- * The value is the "from" price the cards quote; a build nobody can order right
- * now is still a view, just without one. The ref makes it one per build even
- * where React runs an effect twice, as it does in development.
- */
-export function useViewContent(product: Product | undefined) {
-  const slug = product?.slug
-  const sent = useRef<string | undefined>(undefined)
-  useEffect(() => {
-    if (!product || sent.current === product.slug) return
-    sent.current = product.slug
-    const price = fromPrice(product)
-    track("ViewContent", {
-      content_ids: [product.slug],
-      content_name: product.name,
-      content_type: "product",
-      ...(price > 0 && { value: price, currency: CURRENCY }),
-    })
-  }, [slug])
 }
