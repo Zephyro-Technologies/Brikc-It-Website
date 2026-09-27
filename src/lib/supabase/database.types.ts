@@ -480,6 +480,8 @@ export type Database = {
       }
       orders: {
         Row: {
+          client_ip: string | null
+          client_user_agent: string | null
           coupon_code: string
           created_at: string
           customer_email: string
@@ -487,6 +489,9 @@ export type Database = {
           customer_phone: string
           discount: number
           id: string
+          meta_fbc: string | null
+          meta_fbp: string | null
+          meta_reported_at: string | null
           number: string
           ship_city: string
           ship_country: string
@@ -505,6 +510,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          client_ip?: string | null
+          client_user_agent?: string | null
           coupon_code?: string
           created_at?: string
           customer_email: string
@@ -512,6 +519,9 @@ export type Database = {
           customer_phone?: string
           discount?: number
           id?: string
+          meta_fbc?: string | null
+          meta_fbp?: string | null
+          meta_reported_at?: string | null
           number?: string
           ship_city: string
           ship_country?: string
@@ -530,6 +540,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          client_ip?: string | null
+          client_user_agent?: string | null
           coupon_code?: string
           created_at?: string
           customer_email?: string
@@ -537,6 +549,9 @@ export type Database = {
           customer_phone?: string
           discount?: number
           id?: string
+          meta_fbc?: string | null
+          meta_fbp?: string | null
+          meta_reported_at?: string | null
           number?: string
           ship_city?: string
           ship_country?: string
@@ -1002,8 +1017,11 @@ export type Database = {
       place_order: {
         Args: {
           p_city: string
+          p_client_ip?: string
           p_coupon?: string
           p_email: string
+          p_fbc?: string
+          p_fbp?: string
           p_line1: string
           p_line2: string
           p_lines: Json
@@ -1012,6 +1030,7 @@ export type Database = {
           p_postcode: string
           p_province: string
           p_shipping_method?: string
+          p_user_agent?: string
         }
         Returns: Json
       }

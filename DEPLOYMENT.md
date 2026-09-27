@@ -224,7 +224,24 @@ fails everywhere.
 
 To check it's firing: Events Manager → the pixel → Test events, with brikc.it open; or the Meta
 Pixel Helper extension. A visit should show PageView, a build's page ViewContent, an add AddToCart,
-`/checkout` InitiateCheckout, and a placed order Purchase with the order number as its event id.
+`/checkout` InitiateCheckout, and a placed order AddPaymentInfo with the order number as its event id.
+
+**Purchase comes from the database, when an order is marked paid** — the admin's
+`20260927140000_a_paid_order_tells_meta.sql`. It is silent until the Conversions API token is in
+Vault:
+
+1. Events Manager → the dataset → **Settings → Conversions API** → generate an access token.
+2. In the Supabase SQL editor: `select vault.create_secret('<the token>', 'meta_capi_token');` — it
+   prints the new secret's uuid, which is not the token; don't paste that anywhere.
+3. To try it without it counting: Events Manager → **Test events** → copy the test code, then
+   `select vault.create_secret('<the code>', 'meta_test_event_code');`, mark an order paid, watch the
+   Purchase arrive under Test events, and remove the code with
+   `delete from vault.secrets where name = 'meta_test_event_code';`.
+4. Meta's answers: `select status_code, content, created from net._http_response order by created desc limit 10;`
+   — a 401 with code 190 is a wrong or revoked token.
+
+Keep **Automatic events** and **Automatic website matching** off in the dataset's Settings; `/privacy`
+doesn't describe what either would send.
 
 ## 6. Attach the domain
 

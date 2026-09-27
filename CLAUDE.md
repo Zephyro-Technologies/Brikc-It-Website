@@ -353,28 +353,44 @@ tracking off is clearing a field in the admin. The id is public, it is in every 
 and `settings_meta_pixel_id_shape` and `PIXEL_ID` both hold it to digits because it is printed into
 an inline script.
 
-- Meta's snippet, unchanged, as a `beforeInteractive` inline `<Script>`: `fbq` has to exist before
-  hydration, or an event fired as a page mounts has no queue to land in.
+- Meta's snippet as a `beforeInteractive` inline `<Script>`: Next runs it before hydrating, so `fbq`
+  is queueing before any page mounts. The one change to it is `autoConfig` off, set before `init`:
+  left on, it reports every button pressed, which `/privacy` doesn't describe.
 - **Nothing here sends PageView.** The snippet counts the first page and fbevents.js counts every
   navigation after it by listening to the History API. A PageView per route change would count every
-  page twice. A chip on `/shop` changes the URL, so Meta counts it as a page view — that is Meta's
-  default, and `disablePushState`, the way out of it, is one Meta advises against.
-- ViewContent comes from `useViewContent()` in both detail views; AddToCart from the cart's `add()`, so
-  every add button reports; InitiateCheckout once per checkout visit, when the cart first has lines
-  and ordering is open. **Purchase fires in `CheckoutView` the moment `/api/orders` succeeds, never on
-  the confirmation page**: Meta does not deduplicate two browser events even when they share an
-  eventID, and that page can be reloaded. The order number is the eventID regardless — it is what a
-  Conversions API event would one day pair with.
-- A product is named by its **slug**, the id the cart, the wire and the URLs already use. A catalogue
-  feed has to use the same ids, and a renamed build looks like a new product to Meta.
-- The values are analytics, not money the shop acts on, so the money invariant isn't in play: the
-  Purchase value is `place_order`'s total, the rest are catalogue prices as the page shows them.
-- Automatic Advanced Matching is a switch in Events Manager, not in code. Turned on, it hashes and
-  sends the checkout's email, phone and name fields.
-- Meta's Business Tools Terms ask for a clear notice, on each page the pixel runs on, of what it
-  collects and how to opt out. The shop has no privacy page yet.
-- **The migration ships first.** `getSettings()` selects `meta_pixel_id` in the root layout, so
-  deploying this before `20260927120000_the_meta_pixel_is_a_setting.sql` is applied 500s every page.
+  page twice. A chip on `/shop` changes the URL, so Meta counts it as a page view — Meta's default.
+- ViewContent from `useViewContent()` (its own file: `MetaPixel` is a Server Component importing
+  `lib/pixel.ts`, and Next refuses to build if that module reaches a React hook), AddToCart from the
+  cart's `add()`, InitiateCheckout once per checkout visit.
+- **A placed order is AddPaymentInfo, not Purchase.** Most are paid by transfer later and some never
+  are, so the browser reports placing one and **Purchase means paid**: the database sends it to Meta's
+  Conversions API when an order moves into paid — or straight past it into in_production, shipped or
+  delivered, since nothing here is built or shipped before the transfer arrives (`private.tell_meta_paid()`,
+  `20260927140000_a_paid_order_tells_meta.sql` in the admin). AddPaymentInfo fires in `CheckoutView`
+  the moment `/api/orders` succeeds, not on the confirmation page, which can be reloaded — Meta does not
+  deduplicate two browser events even when they share an eventID.
+- **What ties a paid order back to its ad** is kept at checkout: `/api/orders` passes the `_fbp` and
+  `_fbc` cookies, `cf-connecting-ip` and the user agent to `place_order`, which stores them on the
+  order. Nothing is sent to Meta at that point; only if the order is paid.
+- The trigger fires **once per order ever** — `orders.meta_reported_at` is the switch, so paid →
+  cancelled → paid reports once — for site and hand-typed orders alike, and only with an email or a
+  phone to match on. It hashes to Meta's rules in SQL (`private.meta_hash`, `meta_letters`,
+  `meta_phone`, which mirrors `normaliseWhatsapp()`), sends `action_source: system_generated`
+  because the sale is a transfer the shop confirms, and runs inside its own exception block: **nothing
+  in it may stop an order being marked paid.** A sent Purchase cannot be withdrawn.
+- The token is in Vault as `meta_capi_token`, never in settings. Unset, nothing is sent. While
+  `meta_test_event_code` is also set, Meta shows the events under Test events and doesn't count them.
+  Meta's answers land in `net._http_response`; the order gets a note by "Meta" when one is queued.
+- A product is named by its **slug** everywhere, browser and server, so the two agree — and a renamed
+  build looks like a new product to Meta.
+- The values are analytics, not money the shop acts on, so the money invariant isn't in play.
+- **`/privacy` describes all of this and must stay true.** Change what is collected or who gets it and
+  that page changes in the same commit. It is linked from the footer on every page because Meta's
+  Business Tools Terms ask for a notice wherever the pixel runs.
+- In Events Manager, "Automatic events" and "Automatic website matching" (automatic advanced
+  matching) are both switched off; either would send Meta things `/privacy` doesn't say.
+- **Migrations ship first.** `getSettings()` selects `meta_pixel_id` in the root layout, and `place_order`
+  takes the four new parameters with defaults so the storefront deployed before them keeps working.
 
 ### Rendering and revalidation
 

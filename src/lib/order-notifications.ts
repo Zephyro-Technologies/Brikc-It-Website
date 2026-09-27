@@ -109,6 +109,9 @@ async function alertOwners(order: NewOrder, deliveryLabel: string, email: Outcom
   // A delivery group's key, so owners are added and removed on pushover.net
   // rather than here. A single person's user key works the same way.
   const user = process.env.PUSHOVER_GROUP_KEY
+  // Off until both are set. Setting them sends the shopper's name, city and
+  // email to Pushover, which /privacy (src/app/privacy/page.tsx) doesn't list
+  // yet — name it there in the same change that turns this on.
   if (!token || !user) return
 
   const discount = order.discount ?? 0

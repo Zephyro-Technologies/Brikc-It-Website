@@ -431,7 +431,14 @@ export function Footer({ instagram = "@brikc.it" }: { instagram?: string }) {
 
       <div className="border-t border-white/10 px-4 py-6 sm:px-6">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
-          <p className="text-xs whitespace-nowrap text-white/45">© {YEAR} brikc.it — built by hand, framed with care.</p>
+          <p className="text-xs whitespace-nowrap text-white/45">
+            © {YEAR} brikc.it — built by hand, framed with care. ·{" "}
+            {/* On every page because the pixel is: Meta's terms ask for the
+                notice wherever it runs. */}
+            <Link href="/privacy" className="underline underline-offset-2 hover:text-white">
+              Privacy
+            </Link>
+          </p>
           {/* Kept from the previous chrome: the shop calls its models
               "LEGO-style" throughout, so saying plainly that the LEGO Group
               has nothing to do with us is what keeps that descriptive rather

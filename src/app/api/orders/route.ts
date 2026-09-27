@@ -22,6 +22,15 @@ import { announceOrder } from "../../../lib/order-notifications"
 /** Our own validation failures, raised with errcode 22023, are safe to show. */
 const USER_ERROR = "22023"
 
+/** One cookie's value from the request, or "" — Meta's _fbp and _fbc are set on brikc.it. */
+function cookie(request: Request, name: string): string {
+  for (const part of (request.headers.get("cookie") ?? "").split(";")) {
+    const [key, ...value] = part.trim().split("=")
+    if (key === name) return value.join("=")
+  }
+  return ""
+}
+
 export async function POST(request: Request) {
   let body: Record<string, unknown>
   try {
@@ -58,6 +67,14 @@ export async function POST(request: Request) {
     // preview ran and works the amount out again, so a code that expired
     // while the form was open is caught here rather than honoured.
     p_coupon: str(body.coupon),
+    // Kept on the order and used only if it is paid: that is when the database
+    // tells Meta about the purchase, and these are what let Meta connect it to
+    // the ad click that started it. _fbc exists only for a visit that came from
+    // an ad. Nothing here is sent anywhere by this route.
+    p_fbp: cookie(request, "_fbp"),
+    p_fbc: cookie(request, "_fbc"),
+    p_client_ip: request.headers.get("cf-connecting-ip") ?? "",
+    p_user_agent: request.headers.get("user-agent") ?? "",
   })
 
   if (error) {

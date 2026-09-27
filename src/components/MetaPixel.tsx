@@ -9,7 +9,10 @@ import { PIXEL_ID } from "../lib/pixel"
  * has to have defined `fbq` before the page hydrates, or a ViewContent fired as
  * a product page mounts would find nothing to queue into and vanish.
  *
- * The snippet is Meta's own, unchanged. It counts the page it loads on, and
+ * autoConfig is off, set before init as it has to be: left on, the pixel reports
+ * buttons as they are pressed — their text and styling, as SubscribedButtonClick
+ * — which /privacy doesn't describe and nobody asked for. Otherwise the snippet
+ * is Meta's own, unchanged. It counts the page it loads on, and
  * fbevents.js counts every page after that by itself: it listens to the History
  * API, so each navigation here — which never reloads the document — is a
  * PageView without anything calling for one. A PageView of our own on each
@@ -31,6 +34,7 @@ n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window,document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
+fbq('set','autoConfig',false,'${id}');
 fbq('init','${id}');
 fbq('track','PageView');`
 

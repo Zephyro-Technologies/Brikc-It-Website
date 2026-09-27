@@ -20,11 +20,16 @@
  * built later has to use the same one, or Meta can't match the two.
  *
  * The values here are analytics, not money the shop acts on. A ViewContent or
- * AddToCart price is the catalogue's number as the page shows it; the Purchase
- * value is the total place_order returned. None of it travels to the shop.
+ * AddToCart price is the catalogue's number as the page shows it; the
+ * AddPaymentInfo value is the total place_order returned. None of it travels to
+ * the shop.
  */
 
-type StandardEvent = "ViewContent" | "AddToCart" | "InitiateCheckout" | "Purchase"
+/**
+ * No Purchase: a placed order isn't a sale here. The database sends Purchase to
+ * Meta's Conversions API when an order is marked paid.
+ */
+type StandardEvent = "ViewContent" | "AddToCart" | "InitiateCheckout" | "AddPaymentInfo"
 type Fbq = (...args: unknown[]) => void
 
 declare global {
@@ -41,7 +46,7 @@ export const PIXEL_ID = /^[0-9]{10,20}$/
 
 /**
  * One standard event. `eventID` makes a repeat of the same event recognisable
- * as a repeat — the order number, for a Purchase.
+ * as a repeat — the order number, for an AddPaymentInfo.
  */
 export function track(event: StandardEvent, params: Record<string, unknown> = {}, eventID?: string) {
   if (typeof window === "undefined" || typeof window.fbq !== "function") return

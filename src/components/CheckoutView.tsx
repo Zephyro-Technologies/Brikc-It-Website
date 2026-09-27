@@ -327,11 +327,12 @@ export default function CheckoutView({
         return
       }
 
-      // The sale is reported here, the moment it happened, rather than by the
-      // confirmation page — which can be reloaded, and would count it again.
-      // The value is what place_order charged, and the order number is the
-      // eventID, so Meta can tell this sale from any other.
-      track("Purchase", { ...lineParams(priced), value: body.total ?? total, currency: CURRENCY }, body.number)
+      // Placed is not bought — most orders are paid by transfer later and some
+      // never are — so this is AddPaymentInfo, and Purchase comes from the
+      // database when the order is marked paid (20260927140000 in the admin).
+      // Reported here, the moment it happened, rather than by the confirmation
+      // page, which can be reloaded and would count it again.
+      track("AddPaymentInfo", { ...lineParams(priced), value: body.total ?? total, currency: CURRENCY }, body.number)
 
       // Handed to the confirmation page this way rather than in the URL: an
       // order reference in a shareable link is an invitation to go looking at
