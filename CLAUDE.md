@@ -345,6 +345,37 @@ A **manual order** is written straight to `orders` by the admin rather than thro
 rather than a cart because the operator is trusted with the numbers, and because
 `quote_coupon` refuses an out-of-stock line, which a hand-entered order is often for.
 
+### Meta Pixel
+
+**On when `settings.meta_pixel_id` holds an id, and absent otherwise.** `MetaPixel` in the root
+layout renders nothing — script and `<noscript>` alike — for an empty or malformed id, so switching
+tracking off is clearing a field in the admin. The id is public, it is in every page's HTML anyway,
+and `settings_meta_pixel_id_shape` and `PIXEL_ID` both hold it to digits because it is printed into
+an inline script.
+
+- Meta's snippet, unchanged, as a `beforeInteractive` inline `<Script>`: `fbq` has to exist before
+  hydration, or an event fired as a page mounts has no queue to land in.
+- **Nothing here sends PageView.** The snippet counts the first page and fbevents.js counts every
+  navigation after it by listening to the History API. A PageView per route change would count every
+  page twice. A chip on `/shop` changes the URL, so Meta counts it as a page view — that is Meta's
+  default, and `disablePushState`, the way out of it, is one Meta advises against.
+- ViewContent comes from `useViewContent()` in both detail views; AddToCart from the cart's `add()`, so
+  every add button reports; InitiateCheckout once per checkout visit, when the cart first has lines
+  and ordering is open. **Purchase fires in `CheckoutView` the moment `/api/orders` succeeds, never on
+  the confirmation page**: Meta does not deduplicate two browser events even when they share an
+  eventID, and that page can be reloaded. The order number is the eventID regardless — it is what a
+  Conversions API event would one day pair with.
+- A product is named by its **slug**, the id the cart, the wire and the URLs already use. A catalogue
+  feed has to use the same ids, and a renamed build looks like a new product to Meta.
+- The values are analytics, not money the shop acts on, so the money invariant isn't in play: the
+  Purchase value is `place_order`'s total, the rest are catalogue prices as the page shows them.
+- Automatic Advanced Matching is a switch in Events Manager, not in code. Turned on, it hashes and
+  sends the checkout's email, phone and name fields.
+- Meta's Business Tools Terms ask for a clear notice, on each page the pixel runs on, of what it
+  collects and how to opt out. The shop has no privacy page yet.
+- **The migration ships first.** `getSettings()` selects `meta_pixel_id` in the root layout, so
+  deploying this before `20260927120000_the_meta_pixel_is_a_setting.sql` is applied 500s every page.
+
 ### Rendering and revalidation
 
 | Route | Mode | Why |

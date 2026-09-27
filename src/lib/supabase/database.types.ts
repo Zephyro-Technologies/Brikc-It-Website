@@ -914,6 +914,7 @@ export type Database = {
           lead_time_framed: string
           lead_time_standard: string
           low_stock_at: number
+          meta_pixel_id: string
           store_name: string
           teamhq_cities: string
           teamhq_fee: number
@@ -938,6 +939,7 @@ export type Database = {
           lead_time_framed?: string
           lead_time_standard?: string
           low_stock_at?: number
+          meta_pixel_id?: string
           store_name?: string
           teamhq_cities?: string
           teamhq_fee?: number
@@ -962,6 +964,7 @@ export type Database = {
           lead_time_framed?: string
           lead_time_standard?: string
           low_stock_at?: number
+          meta_pixel_id?: string
           store_name?: string
           teamhq_cities?: string
           teamhq_fee?: number

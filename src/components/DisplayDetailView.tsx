@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Check, Package, ShieldCheck, Truck } from "lucide-react"
 import { useCart } from "../cart"
+import { useViewContent } from "../lib/pixel"
 import { money } from "../lib/money"
 import type { Product } from "../data"
 import { cardTag, displayVisual, lowVariantStockNote, specs, subline } from "../lib/product-view"
@@ -38,6 +39,7 @@ export default function DisplayDetailView({
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
   const { add } = useCart()
+  useViewContent(product)
 
   useEffect(() => {
     if (!added) return

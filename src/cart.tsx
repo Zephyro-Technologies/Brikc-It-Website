@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
+import { CURRENCY, lineParams, track } from "./lib/pixel"
 import {
   FORMAT_LABELS,
   FRAME_LABELS,
@@ -170,6 +171,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
           qty,
         },
       ]
+    })
+    // Out here rather than in the updater, which React may run twice: one add
+    // is one event, whichever button it came from.
+    track("AddToCart", {
+      ...lineParams([{ slug: product.slug, qty }]),
+      content_name: product.name,
+      value: unitPrice * qty,
+      currency: CURRENCY,
     })
     if (opts?.open !== false) setOpen(true)
   }

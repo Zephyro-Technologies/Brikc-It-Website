@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { CartProvider } from "../cart"
 import { Nav, Footer, CartDrawer } from "../components/Layout"
 import { ScrollToTop } from "../components/ScrollToTop"
+import MetaPixel from "../components/MetaPixel"
 import { getSettings } from "../lib/shop"
 import { ShopSettingsProvider } from "../lib/shop-settings"
 import "./globals.css"
@@ -15,14 +16,15 @@ export const metadata: Metadata = {
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  // The announcement bar's text, the footer's Instagram handle, and the
-  // threshold the cards use to decide when to say "Only 2 left". Prices live
-  // on the product, so the cart still depends on no store setting.
+  // The announcement bar's text, the footer's Instagram handle, the threshold
+  // the cards use to decide when to say "Only 2 left", and the Meta Pixel's id.
+  // Prices live on the product, so the cart still depends on no store setting.
   const settings = await getSettings()
 
   return (
     <html lang="en">
       <body>
+        <MetaPixel id={settings.metaPixelId} />
         <ShopSettingsProvider value={{ lowStockAt: settings.lowStockAt }}>
           <CartProvider>
             <Suspense fallback={null}>

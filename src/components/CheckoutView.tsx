@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { AlertTriangle, ArrowLeft, ChevronDown, Loader2, ShoppingBag, Tag, X } from "lucide-react"
@@ -19,6 +19,7 @@ import {
 } from "../data"
 import { isSellable } from "../lib/product-view"
 import { CONFIRMATION_KEY } from "../lib/checkout"
+import { CURRENCY, lineParams, track } from "../lib/pixel"
 import { OTHER_CITY, PROVINCES, citiesIn } from "../lib/pakistan"
 
 const FIELD =
@@ -213,6 +214,15 @@ export default function CheckoutView({
   const repriced = priced.filter((l) => l.changed)
   const subtotal = priced.reduce((n, l) => (l.unavailable ? n : n + l.unitPrice * l.qty), 0)
 
+  // Once per visit, when the cart — which fills in after mount — first has
+  // something in it, and only when ordering is open: a shut checkout isn't one.
+  const checkoutTracked = useRef(false)
+  useEffect(() => {
+    if (checkoutTracked.current || !ordersOpen || priced.length === 0) return
+    checkoutTracked.current = true
+    track("InitiateCheckout", { ...lineParams(priced), value: subtotal, currency: CURRENCY })
+  }, [ordersOpen, priced, subtotal])
+
   /**
    * The cart as the server sees it — the one shape sent both to price a coupon
    * and to place the order, so a discount can never be quoted against a
@@ -316,6 +326,12 @@ export default function CheckoutView({
         setError(body.error ?? "We couldn't place that order.")
         return
       }
+
+      // The sale is reported here, the moment it happened, rather than by the
+      // confirmation page — which can be reloaded, and would count it again.
+      // The value is what place_order charged, and the order number is the
+      // eventID, so Meta can tell this sale from any other.
+      track("Purchase", { ...lineParams(priced), value: body.total ?? total, currency: CURRENCY }, body.number)
 
       // Handed to the confirmation page this way rather than in the URL: an
       // order reference in a shareable link is an invitation to go looking at

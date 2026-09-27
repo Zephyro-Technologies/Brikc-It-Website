@@ -211,6 +211,21 @@ Key not found" on both phones is the record, because this app cannot write a
 note onto the order. The shopper has the same details on the confirmation page
 either way. Worker logs carry the same lines.
 
+## 5c. Meta Pixel
+
+Off until an id is set, and set in the admin rather than here: **Settings → Meta Pixel → Pixel ID**.
+Save, and the settings trigger rebuilds every page with the script in it; clear the field to take it
+out again.
+
+The column is `settings.meta_pixel_id`, added by the admin's
+`20260927120000_the_meta_pixel_is_a_setting.sql`. **Apply that migration before deploying the
+storefront** — the root layout selects the column on every page, so a deploy that arrives first
+fails everywhere.
+
+To check it's firing: Events Manager → the pixel → Test events, with brikc.it open; or the Meta
+Pixel Helper extension. A visit should show PageView, a build's page ViewContent, an add AddToCart,
+`/checkout` InitiateCheckout, and a placed order Purchase with the order number as its event id.
+
 ## 6. Attach the domain
 
 Worker → Settings → Domains & Routes → **Add custom domain** → `brikc.it`

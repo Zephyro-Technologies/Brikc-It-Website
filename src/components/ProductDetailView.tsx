@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Check, ChevronLeft, ChevronRight, Package, ShieldCheck, Truck, X } from "lucide-react"
 import { useCart } from "../cart"
+import { useViewContent } from "../lib/pixel"
 import { money } from "../lib/money"
 import {
   FORMAT_LABELS,
@@ -69,6 +70,7 @@ export default function ProductDetailView({
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
   const { add } = useCart()
+  useViewContent(product)
 
   const images = product?.images ?? []
   const count = images.length

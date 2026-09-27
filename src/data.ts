@@ -214,6 +214,12 @@ export type Settings = {
    */
   banner: string
   /**
+   * The Meta Pixel to load on every page, or empty for none. Digits only — the
+   * database's settings_meta_pixel_id_shape and MetaPixel both insist, because
+   * it is printed into an inline script.
+   */
+  metaPixelId: string
+  /**
    * At or below this many left, a card says so. Set in the admin; zero turns the
    * nudge off entirely rather than showing it on the last one.
    */
