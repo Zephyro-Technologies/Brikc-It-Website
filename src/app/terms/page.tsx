@@ -9,7 +9,7 @@ export const revalidate = 60
 
 export const metadata: Metadata = {
   title: "Terms & conditions — brikc.it",
-  description: "The terms on which brikc.it sells its builds, frames and displays.",
+  description: "The terms on which brikc.it sells its builds and display frames.",
 }
 
 export default async function TermsPage() {
@@ -22,8 +22,8 @@ export default async function TermsPage() {
     >
       <Section n={1} title="Who we are">
         <p>
-          brikc.it is an online shop in Pakistan selling brick-built scale models of cars, bikes and racing cars,
-          display frames and desks
+          brikc.it is an online shop in Pakistan selling brick-built scale models of cars, bikes and racing cars, and
+          display frames for them
           {BUSINESS.operator ? `, run by ${BUSINESS.operator}` : ""}.
           {BUSINESS.address ? ` Our address is ${BUSINESS.address}.` : ""}
         </p>
