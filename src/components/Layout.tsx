@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { Mail, MapPin, Menu, MessageCircle, Minus, Phone, Plus, ShoppingBag, Trash2, X } from "lucide-react"
 import { lineLabel, useCart } from "../cart"
 import { money } from "../lib/money"
-import { NAV } from "../content/site"
+import { navLinks } from "../content/site"
 import { BUSINESS, POLICY_LINKS, telHref } from "../content/business"
 
 /**
@@ -93,7 +93,8 @@ function CartButton() {
   )
 }
 
-export function Nav({ banner = "" }: { banner?: string }) {
+export function Nav({ banner = "", hasDisplays = true }: { banner?: string; hasDisplays?: boolean }) {
+  const nav = navLinks(hasDisplays)
   const pathname = usePathname()
   const [bannerOpen, setBannerOpen] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -153,7 +154,7 @@ export function Nav({ banner = "" }: { banner?: string }) {
           </Link>
 
           <div className="mx-auto hidden items-center gap-1 lg:flex">
-            {NAV.map((n) => (
+            {nav.map((n) => (
               <Link
                 key={n.to}
                 href={n.to}
@@ -192,7 +193,7 @@ export function Nav({ banner = "" }: { banner?: string }) {
 
         {menuOpen && (
           <div className="border-t border-white/10 bg-[#0b0b0d] px-4 py-2 lg:hidden">
-            {NAV.map((n) => (
+            {nav.map((n) => (
               <Link
                 key={n.to}
                 href={n.to}
@@ -372,7 +373,14 @@ export function CartDrawer() {
 // call inside JSX could.
 const YEAR = new Date().getFullYear()
 
-export function Footer({ instagram = "@brikc.it" }: { instagram?: string }) {
+export function Footer({
+  instagram = "@brikc.it",
+  hasDisplays = true,
+}: {
+  instagram?: string
+  hasDisplays?: boolean
+}) {
+  const nav = navLinks(hasDisplays)
   const handle = instagram.replace(/^@/, "")
   return (
     /* Dark, like the Best Sellers band — the same two literals, not tokens,
@@ -402,7 +410,7 @@ export function Footer({ instagram = "@brikc.it" }: { instagram?: string }) {
         <div>
           <h4 className="text-sm font-bold tracking-wider text-white/50 uppercase">Explore</h4>
           <ul className="mt-4 space-y-2.5 text-sm">
-            {NAV.map((n) => (
+            {nav.map((n) => (
               <li key={n.to}>
                 <Link href={n.to} className="text-white/85 hover:text-[var(--primary-2)]">
                   {n.label}
@@ -413,7 +421,7 @@ export function Footer({ instagram = "@brikc.it" }: { instagram?: string }) {
         </div>
 
         <div>
-          <h4 className="text-sm font-bold tracking-wider text-white/50 uppercase">Policies</h4>
+          <h4 className="text-sm font-bold tracking-wider text-white/50 uppercase">Help</h4>
           <ul className="mt-4 space-y-2.5 text-sm">
             {POLICY_LINKS.map((p) => (
               <li key={p.to}>

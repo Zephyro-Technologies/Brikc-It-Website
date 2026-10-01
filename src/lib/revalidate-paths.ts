@@ -30,7 +30,7 @@ const BOOKLETS = "/booklets"
 const GUIDES = "/guides"
 // The written pages. They read the Instagram handle, the lead times and the
 // hand-delivery towns from settings, and every page carries the footer.
-const WRITTEN = ["/how-it-works", "/shipping-policy", "/refund-policy", "/terms", "/privacy"]
+const WRITTEN = ["/contact", "/how-it-works", "/shipping-policy", "/refund-policy", "/terms", "/privacy"]
 
 // /shop is deliberately absent everywhere below. It awaits searchParams, so it
 // renders per request and is never cached — asking to rebuild it is a no-op.
@@ -55,10 +55,13 @@ async function everything(): Promise<string[]> {
   ]
 }
 
-function productPages(change: Change): string[] {
+async function productPages(change: Change): Promise<string[]> {
   const slugs = [change.slug, change.oldSlug].filter((s): s is string => !!s)
+  // Every page's nav offers Displays only while there is at least one, so a
+  // display arriving or going can change the header on all of them. The
+  // renamed-away slug is added because everything() only knows live ones.
   if (change.kind === "display") {
-    return [HOME, DISPLAYS, ...slugs.map((s) => `/displays/${s}`)]
+    return [...(await everything()), ...slugs.map((s) => `/displays/${s}`)]
   }
   // A bundle lives in the shop grid and has a page there, but it is not a
   // build you assemble, so it never appears on /guides.
@@ -77,7 +80,7 @@ export async function pathsFor(change: Change): Promise<string[]> {
     // it shows up on the display it belongs to, whose slug the caller resolved.
     case "products":
     case "product_variants":
-      return productPages(change)
+      return await productPages(change)
 
     // The chips on the homepage come from here, and so does the category name
     // on every build's page. A rename cascades to the builds carrying it, so

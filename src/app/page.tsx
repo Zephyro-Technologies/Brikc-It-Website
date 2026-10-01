@@ -146,6 +146,9 @@ function ShopPreview({ products }: { products: Product[] }) {
 }
 
 function DisplaysPreview({ displays }: { displays: Product[] }) {
+  // No section at all until there is something in it — a homepage band that
+  // only says "coming soon" reads as an unfinished site.
+  if (displays.length === 0) return null
 
   return (
     <section className="bg-[var(--surface-2)] py-16">
@@ -157,9 +160,6 @@ function DisplaysPreview({ displays }: { displays: Product[] }) {
             action={<ExploreMore to="/displays" label="Explore all displays" />}
           />
         </Reveal>
-        {displays.length === 0 ? (
-          <ComingSoon note="The display range is being photographed and priced." />
-        ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {displays.slice(0, 4).map((d, i) => (
             <Reveal key={d.slug} delay={i * 80}>
@@ -167,7 +167,6 @@ function DisplaysPreview({ displays }: { displays: Product[] }) {
             </Reveal>
           ))}
         </div>
-        )}
       </div>
     </section>
   )

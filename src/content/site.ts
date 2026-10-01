@@ -28,6 +28,16 @@ export const NAV: { label: string; to: string; shortcut?: boolean }[] = [
   { label: "Under 10k", to: "/shop?price=under-10k", shortcut: true },
 ]
 
+/**
+ * The nav as it should read today. Displays stays out of it while there are
+ * none to show: a menu item that opens on "coming soon" reads as an unfinished
+ * site, and the page itself still answers at /displays for anyone holding a
+ * link. It comes back by itself when the first display is added.
+ */
+export function navLinks(hasDisplays: boolean) {
+  return NAV.filter((n) => hasDisplays || n.to !== "/displays")
+}
+
 export const STEPS = [
   {
     n: "01",

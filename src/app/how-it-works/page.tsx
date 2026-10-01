@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import type { ReactNode } from "react"
 import Link from "next/link"
 import { ContactBand, PolicyPage, Section, Steps, policyLink } from "../../components/Policy"
-import { getSettings } from "../../lib/shop"
+import { getDisplays, getSettings } from "../../lib/shop"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
 export const revalidate = 60
@@ -22,7 +22,8 @@ export const metadata: Metadata = {
  * section, and step 5, in the same commit that puts it into the checkout.
  */
 
-const JOURNEY: { title: string; body: ReactNode }[] = [
+/** The displays are only offered once there are some, here as in the nav. */
+const journey = (hasDisplays: boolean): { title: string; body: ReactNode }[] => [
   {
     title: "Browse",
     body: (
@@ -31,10 +32,15 @@ const JOURNEY: { title: string; body: ReactNode }[] = [
         <Link href="/shop" className={policyLink}>
           shop
         </Link>{" "}
-        by category or price, or the{" "}
-        <Link href="/displays" className={policyLink}>
-          displays
-        </Link>
+        by category or price
+        {hasDisplays && (
+          <>
+            , or the{" "}
+            <Link href="/displays" className={policyLink}>
+              displays
+            </Link>
+          </>
+        )}
         . Every build has its own page with photographs, a description and the price of each option.
       </>
     ),
@@ -111,7 +117,8 @@ const ONLINE_PAYMENT: { title: string; body: ReactNode }[] = [
 ]
 
 export default async function HowItWorksPage() {
-  const settings = await getSettings()
+  const [settings, displays] = await Promise.all([getSettings(), getDisplays()])
+  const hasDisplays = displays.length > 0
 
   return (
     <PolicyPage
@@ -123,7 +130,8 @@ export default async function HowItWorksPage() {
           We are a small online shop, and everything we sell is listed on this site with its price in rupees. Our
           models are scale builds of cars, bikes and F1-style racing cars. Each one can be bought unassembled, as a kit
           in its box, or assembled by hand by us, and any model can have a plain or LED-lit display frame added so the
-          finished build hangs on a wall. We also sell frames and desks on their own, by size or finish, and bundles of
+          finished build hangs on a wall.
+          {hasDisplays && " We also sell frames and desks on their own, by size or finish."} We also offer bundles of
           several builds for one price.
         </p>
         <p>
@@ -133,7 +141,7 @@ export default async function HowItWorksPage() {
       </Section>
 
       <Section title="From choosing a build to it arriving" wide>
-        <Steps steps={JOURNEY} />
+        <Steps steps={journey(hasDisplays)} />
       </Section>
 
       <Section title="Paying online by card or wallet" wide>
