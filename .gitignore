@@ -19,3 +19,4 @@ next-env.d.ts
 logs/
 *.log
 .DS_Store
+
