@@ -71,8 +71,8 @@ export default async function RefundPolicyPage() {
 
       <Section title="How refunds are paid">
         <p>
-          Refunds go back the way you paid. A payment by bank transfer, JazzCash or Easypaisa is refunded by transfer
-          to an account in your name. We send a refund within 3 working days of agreeing it, and your bank or wallet
+          Refunds go back the way you paid. A payment by bank transfer, JazzCash or Easypaisa, or online through
+          Rapid Gateway, is refunded by transfer to an account in your name. We send a refund within 3 working days of agreeing it, and your bank or wallet
           may take a few more days to show it.
         </p>
         <p>

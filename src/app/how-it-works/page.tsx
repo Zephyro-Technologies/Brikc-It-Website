@@ -108,7 +108,7 @@ const ONLINE_PAYMENT: { title: string; body: ReactNode }[] = [
   },
   {
     title: "Pay there",
-    body: "Your card or wallet details are entered on Rapid Gateway’s page and never reach us.",
+    body: "You pay from your bank account or mobile wallet on Rapid Gateway’s page. Your login and account details never reach us.",
   },
   {
     title: "Confirmed at once",
@@ -144,17 +144,17 @@ export default async function HowItWorksPage() {
         <Steps steps={journey(hasDisplays)} />
       </Section>
 
-      <Section title="Paying online by card or wallet" wide>
+      <Section title="Paying online from your bank or wallet" wide>
         <p>
           We are adding online payment through Rapid Gateway, a Pakistani payment
-          gateway, so you can pay by debit or credit card or mobile wallet at checkout instead of transferring
-          yourself. It will work like this:
+          gateway, so you can pay from your bank account or mobile wallet at checkout instead of making a transfer
+          yourself and sending us the receipt. We don&rsquo;t take card payments. It will work like this:
         </p>
         <Steps steps={ONLINE_PAYMENT} columns={4} />
         <p>
           The amount is always set by our server from the order itself, never by your browser. Bank transfer, JazzCash
-          and Easypaisa stay available alongside it. Refunds for online payments go back to the card or wallet you
-          paid with, as our{" "}
+          and Easypaisa stay available alongside it. Refunds for online payments go back to the bank account or
+          wallet you paid from, as our{" "}
           <Link href="/refund-policy" className={policyLink}>
             refund policy
           </Link>{" "}
