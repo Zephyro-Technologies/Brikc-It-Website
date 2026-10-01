@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, MessageCircle, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react"
+import { Mail, MapPin, Menu, MessageCircle, Minus, Phone, Plus, ShoppingBag, Trash2, X } from "lucide-react"
 import { lineLabel, useCart } from "../cart"
 import { money } from "../lib/money"
 import { NAV } from "../content/site"
+import { BUSINESS, POLICY_LINKS, telHref } from "../content/business"
 
 /**
  * The light, Material-leaning chrome every page sits inside: a dismissible
@@ -380,7 +381,7 @@ export function Footer({ instagram = "@brikc.it" }: { instagram?: string }) {
        1.4:1 against the light background it could not be read at all, and at
        12.9:1 here it is what it was made to be. */
     <footer className="bg-[#0b0b0d] text-white">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
         <div>
           <Link href="/" className="inline-flex" aria-label="brikc.it — home">
             <LogoStacked className="h-28" />
@@ -411,11 +412,51 @@ export function Footer({ instagram = "@brikc.it" }: { instagram?: string }) {
           </ul>
         </div>
 
+        <div>
+          <h4 className="text-sm font-bold tracking-wider text-white/50 uppercase">Policies</h4>
+          <ul className="mt-4 space-y-2.5 text-sm">
+            {POLICY_LINKS.map((p) => (
+              <li key={p.to}>
+                <Link href={p.to} className="text-white/85 hover:text-[var(--primary-2)]">
+                  {p.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
         {/* The prototype's newsletter form posted nowhere — there is no
-            mailing list here. Instagram is the one channel getSettings()
-            actually gives the footer, so that's what this column offers. */}
+            mailing list here. The email, phone and address are the ones on the
+            payment gateway's merchant application, and each line only appears
+            once BUSINESS holds it; Instagram is there regardless. */}
         <div>
           <h4 className="text-sm font-bold tracking-wider text-white/50 uppercase">Get in touch</h4>
+          {(BUSINESS.email || BUSINESS.phone || BUSINESS.address) && (
+            <ul className="mt-4 space-y-2.5 text-sm text-white/85">
+              {BUSINESS.email && (
+                <li className="flex gap-2.5">
+                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-white/50" />
+                  <a href={`mailto:${BUSINESS.email}`} className="break-all hover:text-[var(--primary-2)]">
+                    {BUSINESS.email}
+                  </a>
+                </li>
+              )}
+              {BUSINESS.phone && (
+                <li className="flex gap-2.5">
+                  <Phone className="mt-0.5 h-4 w-4 shrink-0 text-white/50" />
+                  <a href={telHref(BUSINESS.phone)} className="hover:text-[var(--primary-2)]">
+                    {BUSINESS.phone}
+                  </a>
+                </li>
+              )}
+              {BUSINESS.address && (
+                <li className="flex gap-2.5">
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-white/50" />
+                  <address className="not-italic">{BUSINESS.address}</address>
+                </li>
+              )}
+            </ul>
+          )}
           <p className="mt-4 text-sm text-white/60">Questions before you order? We reply fastest on Instagram.</p>
           <a
             href={`https://instagram.com/${handle}`}
@@ -431,13 +472,9 @@ export function Footer({ instagram = "@brikc.it" }: { instagram?: string }) {
 
       <div className="border-t border-white/10 px-4 py-6 sm:px-6">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
-          <p className="text-xs whitespace-nowrap text-white/45">
-            © {YEAR} brikc.it — built by hand, framed with care. ·{" "}
-            {/* On every page because the pixel is: Meta's terms ask for the
-                notice wherever it runs. */}
-            <Link href="/privacy" className="underline underline-offset-2 hover:text-white">
-              Privacy
-            </Link>
+          <p className="text-xs text-white/45">
+            © {YEAR} {BUSINESS.operator ? `${BUSINESS.operator} · ` : ""}brikc.it — built by hand, framed with
+            care.
           </p>
           {/* Kept from the previous chrome: the shop calls its models
               "LEGO-style" throughout, so saying plainly that the LEGO Group
