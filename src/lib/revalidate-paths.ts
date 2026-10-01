@@ -28,6 +28,9 @@ const BEST_SELLERS = "/best-sellers"
 const DISPLAYS = "/displays"
 const BOOKLETS = "/booklets"
 const GUIDES = "/guides"
+// The written pages. They read the Instagram handle, the lead times and the
+// hand-delivery towns from settings, and every page carries the footer.
+const WRITTEN = ["/how-it-works", "/shipping-policy", "/refund-policy", "/terms", "/privacy"]
 
 // /shop is deliberately absent everywhere below. It awaits searchParams, so it
 // renders per request and is never cached — asking to rebuild it is a no-op.
@@ -45,6 +48,7 @@ async function everything(): Promise<string[]> {
     DISPLAYS,
     BOOKLETS,
     GUIDES,
+    ...WRITTEN,
     ...models.map((s) => `/shop/${s}`),
     ...displays.map((d) => `/displays/${d.slug}`),
     ...guides.map((g) => `/booklets/${g.slug}`),
