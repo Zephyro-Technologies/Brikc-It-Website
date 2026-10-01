@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import type { ReactNode } from "react"
+import { PolicyPage, Section, policyLink } from "../../components/Policy"
 
 export const metadata: Metadata = {
   title: "Privacy — brikc.it",
@@ -18,28 +18,12 @@ export const metadata: Metadata = {
 
 const UPDATED = "27 September 2026"
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="mt-10">
-      <h2 className="font-display text-xl" style={{ fontWeight: 700 }}>
-        {title}
-      </h2>
-      <div className="mt-2 space-y-3 leading-relaxed text-[var(--muted)]">{children}</div>
-    </section>
-  )
-}
-
-const link = "font-medium text-[var(--primary)] underline underline-offset-2 hover:text-[var(--primary-deep)]"
+const link = policyLink
 
 export default function PrivacyPage() {
   return (
-    <article className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <h1 className="font-display text-4xl tracking-tight sm:text-5xl" style={{ fontWeight: 800 }}>
-        Privacy
-      </h1>
-      <p className="mt-2 text-sm text-[var(--muted)]">Updated {UPDATED}</p>
-
-      <Section title="When you order">
+    <PolicyPage title="Privacy" updated={UPDATED}>
+      <Section title="When you order" wide>
         <p>
           You give us your name, email, phone number and delivery address. We use them to run your order: to email
           you the payment details, match your transfer, confirm the order on WhatsApp, and deliver it.
@@ -64,7 +48,7 @@ export default function PrivacyPage() {
         </p>
       </Section>
 
-      <Section title="Meta (Facebook and Instagram) ads">
+      <Section title="Meta (Facebook and Instagram) ads" wide>
         <p>
           We use the Meta Pixel to measure our ads. It sets cookies on brikc.it and tells Meta which pages and builds
           you look at, what you add to your cart, and when you check out or place an order, with prices.
@@ -103,6 +87,6 @@ export default function PrivacyPage() {
           .
         </p>
       </Section>
-    </article>
+    </PolicyPage>
   )
 }
