@@ -20,6 +20,10 @@ export const NAV: { label: string; to: string; shortcut?: boolean }[] = [
   // /booklets and are linked from the bottom of that page — they were what
   // "Guides" meant before there was a PDF to download.
   { label: "Guides", to: "/guides" },
+  // What the business is, the whole customer journey and how online payment
+  // works. In the header rather than only the footer because the payment
+  // gateway's reviewers look for it from the first page and missed it there.
+  { label: "How it works", to: "/how-it-works" },
   // A shortcut into the shop rather than a section of the site, which is what
   // `shortcut` marks: it stays out of the footer's list of places to go, and it
   // never lights up as the current page — being under ten thousand rupees is a
@@ -51,6 +55,11 @@ export const STEPS = [
   },
   {
     n: "03",
+    title: "Pay securely",
+    desc: "Check out and pay from your bank account or mobile wallet. Online payment through Rapid Gateway is on its way; until then, by bank transfer.",
+  },
+  {
+    n: "04",
     title: "We build and deliver",
     desc: "Assembled, inspected and double-boxed, then couriered anywhere in Pakistan.",
   },

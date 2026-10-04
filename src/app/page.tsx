@@ -180,9 +180,10 @@ function HowItWorks() {
           <SectionHead
             title="How it works"
             desc="From a box of bricks to a framed centrepiece — here's how your model comes to life."
+            action={<ExploreMore to="/how-it-works" label="The full journey" />}
           />
         </Reveal>
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((s, i) => (
             <Reveal key={s.n} delay={i * 90}>
               <div className="relative h-full rounded-3xl border border-[var(--border)] bg-white p-7 shadow-[var(--shadow-1)]">
