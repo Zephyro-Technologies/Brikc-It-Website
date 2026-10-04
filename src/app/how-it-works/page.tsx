@@ -10,7 +10,7 @@ export const revalidate = 60
 export const metadata: Metadata = {
   title: "How it works — brikc.it",
   description:
-    "What brikc.it sells, how we build and deliver it, and every step from choosing a build to it arriving at your door.",
+    "brikc.it's business model, target customers and operations, the customer journey from browsing to delivery, and how we use our payment gateway.",
 }
 
 /**
@@ -59,7 +59,7 @@ const journey = (hasDisplays: boolean): { title: string; body: ReactNode }[] => 
   },
   {
     title: "Pay",
-    body: "Transfer the amount by bank transfer, JazzCash or Easypaisa to one of the accounts shown, and send us the receipt on WhatsApp with your order number. The button on the confirmation page writes the message for you.",
+    body: "Today: transfer the amount by bank transfer, JazzCash or Easypaisa to one of the accounts shown, and send us the receipt on WhatsApp. Once Rapid Gateway is live: pay online at checkout from your bank account or mobile wallet, with nothing to send afterwards.",
   },
   {
     title: "We confirm",
@@ -123,38 +123,70 @@ export default async function HowItWorksPage() {
   return (
     <PolicyPage
       title="How it works"
-      intro="brikc.it sells brick-built scale models of cars, bikes and racing cars to customers across Pakistan. You can buy one boxed to build yourself, or built by us and framed for your wall."
+      intro="Our business model, who we sell to, how we operate, the customer journey from browsing to delivery, and how we will use our payment gateway."
     >
-      <Section title="What we do" wide>
+      <Section title="Our business model" wide>
         <p>
-          We are a small online shop, and everything we sell is listed on this site with its price in rupees. Our
-          models are scale builds of cars, bikes and F1-style racing cars. Each one can be bought unassembled, as a kit
-          in its box, or assembled by hand by us, and any model can have a plain or LED-lit display frame added so the
-          finished build hangs on a wall.
-          {hasDisplays && " We also sell frames and desks on their own, by size or finish."} We also offer bundles of
-          several builds for one price.
-        </p>
-        <p>
-          We keep our kits in stock, and assemble, frame, pack and dispatch every order ourselves. We sell only online,
-          through this site and our Instagram, to people buying for themselves or as a gift.
+          brikc.it is an online retail shop. We sell physical products, brick-built scale models and display frames,
+          directly to customers in Pakistan through this website and our Instagram. Every product is listed here with
+          photographs, a description and its price in Pakistani rupees, and customers pay for their order before we
+          dispatch it. That sale is how the business earns its money: there are no subscriptions, memberships or
+          recurring charges.
         </p>
       </Section>
 
-      <Section title="From choosing a build to it arriving" wide>
+      <Section title="Products we sell">
+        <p>
+          Scale models of cars, bikes and F1-style racing cars. Each one can be bought unassembled, as a kit in its
+          box, or assembled by hand by us, and any model can have a plain or LED-lit display frame added so the
+          finished build hangs on a wall. We also offer bundles of several builds for one price.
+          {hasDisplays && " Frames and desks are also sold on their own, by size or finish."}
+        </p>
+      </Section>
+
+      <Section title="Who our customers are">
+        <p>
+          Individuals across Pakistan: people who collect or enjoy cars, bikes and motorsport, people who like building
+          models themselves, and people buying a gift. We sell to the public, one order at a time, and deliver within
+          Pakistan only.
+        </p>
+      </Section>
+
+      <Section title="How we operate" wide>
+        <p>
+          We keep our kits in stock. When an order is paid, we pack kits sealed, assemble builds by hand and inspect
+          them, and fit and check frames, all ourselves. Orders go out by tracked courier, free anywhere in Pakistan, or
+          by hand delivery in the towns listed at checkout. We handle questions, returns and refunds ourselves by email,
+          phone and WhatsApp, as set out in our{" "}
+          <Link href="/shipping-policy" className={policyLink}>
+            shipping
+          </Link>{" "}
+          and{" "}
+          <Link href="/refund-policy" className={policyLink}>
+            refund
+          </Link>{" "}
+          policies.
+        </p>
+      </Section>
+
+      <Section title="Customer journey: from browsing to delivery" wide>
         <Steps steps={journey(hasDisplays)} />
       </Section>
 
-      <Section title="Paying online from your bank or wallet" wide>
+      <Section title="How we will use the payment gateway" wide>
         <p>
-          We are adding online payment through Rapid Gateway, a Pakistani payment
-          gateway, so you can pay from your bank account or mobile wallet at checkout instead of making a transfer
-          yourself and sending us the receipt. We don&rsquo;t take card payments. It will work like this:
+          We are integrating <strong className="text-[var(--foreground)]">Rapid Gateway</strong>, a Pakistani payment
+          gateway, for one purpose: to collect payment for orders placed on brikc.it, at the checkout step. Customers
+          will pay from their bank account or mobile wallet instead of making a transfer themselves and sending us the
+          receipt. We don&rsquo;t take card payments. During the customer&rsquo;s payment it works like this:
         </p>
         <Steps steps={ONLINE_PAYMENT} columns={4} />
         <p>
-          The amount is always set by our server from the order itself, never by your browser. Bank transfer, JazzCash
-          and Easypaisa stay available alongside it. Refunds for online payments go back to the bank account or
-          wallet you paid from, as our{" "}
+          The amount charged is always the order total set by our server from the order itself, never by the
+          customer&rsquo;s browser. The gateway is used only for one-off payments for products on this site: no
+          subscriptions, no recurring billing, no payments for anything sold elsewhere. Bank transfer, JazzCash and
+          Easypaisa stay available alongside it. Refunds for online payments go back to the bank account or wallet the
+          customer paid from, as our{" "}
           <Link href="/refund-policy" className={policyLink}>
             refund policy
           </Link>{" "}
