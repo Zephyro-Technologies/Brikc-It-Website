@@ -549,11 +549,38 @@ export default function CheckoutView({
             <h2 className="font-display text-lg" style={{ fontWeight: 700 }}>
               How you&rsquo;ll pay
             </h2>
-            <p className="mt-2 leading-relaxed text-[var(--muted)]">
-              Bank transfer or mobile wallet. Place the order first — the next page gives you the
-              account details and your order number, and you send the receipt to us on WhatsApp.
-              Nothing is charged automatically and we start the build once the transfer lands.
-            </p>
+            {/* Two cards, not two choices: only the transfer can be picked
+                today. The second says how the payment gateway will slot into
+                this step, because its reviewers ask to see that at checkout,
+                and it is information, not a control, so nothing here is a
+                button that does nothing. Make it a real option, and drop the
+                "coming soon", in the commit that wires the gateway in. */}
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border-2 border-[var(--primary)] bg-white p-4">
+                <p className="text-sm font-semibold">Bank transfer or mobile wallet</p>
+                <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
+                  Place the order first. The next page gives you the account details and your order
+                  number, and you send the receipt to us on WhatsApp. Nothing is charged automatically,
+                  and we start the build once the transfer lands.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-dashed border-[var(--border)] bg-white/60 p-4">
+                <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                  Pay online with Rapid Gateway
+                  <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[10px] font-semibold tracking-wider text-[var(--muted)] uppercase">
+                    Coming soon
+                  </span>
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
+                  You&rsquo;ll be taken to Rapid Gateway&rsquo;s secure page to pay the exact order total
+                  from your bank account or mobile wallet, then brought back here with the order
+                  confirmed. No receipt to send.{" "}
+                  <Link href="/how-it-works" className="text-[var(--primary)] underline-offset-4 hover:underline">
+                    How it works
+                  </Link>
+                </p>
+              </div>
+            </div>
           </section>
         </div>
 
