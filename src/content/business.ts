@@ -14,7 +14,7 @@ export const BUSINESS = {
   /** The legal name the shop trades under — the registered person or business. */
   operator: "",
   /** Exactly as printed on the utility bill submitted to the gateway. */
-  address: "HOUSE NO 7, KHARAL HOUSE, JINNAH CHOWK, ZAKARIA TOWN, BOSAN ROAD, Multan Cantt. Bosan Town",
+  address: "JINNAH ST ZAKRIYA TOWN, BASAN RD, MULTAN",
   email: "orders@brikc.it",
   /** As people dial it, e.g. "0316 5511771". */
   phone: "0316 5511771",
