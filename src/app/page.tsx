@@ -3,6 +3,7 @@ import { ArrowRight, BadgeCheck, Star } from "lucide-react"
 import { ComingSoon, Reveal, SectionHead, ExploreMore, ProductCard } from "../components/ui"
 import { DisplayCard } from "../components/DisplayCard"
 import { Hero } from "../components/Hero"
+import ReviewPhotos from "../components/ReviewPhotos"
 import { money } from "../lib/money"
 import type { Product } from "../data"
 import { getCategories, getDisplays, getGuides, getProducts, getFeaturedReviews } from "../lib/shop"
@@ -243,7 +244,8 @@ function ReviewCard({ review }: { review: Review }) {
   // in someone's actual room. The product image is the fallback for a review
   // that came with nothing attached.
   const video = review.media.find((m) => m.kind === "video")
-  const photo = review.media.find((m) => m.kind === "image")?.url ?? review.image
+  const photos = review.media.filter((m) => m.kind === "image").map((m) => m.url)
+  const photo = photos[0] ?? review.image
 
   const hero = video ? (
     // eslint-disable-next-line jsx-a11y/media-has-caption
@@ -254,6 +256,8 @@ function ReviewCard({ review }: { review: Review }) {
       poster={photo}
       className="h-48 w-full bg-black object-cover"
     />
+  ) : photos.length > 0 ? (
+    <ReviewPhotos photos={photos} name={review.name} />
   ) : photo ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img
@@ -263,6 +267,24 @@ function ReviewCard({ review }: { review: Review }) {
       className="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-105"
     />
   ) : null
+
+  // A video needs its own clicks, and so does a reviewer's photograph — it
+  // opens full size. Either way the card is not also a link: a button inside an
+  // anchor is a fight the anchor wins. The build's name in the caption is the
+  // link instead. A card showing only the catalogue shot stays a link whole.
+  const whole = Boolean(review.slug) && !video && photos.length === 0
+
+  const build =
+    review.slug && !whole ? (
+      <Link
+        href={`/shop/${review.slug}`}
+        className="font-semibold text-[var(--foreground)] underline-offset-2 hover:underline"
+      >
+        {review.build}
+      </Link>
+    ) : (
+      review.build
+    )
 
   const body = (
     <>
@@ -285,7 +307,7 @@ function ReviewCard({ review }: { review: Review }) {
           <p className="mt-0.5 text-sm text-[var(--muted)]">
             {review.handle}
             {review.handle && review.build ? " · " : ""}
-            {review.build}
+            {build}
           </p>
         </div>
       </div>
@@ -295,9 +317,7 @@ function ReviewCard({ review }: { review: Review }) {
   const shell =
     "group flex h-full flex-col overflow-hidden rounded-3xl bg-white shadow-[var(--shadow-1)]"
 
-  // A video needs its own clicks, so a card carrying one is not also a link —
-  // a play button inside an anchor is a fight the anchor wins.
-  return review.slug && !video ? (
+  return whole ? (
     <Link
       href={`/shop/${review.slug}`}
       className={`mat-btn ${shell} hover:-translate-y-1 hover:shadow-[var(--shadow-2)]`}

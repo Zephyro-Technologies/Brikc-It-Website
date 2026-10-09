@@ -1,8 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
-import { Check, ChevronLeft, ChevronRight, Package, ShieldCheck, Truck, X } from "lucide-react"
+import { Check, ChevronLeft, ChevronRight, Package, ShieldCheck, Truck } from "lucide-react"
 import { useCart } from "../cart"
 import { useViewContent } from "../lib/use-view-content"
 import { money } from "../lib/money"
@@ -24,6 +24,7 @@ import { Markdown } from "../lib/markdown"
 import { cardTag, isSellable, lowStockNote, productImage, soldFormats, specs, subline } from "../lib/product-view"
 import { useShopSettings } from "../lib/shop-settings"
 import { ProductCard, Reveal } from "./ui"
+import Lightbox from "./Lightbox"
 import ProductReviews from "./ProductReviews"
 
 /**
@@ -62,8 +63,6 @@ export default function ProductDetailView({
 
   const [activeImg, setActiveImg] = useState(0)
   const [lightbox, setLightbox] = useState(false)
-  const closeRef = useRef<HTMLButtonElement>(null)
-  const openerRef = useRef<HTMLElement | null>(null)
   // "none" until the shopper asks for a frame, so the price on screen is the
   // base price until they choose otherwise.
   const [frame, setFrame] = useState<FrameChoice>("none")
@@ -103,38 +102,6 @@ export default function ProductDetailView({
     (by: number) => setActiveImg((i) => (count === 0 ? 0 : (i + by + count) % count)),
     [count],
   )
-
-  // Arrow keys move through the photographs while the full-size view is open,
-  // and Escape closes it — the things a keyboard expects of a lightbox.
-  // Focus moves into the overlay when it opens and back to whatever opened it
-  // when it closes. Without this a keyboard is left behind on the page under a
-  // full-screen dialog, tabbing through things it cannot see.
-  useEffect(() => {
-    if (!lightbox) {
-      openerRef.current?.focus()
-      openerRef.current = null
-      return
-    }
-    openerRef.current = document.activeElement as HTMLElement | null
-    closeRef.current?.focus()
-  }, [lightbox])
-
-  useEffect(() => {
-    if (!lightbox) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setLightbox(false)
-      if (e.key === "ArrowLeft") step(-1)
-      if (e.key === "ArrowRight") step(1)
-    }
-    window.addEventListener("keydown", onKey)
-    // The page behind a full-screen overlay should not scroll under it.
-    const previous = document.body.style.overflow
-    document.body.style.overflow = "hidden"
-    return () => {
-      window.removeEventListener("keydown", onKey)
-      document.body.style.overflow = previous
-    }
-  }, [lightbox, step])
 
   useEffect(() => {
     if (!added) return
@@ -624,68 +591,14 @@ export default function ProductDetailView({
         </div>
       )}
 
-      {/* Deliberately outside every Reveal: .reveal starts at opacity 0 and only
-          becomes visible when it scrolls into view, which a fixed overlay never
-          does — it would open invisible. */}
       {lightbox && count > 0 && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={`${product.name}, image ${activeImg + 1} of ${count}`}
-          onClick={() => setLightbox(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
-        >
-          <button
-            ref={closeRef}
-            type="button"
-            onClick={() => setLightbox(false)}
-            aria-label="Close"
-            className="mat-btn absolute top-4 right-4 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
-          >
-            <X className="h-5 w-5" />
-          </button>
-
-          {count > 1 && (
-            <>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  step(-1)
-                }}
-                aria-label="Previous image"
-                className="mat-btn absolute top-1/2 left-4 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  step(1)
-                }}
-                aria-label="Next image"
-                className="mat-btn absolute top-1/2 right-4 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </button>
-            </>
-          )}
-
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={productImage(product, activeImg)}
-            alt={product.name}
-            onClick={(e) => e.stopPropagation()}
-            className="max-h-[88vh] max-w-full rounded-2xl object-contain"
-          />
-
-          {count > 1 && (
-            <span className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-sm font-semibold text-white">
-              {activeImg + 1} / {count}
-            </span>
-          )}
-        </div>
+        <Lightbox
+          images={images.map((_, i) => productImage(product, i))}
+          index={activeImg}
+          onIndex={setActiveImg}
+          onClose={() => setLightbox(false)}
+          label={product.name}
+        />
       )}
     </div>
   )

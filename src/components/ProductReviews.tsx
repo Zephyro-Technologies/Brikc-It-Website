@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { BadgeCheck, PenLine, Star } from "lucide-react"
 import type { Review } from "../data"
+import Lightbox from "./Lightbox"
 import ReviewForm from "./ReviewForm"
 
 /**
@@ -23,6 +24,10 @@ export default function ProductReviews({
   reviews: Review[]
 }) {
   const [writing, setWriting] = useState(false)
+  // Which review's photographs are open full size, and which of them.
+  const [viewing, setViewing] = useState<{ review: number; photo: number } | null>(null)
+  const photosOf = (r: number) =>
+    reviews[r].media.filter((m) => m.kind === "image").map((m) => m.url)
   const formRef = useRef<HTMLDivElement>(null)
 
   function openForm() {
@@ -47,8 +52,8 @@ export default function ProductReviews({
     <div id="review" className="scroll-mt-24">
       {reviews.length > 0 ? (
         <ul className="flex flex-col gap-6">
-          {reviews.map((review, i) => (
-            <li key={`${review.name}-${i}`} className="border-b border-[var(--border)] pb-6 last:border-0 last:pb-0">
+          {reviews.map((review, r) => (
+            <li key={`${review.name}-${r}`} className="border-b border-[var(--border)] pb-6 last:border-0 last:pb-0">
               <div className="flex flex-wrap items-center gap-2">
                 <Stars rating={review.rating} />
                 {review.verified && (
@@ -78,13 +83,24 @@ export default function ProductReviews({
                           className="h-28 rounded-xl bg-black"
                         />
                       ) : (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={m.url}
-                          alt={`Photo from ${review.name}`}
-                          loading="lazy"
-                          className="h-28 w-28 rounded-xl object-cover"
-                        />
+                        // A thumbnail is cropped square; the button opens the
+                        // whole photograph.
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setViewing({ review: r, photo: photosOf(r).indexOf(m.url) })
+                          }
+                          aria-label={`Open photo from ${review.name} full size`}
+                          className="mat-btn block cursor-zoom-in overflow-hidden rounded-xl"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={m.url}
+                            alt={`Photo from ${review.name}`}
+                            loading="lazy"
+                            className="h-28 w-28 object-cover"
+                          />
+                        </button>
                       )}
                     </li>
                   ))}
@@ -97,6 +113,16 @@ export default function ProductReviews({
         <p className="text-[var(--muted)]">
           No reviews of this build yet. If you have one, yours would be the first.
         </p>
+      )}
+
+      {viewing && (
+        <Lightbox
+          images={photosOf(viewing.review)}
+          index={viewing.photo}
+          onIndex={(photo) => setViewing({ ...viewing, photo })}
+          onClose={() => setViewing(null)}
+          label={`Photo from ${reviews[viewing.review].name}`}
+        />
       )}
 
       {writing ? (
