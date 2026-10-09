@@ -324,7 +324,8 @@ makes Supabase answer with `Content-Disposition: attachment` *and* name the file
 
 Uploads go through `src/lib/upload-manual.ts` in the admin, modelled on `uploadVideo` and **not**
 on `uploadImage` — the image path decodes and re-encodes to WebP, which is the wrong thing to do
-to a document. The bucket is `product-manuals`, public, `application/pdf`, 25 MB, with the same
+to a document. The bucket is `product-manuals`, public, `application/pdf`, with no size limit of
+its own — it takes the project's, 50 MB on Supabase's free plan — and the same
 four policies the other buckets use.
 
 **Only a model has one.** A display arrives built, so there is nothing to assemble: the admin
