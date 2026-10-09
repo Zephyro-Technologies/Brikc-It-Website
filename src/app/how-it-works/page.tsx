@@ -59,7 +59,7 @@ const journey = (hasDisplays: boolean): { title: string; body: ReactNode }[] => 
   },
   {
     title: "Pay",
-    body: "Today: transfer the amount by bank transfer, JazzCash or Easypaisa to one of the accounts shown, and send us the receipt on WhatsApp. Once Rapid Gateway is live: pay online at checkout from your bank account or mobile wallet, with nothing to send afterwards.",
+    body: "Today: transfer the amount by bank transfer, JazzCash or Easypaisa to one of the accounts shown, and send us the receipt on WhatsApp. Once online payment is live: pay online at checkout from your bank account or mobile wallet, with nothing to send afterwards.",
   },
   {
     title: "We confirm",
@@ -103,16 +103,16 @@ const journey = (hasDisplays: boolean): { title: string; body: ReactNode }[] => 
 const ONLINE_PAYMENT: { title: string; body: ReactNode }[] = [
   { title: "Choose to pay online", body: "At checkout, you choose to pay online and place your order." },
   {
-    title: "Go to Rapid Gateway",
-    body: "We send you to Rapid Gateway’s secure payment page for the exact total of your order.",
+    title: "Go to the payment page",
+    body: "We send you to our payment partner’s secure page for the exact total of your order.",
   },
   {
     title: "Pay there",
-    body: "You pay from your bank account or mobile wallet on Rapid Gateway’s page. Your login and account details never reach us.",
+    body: "You pay from your bank account or mobile wallet on our payment partner’s page. Your login and account details never reach us.",
   },
   {
     title: "Confirmed at once",
-    body: "Rapid Gateway sends you back to brikc.it and tells us the payment went through, so there is no receipt to send.",
+    body: "Our payment partner sends you back to brikc.it and tells us the payment went through, so there is no receipt to send.",
   },
 ]
 
@@ -175,10 +175,9 @@ export default async function HowItWorksPage() {
 
       <Section title="How we will use the payment gateway" wide>
         <p>
-          We are integrating <strong className="text-[var(--foreground)]">Rapid Gateway</strong>, a Pakistani payment
-          gateway, for one purpose: to collect payment for orders placed on brikc.it, at the checkout step. Customers
-          will pay from their bank account or mobile wallet instead of making a transfer themselves and sending us the
-          receipt. We don&rsquo;t take card payments. During the customer&rsquo;s payment it works like this:
+          We are integrating a Pakistani payment gateway for one purpose: to collect payment for orders placed on
+          brikc.it, at the checkout step. Customers will pay from their bank account or mobile wallet instead of making
+          a transfer themselves and sending us the receipt. We don&rsquo;t take card payments. During the customer&rsquo;s payment it works like this:
         </p>
         <Steps steps={ONLINE_PAYMENT} columns={4} />
         <p>

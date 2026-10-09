@@ -56,7 +56,7 @@ export const STEPS = [
   {
     n: "03",
     title: "Pay securely",
-    desc: "Check out and pay from your bank account or mobile wallet. Online payment through Rapid Gateway is on its way; until then, by bank transfer.",
+    desc: "Check out and pay from your bank account or mobile wallet. Online payment is on its way; until then, by bank transfer.",
   },
   {
     n: "04",

@@ -73,7 +73,7 @@ export default async function TermsPage() {
         <p>
           Orders are paid for in full before they are dispatched. There is no cash on delivery. Today that is by bank
           transfer, JazzCash or Easypaisa, to the accounts shown with your order. We are also adding online payment from
-          your bank account or mobile wallet through Rapid Gateway, as explained on{" "}
+          your bank account or mobile wallet through our payment partner, as explained on{" "}
           <Link href="/how-it-works" className={policyLink}>
             how it works
           </Link>

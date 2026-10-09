@@ -21,7 +21,7 @@ export const BUSINESS = {
 }
 
 /** The date printed under each policy's title. Change it when the words change. */
-export const POLICIES_UPDATED = "1 October 2026"
+export const POLICIES_UPDATED = "10 October 2026"
 
 /** The footer's Help column: how to reach us, then the policies. */
 export const POLICY_LINKS = [

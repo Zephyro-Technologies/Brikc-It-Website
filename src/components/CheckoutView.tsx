@@ -566,13 +566,13 @@ export default function CheckoutView({
               </div>
               <div className="rounded-2xl border border-dashed border-[var(--border)] bg-white/60 p-4">
                 <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">
-                  Pay online with Rapid Gateway
+                  Pay online
                   <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[10px] font-semibold tracking-wider text-[var(--muted)] uppercase">
                     Coming soon
                   </span>
                 </p>
                 <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
-                  You&rsquo;ll be taken to Rapid Gateway&rsquo;s secure page to pay the exact order total
+                  You&rsquo;ll be taken to our payment partner&rsquo;s secure page to pay the exact order total
                   from your bank account or mobile wallet, then brought back here with the order
                   confirmed. No receipt to send.{" "}
                   <Link href="/how-it-works" className="text-[var(--primary)] underline-offset-4 hover:underline">
