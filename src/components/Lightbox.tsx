@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useRef } from "react"
 import { createPortal } from "react-dom"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
+import { useModal } from "../lib/use-modal"
 
 /**
  * A photograph full size, over everything: the product gallery's and a
@@ -14,10 +15,9 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react"
  * A Reveal that hasn't faded in yet is also still at opacity 0, which would
  * hide it outright.
  *
- * Arrow keys move through the photographs and Escape closes it — the things a
- * keyboard expects of a lightbox. Focus moves into the overlay when it opens and
- * back to whatever opened it when it closes; without that a keyboard is left on
- * the page underneath, tabbing through things it cannot see.
+ * Arrow keys move through the photographs, and useModal() does the rest of
+ * what a keyboard expects: Escape, focus in, kept in and back out, no scrolling
+ * behind.
  */
 export default function Lightbox({
   images,
@@ -33,40 +33,21 @@ export default function Lightbox({
   /** What the photographs are of: "F1 McLaren", "Photo from Ayesha". */
   label: string
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
   const count = images.length
   const step = (by: number) => onIndex((index + by + count) % count)
 
-  // Kept in a ref so the key handler below is attached once, not re-attached on
-  // every move — and always sees the current position.
-  const latest = useRef({ step, onClose })
-  latest.current = { step, onClose }
-
-  useEffect(() => {
-    const opener = document.activeElement as HTMLElement | null
-    closeRef.current?.focus()
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") latest.current.onClose()
-      if (e.key === "ArrowLeft") latest.current.step(-1)
-      if (e.key === "ArrowRight") latest.current.step(1)
-    }
-    window.addEventListener("keydown", onKey)
-    // The page behind a full-screen overlay should not scroll under it.
-    const previous = document.body.style.overflow
-    document.body.style.overflow = "hidden"
-
-    return () => {
-      window.removeEventListener("keydown", onKey)
-      document.body.style.overflow = previous
-      opener?.focus()
-    }
-  }, [])
+  useModal(dialogRef, closeRef, onClose, (e) => {
+    if (e.key === "ArrowLeft") step(-1)
+    if (e.key === "ArrowRight") step(1)
+  })
 
   if (count === 0) return null
 
   return createPortal(
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label={count > 1 ? `${label}, image ${index + 1} of ${count}` : label}

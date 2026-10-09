@@ -4,6 +4,8 @@ import { ComingSoon, Reveal, SectionHead, ExploreMore, ProductCard } from "../co
 import { DisplayCard } from "../components/DisplayCard"
 import { Hero } from "../components/Hero"
 import ReviewPhotos from "../components/ReviewPhotos"
+import ReviewQuote from "../components/ReviewQuote"
+import ReviewSlider from "../components/ReviewSlider"
 import { money } from "../lib/money"
 import type { Product } from "../data"
 import { getCategories, getDisplays, getGuides, getProducts, getFeaturedReviews } from "../lib/shop"
@@ -227,13 +229,15 @@ function Reviews({ reviews }: { reviews: Review[] }) {
             desc="What collectors say once the build is on the wall."
           />
         </Reveal>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {reviews.map((review, i) => (
-            <Reveal key={`${review.name}-${review.build}-${i}`} delay={i * 90}>
-              <ReviewCard review={review} />
-            </Reveal>
-          ))}
-        </div>
+        {/* One Reveal round the row, not one per card: a card scrolled out of
+            the row's sight would otherwise wait at opacity 0 until slid in. */}
+        <Reveal>
+          <ReviewSlider label="Customer reviews">
+            {reviews.map((review, i) => (
+              <ReviewCard key={`${review.name}-${review.build}-${i}`} review={review} />
+            ))}
+          </ReviewSlider>
+        </Reveal>
       </div>
     </section>
   )
@@ -254,7 +258,7 @@ function ReviewCard({ review }: { review: Review }) {
       controls
       preload="metadata"
       poster={photo}
-      className="h-48 w-full bg-black object-cover"
+      className="h-40 w-full bg-black object-cover"
     />
   ) : photos.length > 0 ? (
     <ReviewPhotos photos={photos} name={review.name} />
@@ -264,9 +268,27 @@ function ReviewCard({ review }: { review: Review }) {
       src={photo}
       alt={review.build}
       loading="lazy"
-      className="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-105"
+      className="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-105"
     />
-  ) : null
+  ) : (
+    // Nothing to show, and the band is kept anyway: every card in the slider
+    // has the same shape, so the row is one height and a two-line review
+    // doesn't sit beside a card a photograph taller. The header's black, and
+    // the one red, as the page's own chrome is.
+    <div
+      aria-hidden
+      className="flex h-40 w-full items-center justify-center bg-[linear-gradient(180deg,#0b0b0d_0%,#121114_100%)]"
+    >
+      {/* Pushed down: the glyph sits at the top of its line box, so centring
+          the box leaves the mark high. */}
+      <span
+        className="font-display translate-y-[0.3em] text-8xl leading-none text-[var(--primary-2)]"
+        style={{ fontWeight: 800 }}
+      >
+        &ldquo;
+      </span>
+    </div>
+  )
 
   // A video needs its own clicks, and so does a reviewer's photograph — it
   // opens full size. Either way the card is not also a link: a button inside an
@@ -288,7 +310,7 @@ function ReviewCard({ review }: { review: Review }) {
 
   const body = (
     <>
-      {hero && <div className="relative overflow-hidden">{hero}</div>}
+      <div className="relative overflow-hidden">{hero}</div>
       <div className="flex flex-1 flex-col p-7">
         <div className="flex items-center gap-2">
           <Stars rating={review.rating} />
@@ -299,9 +321,12 @@ function ReviewCard({ review }: { review: Review }) {
             </span>
           )}
         </div>
-        <blockquote className="mt-4 flex-1 text-lg leading-relaxed text-[var(--foreground)]">
-          &ldquo;{review.text}&rdquo;
-        </blockquote>
+        <ReviewQuote
+          text={review.text}
+          name={review.name}
+          caption={[review.handle, review.build].filter(Boolean).join(" · ")}
+          inLink={whole}
+        />
         <div className="mt-6 border-t border-[var(--border)] pt-4">
           <p className="font-semibold">{review.name}</p>
           <p className="mt-0.5 text-sm text-[var(--muted)]">

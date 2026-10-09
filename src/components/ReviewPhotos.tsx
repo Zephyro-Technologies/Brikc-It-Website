@@ -25,7 +25,7 @@ export default function ReviewPhotos({ photos, name }: { photos: string[]; name:
           src={photos[0]}
           alt={`Photo from ${name}`}
           loading="lazy"
-          className="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         {photos.length > 1 && (
           <span className="absolute right-3 bottom-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white">
