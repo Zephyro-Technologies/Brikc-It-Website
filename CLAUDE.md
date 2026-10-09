@@ -25,7 +25,7 @@ comments scattered through the components are inherited habit, not a configured 
 producing an empty shop — `unwrap()` in `src/lib/shop.ts` throws on Supabase errors on purpose.
 
 Deploy with `opennextjs-cloudflare deploy`, not `wrangler deploy`: only the adapter's deploy
-step seeds the prerendered pages into the KV cache.
+step seeds the prerendered pages into the R2 cache.
 
 ## Architecture
 
@@ -443,7 +443,7 @@ save still rebuilds a page in about a second through the endpoints below; the fl
 without one those calls were the *only* thing that could ever change a page. One wrong
 `REVALIDATE_SECRET` and the shop served deploy-time prices indefinitely — and kept taking orders,
 because `/checkout` is dynamic and quoted the real ones, so the page and the till disagreed. Sixty
-seconds is the smallest useful value: KV takes about that long to reach every region anyway.
+seconds is the smallest sensible value: every regeneration is a write to the cache.
 
 **Two endpoints, and they are not interchangeable.**
 
@@ -482,14 +482,20 @@ select status_code, content, created from net._http_response order by created de
 A 401 there means the secret does not match the storefront's. Vault holds `storefront_url` and
 `revalidate_secret`; unset, the triggers stay silent, which is what a local stack wants.
 
-On Cloudflare that path needs all three overrides in `open-next.config.ts` — KV incremental
+On Cloudflare that path needs all three overrides in `open-next.config.ts` — R2 incremental
 cache, D1 tag cache, Durable Object queue. Drop any one and the shop still serves but stops
 updating. The D1 `revalidations` table is **not created by the adapter**, which also swallows the
 error, so a missing table means the admin reports a successful save and nothing changes; see
 `d1/tag-cache-schema.sql` and DEPLOYMENT.md §2.
 
-KV, not R2, for the ISR cache — R2 needs a card on file. The trade is eventual consistency: a
-revalidated page can take about a minute to reach every region.
+**R2, not KV, for the ISR cache** — bucket `brikc-it-cache`, binding `NEXT_INC_CACHE_R2_BUCKET`.
+It was KV until October 2026, chosen because R2 needs a payment method on file. KV's free plan
+allows 1,000 writes a day, and the cache ran through them: each regeneration is a write, each
+deploy seeds about 136 entries, and a page checked every few seconds regenerates about once a
+minute. Over the limit, pages stopped updating, deploys failed at the seeding step and Cloudflare
+emailed the owner each time. R2's free tier is a million writes and ten million reads a month,
+strongly consistent, and nothing is charged inside it — a card is now on the account for that
+reason. Don't move it back to KV.
 
 ### Conventions
 

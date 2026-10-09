@@ -13,23 +13,30 @@ Nothing left to create. Every binding already exists on the account:
 
 | Resource | Name / id | Purpose |
 | --- | --- | --- |
-| KV namespace | `NEXT_INC_CACHE_KV` — `6dc2397d2a74484297392bf2086284f0` | holds prerendered pages (ISR cache) |
+| R2 bucket | `NEXT_INC_CACHE_R2_BUCKET` — `brikc-it-cache`, APAC | holds prerendered pages (ISR cache) |
 | D1 database | `brikc-it-tags` — `3001ea28-a4bd-43fa-bb33-49c86236d887`, APAC primary | tag cache, what `revalidatePath()` writes to |
 | Tag-cache table | `revalidations` | created, indexed, round-trip tested |
 | Durable Object | `DOQueueHandler` | revalidation queue — created on first deploy by the `migrations` block |
 
-### Why KV and not R2
+### Why R2 and not KV
 
-R2 can't be enabled without a card on file. KV is included on the Workers free
-plan and needs no payment method, so the ISR cache uses KV instead.
+The cache was KV at first, because R2 can't be enabled without a payment method
+on file. KV's free plan allows **1,000 writes a day**, and the cache ran through
+them: every page regeneration is a write, every deploy seeds about 136 more, and
+a page checked every few seconds regenerates about once a minute. Over the
+limit, pages stopped updating, a deploy failed at the seeding step ("your
+account has reached the free usage limit for this operation for today [code:
+10048]"), and Cloudflare emailed the owner each time.
 
-The trade: KV is **eventually consistent**. A revalidated page can take up to
-about a minute to appear in every region, rather than being immediate
-everywhere. For a catalogue that changes a few times a day that's a fair price,
-and the regional cache in front keeps repeat reads local regardless.
+R2's free tier is counted by the month — 1,000,000 writes, 10,000,000 reads,
+10 GB — and nothing is charged inside it. A card is on the account for that
+reason only; set a billing notification if you want to hear about any charge.
+R2 is also strongly consistent, so a revalidated page is current everywhere at
+once. The old KV namespace (`6dc2397d2a74484297392bf2086284f0`) is no longer
+bound and can be deleted.
 
-Moving to R2 later is a two-line change in `open-next.config.ts` plus swapping
-the `kv_namespaces` block for `r2_buckets` in `wrangler.jsonc`.
+The deploy creates the bucket if it is missing and seeds it through a temporary
+worker, so the Workers Builds token needs R2 edit permission.
 
 The Durable Object queue is also free: it uses the **SQLite** storage backend
 (`new_sqlite_classes`), which is available on the Workers Free plan with no
@@ -125,7 +132,7 @@ Workers & Pages → **Create** → **Import a repository** → pick the repo.
 > to trigger the first build.
 
 **Use `opennextjs-cloudflare deploy`, not `wrangler deploy`.** The adapter's
-deploy step also uploads the prerendered pages into the KV cache. Plain
+deploy step also uploads the prerendered pages into the R2 cache. Plain
 `wrangler deploy` ships the worker without seeding that cache.
 
 ## 5. Environment variables

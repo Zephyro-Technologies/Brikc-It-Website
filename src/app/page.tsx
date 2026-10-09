@@ -19,8 +19,8 @@ import type { Guide, Review, StoreCategory } from "../data"
  * this page: one wrong REVALIDATE_SECRET and the shop served deploy-time prices
  * for as long as nobody looked, while /checkout, which is dynamic, quoted the
  * real ones. Sixty seconds turns "stale until someone notices" into "stale for
- * a minute". Lower buys nothing — the KV cache takes about that long to reach
- * every region anyway.
+ * a minute". Lower buys little, and every regeneration is a write to the
+ * cache.
  */
 export const revalidate = 60
 

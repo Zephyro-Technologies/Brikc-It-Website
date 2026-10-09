@@ -18,13 +18,14 @@
   },
 
   // ── ISR cache ───────────────────────────────────────────────────────────
-  // Workers KV rather than R2: R2 can't be enabled without a card on file, and
-  // KV is included on the free plan. KV is eventually consistent, so a
-  // revalidated page can take up to about a minute to reach every region.
-  "kv_namespaces": [
+  // R2, not KV: KV's free plan allows 1,000 writes a day and the cache spent
+  // them, which failed deploys at the seeding step. R2's free tier is a million
+  // writes a month. Created in APAC, beside the tag cache. The deploy step
+  // seeds the prerendered pages into it (`opennextjs-cloudflare deploy`).
+  "r2_buckets": [
     {
-      "binding": "NEXT_INC_CACHE_KV",
-      "id": "6dc2397d2a74484297392bf2086284f0"
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "brikc-it-cache"
     }
   ],
 
