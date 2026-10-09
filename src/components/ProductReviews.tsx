@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { BadgeCheck, PenLine, Star } from "lucide-react"
 import type { Review } from "../data"
 import ReviewForm from "./ReviewForm"
@@ -35,8 +35,16 @@ export default function ProductReviews({
     )
   }
 
+  // The review emails link to a build's page with #review on the end, and that
+  // means "I came here to write one" — so the form is open when they arrive.
+  // The hash rather than a query string: it never reaches the server, so the
+  // page stays prerendered, and nothing about the customer rides in it.
+  useEffect(() => {
+    if (window.location.hash === "#review") openForm()
+  }, [])
+
   return (
-    <div>
+    <div id="review" className="scroll-mt-24">
       {reviews.length > 0 ? (
         <ul className="flex flex-col gap-6">
           {reviews.map((review, i) => (

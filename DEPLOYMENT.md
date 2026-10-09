@@ -145,7 +145,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY  sb_publishable_…
 
 ```
 REVALIDATE_SECRET                     (the same value the admin uses)
-BREVO_API_KEY                         (optional — the payment email, §5b)
+BREVO_API_KEY                         (optional — every order email, §5b)
 PUSHOVER_APP_TOKEN                    (optional — the owners' push, §5b)
 PUSHOVER_GROUP_KEY                    (optional — the owners' push, §5b)
 ```
@@ -158,8 +158,11 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 
 ## 5b. Order notifications — Brevo, Pushover and the domain
 
-When an order is placed on the site the shopper gets one email with the payment
-details, and the owners get a push. Both are off until their secrets are set.
+Every order — from the site or typed into the admin — emails the customer the
+payment details and emails the owners a new-order alert. A delivered order asks
+the customer for a review, and once more two days later if none came in. The
+owners' push is built and paused. The database decides when each email goes
+(CLAUDE.md, "An order sends its own emails"); this repo decides what it says.
 Most of the work is outside this repo, and the order below matters: the domain
 has to be able to send before the first real email goes out.
 
@@ -167,7 +170,7 @@ has to be able to send before the first real email goes out.
 Domains & Dedicated IPs → Domains → add `brikc.it`. Brevo can write its records
 into Cloudflare for you; by hand it is three — a `brevo-code` TXT, the DKIM
 record, and DMARC. No SPF is needed for Brevo. The code sends as
-`orders@brikc.it` (`SENDER` in `src/lib/order-notifications.ts`), and Brevo
+`orders@brikc.it` (`SENDER` in `src/lib/brevo.ts`), and Brevo
 refuses a sender on a domain it hasn't verified.
 
 **2. Turn off Brevo's IP blocking.** Settings → Security → Authorised IPs →
@@ -204,12 +207,21 @@ success, so nothing tells you. Then on pushover.net: create an application
 user keys (its key is `PUSHOVER_GROUP_KEY`). Owners are added and removed in
 that group, not in code.
 
+**8. Who gets the new-order alert** is Vault's `order_alert_to`, which the
+migration sets to Omer's address. Not this repo, which is public. To change it,
+in the SQL editor:
+
+```sql
+update vault.secrets set secret = 'a@example.com,b@example.com' where name = 'order_alert_to';
+```
+
 **How it fails.** The order is committed before any of this runs and nothing
 here can undo it, and nothing retries — so a failure is one missing email, never
-two. The push says whether the email went: "Payment email NOT sent — Brevo 401:
-Key not found" on both phones is the record, because this app cannot write a
-note onto the order. The shopper has the same details on the confirmation page
-either way. Worker logs carry the same lines.
+two. `/api/emails` answers only after Brevo has, so its answer is the record:
+`net._http_response` holds it, joined from `order_emails.request_id` (the query is
+in CLAUDE.md). The owners' alert also says whether the payment email went —
+"Payment email NOT sent — Brevo 401: Key not found". The shopper has the same
+details on the confirmation page either way. Worker logs carry the same lines.
 
 ## 5c. Meta Pixel
 

@@ -1,7 +1,6 @@
-import { after, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { supabase } from "../../../lib/supabase/client"
 import { wireLines } from "../../../lib/order-lines"
-import { announceOrder } from "../../../lib/order-notifications"
 
 /**
  * Takes an order from the checkout form.
@@ -15,8 +14,10 @@ import { announceOrder } from "../../../lib/order-notifications"
  * So this route never sees a price and never computes a total. If it did, that
  * would be one more place a total could be wrong.
  *
- * Once the order is in, the payment email and the owners' push go out from
- * `announceOrder`, after the response — see src/lib/order-notifications.ts.
+ * Nothing here sends an email. The order's first status event, written inside
+ * place_order, makes the database ask /api/emails for the payment details and
+ * the owners' alert — the same path a manual order takes. See
+ * src/lib/order-notifications.ts.
  */
 
 /** Our own validation failures, raised with errcode 22023, are safe to show. */
@@ -109,23 +110,6 @@ export async function POST(request: Request) {
     discount: result.discount ?? 0,
     coupon: result.coupon ?? "",
   }
-
-  // The payment email and the owners' push. after() keeps the Worker alive until
-  // they finish without holding the shopper's response for them, and the order
-  // is already committed — nothing in there can undo it.
-  after(() =>
-    announceOrder({
-      ...placed,
-      name: str(customer.name).trim(),
-      // Trimmed and lowercased, as place_order stored and validated it.
-      email: str(customer.email).trim().toLowerCase(),
-      city: str(address.city).trim(),
-      items: lines.reduce((n, l) => n + l.qty, 0),
-      // Normalised the way place_order resolves it — lower(btrim(...)) — so the
-      // label on the email and the push is the method that was charged.
-      method: str(body.shippingMethod).trim().toLowerCase() === "teamhq" ? "teamhq" : "standard",
-    }),
-  )
 
   return NextResponse.json(placed)
 }

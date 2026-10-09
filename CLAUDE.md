@@ -244,36 +244,64 @@ the checkout entirely unless a WhatsApp number *and* at least one account are co
 The placed order reaches `/checkout/confirmation` through `sessionStorage` under
 `CONFIRMATION_KEY`, not the URL — an order reference in a shareable link invites enumeration.
 
-**Once an order is placed, the shopper gets one email and the owners get one push.**
-`announceOrder()` in `src/lib/order-notifications.ts` sends the payment details through Brevo,
-then pushes the order to both owners' phones through a Pushover delivery group. It runs inside
-`after()` in `/api/orders` — on this stack `after()` really is wired to the Worker's `waitUntil`
-— so the shopper's button never waits on either provider, and the order is committed before it
-starts.
+**An order sends its own emails, and the database says when.** Three kinds, each at most once per
+order, recorded in `order_emails` (admin repo, `20261009120000_orders_send_their_own_emails.sql`):
 
-- **From the route, not a trigger**, unlike revalidation. A manual order is three separate
-  writes from the admin, so a trigger on `orders` would fire before its lines existed; and this
-  app holds only the publishable key, so it could not have written the outcome down anyway.
-  Site orders only — a manual order sends nothing.
-- **The push is the record.** It says whether the email went, and why not — "Payment email NOT
-  sent — Brevo 401" on both phones is how anybody finds out, since nothing can write a note onto
-  the order from here.
+| Kind | When | What goes |
+| --- | --- | --- |
+| `placed` | the order's first status event | payment details to the customer, then a new-order alert to the owners |
+| `review` | the first move into delivered | a request to review each model in the order |
+| `review_reminder` | two days later, hourly `pg_cron` job | the same, once more, if no review has come in and it is still delivered |
+
+- **Site and manual orders alike.** The trigger is on the first `order_status_events` row, not on
+  `orders`: a manual order is three writes from the admin, and both `place_order` and `createOrder`
+  write that first `pending_payment` event last, so when it lands the order has its lines.
+  `/api/orders` sends nothing itself any more.
+- `private.send_order_email()` marks the row, then posts `private.order_email_payload()` — everything
+  the emails need, since this app cannot read an order — to **`POST /api/emails`** through pg_net,
+  with the same `x-revalidate-secret` and Vault `storefront_url` the revalidation triggers use. Unset,
+  nothing is queued, which is what a local stack wants. It swallows its own errors: it runs inside
+  `place_order` and every status change, and an email is worth less than either.
+- `/api/emails` (`src/lib/order-notifications.ts`) **answers after Brevo has**, so the answer is the
+  record — `order_emails.request_id` joins to `net._http_response`, and a 502 there names the email
+  that failed and why. The owners' alert carries the payment email's outcome too. The database also
+  writes a note on the order, by "Email", when it queues one.
+- **The owners' address is Vault's `order_alert_to`** (comma-separated), never this repo, which is
+  public. A reply to the alert goes to the customer.
+- **A manual order backdated by more than a day gets no payment email** — that is the operator writing
+  up an order taken earlier, usually one already paid. The owners still hear about it.
+- **Only models are asked about**, because only a model's page has a review form, and only lines on
+  the order itself, because `submit_review` checks `order_lines`. The button goes to
+  `/shop/<slug>#review`, which opens the form (`ProductReviews.tsx`). Nothing about the customer goes
+  in the link: the page address reaches Meta with every page view. Any review on the order, published
+  or not, stops the reminder; nothing older than a week is reminded.
 - **At most once.** Nothing retries: a second payment email is worse than a missing one, and the
   confirmation page has already shown the same details.
-- **The email says what the page says.** `src/lib/payment-email.ts` repeats
+- **The payment email says what the page says.** `src/lib/payment-email.ts` repeats
   `OrderConfirmation.tsx` sentence for sentence, and both list accounts from `paymentAccounts()`
   in `src/lib/checkout.ts` — change the copy in both, and an account added there reaches both.
-  Built as HTML here rather than as a Brevo template, because a second copy of the bank details
-  in another dashboard is one nobody would update. Everything interpolated goes through `esc()`:
-  the name is whatever the shopper typed.
-- **Every key is optional** (`BREVO_API_KEY`, `PUSHOVER_APP_TOKEN`, `PUSHOVER_GROUP_KEY`); unset,
-  that half is off. Keep them out of `.env.local` so a test order never emails a real address.
-  They are Worker secrets and never `settings` columns — `settings` is public.
+  All four emails are drawn in `src/lib/email-layout.ts`, HTML built here rather than as Brevo
+  templates, because a second copy of the bank details in another dashboard is one nobody would
+  update. Everything interpolated goes through `esc()`.
+- `BREVO_API_KEY` is a Worker secret and optional; unset, every email reports it was not sent. Keep it
+  out of `.env.local` so a test order never emails a real address. The Pushover push
+  (`PUSHOVER_APP_TOKEN`, `PUSHOVER_GROUP_KEY`) is built and paused: off until both are set, and
+  `/privacy` must name Pushover in the same change that turns it on.
 - It sends as `orders@brikc.it`, the address on the domain authenticated with Brevo; Brevo
   refuses any other. Replies reach an owner through Cloudflare Email Routing. The domain side —
   DKIM, DMARC, Brevo's IP blocking, which must stay off — is DEPLOYMENT.md §5b.
-- The push links to `admin.brikc.it/orders/<number>`; the admin's `useOrder()` answers to the
-  number as well as the id, because the id never leaves the database on this path.
+- The alert links to `admin.brikc.it/orders/<number>`; the admin's `useOrder()` answers to the
+  number as well as the id.
+- `/privacy` lists every email a customer gets. Add one and that page changes in the same commit.
+
+Whether it is working, on the database:
+
+```sql
+select o.number, e.kind, e.queued_at, r.status_code, r.content
+from order_emails e join orders o on o.id = e.order_id
+left join net._http_response r on r.id = e.request_id
+order by e.queued_at desc limit 20;
+```
 
 ### Assembly manuals
 

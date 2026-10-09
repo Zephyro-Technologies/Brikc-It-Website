@@ -16,7 +16,7 @@ export const metadata: Metadata = {
  * this page changes in the same commit.
  */
 
-const UPDATED = "27 September 2026"
+const UPDATED = "9 October 2026"
 
 const link = policyLink
 
@@ -26,11 +26,14 @@ export default function PrivacyPage() {
       <Section title="When you order" wide>
         <p>
           You give us your name, email, phone number and delivery address. We use them to run your order: to email
-          you the payment details, match your transfer, confirm the order on WhatsApp, and deliver it.
+          you the payment details, match your transfer, confirm the order on WhatsApp, and deliver it. Once it has
+          been delivered we email you to ask for a review, and once more two days later if you haven&rsquo;t written
+          one. Those are the only emails we send.
         </p>
         <p>
-          Orders are stored on Supabase, our database provider. The payment email is sent through Brevo, our email
-          provider. Whoever delivers your order gets your name, phone number and address.
+          Orders are stored on Supabase, our database provider. Our emails are sent through Brevo, our email provider,
+          and a copy of each new order&rsquo;s details goes to the shop&rsquo;s owners by email. Whoever delivers your
+          order gets your name, phone number and address.
         </p>
         <p>
           You don&rsquo;t pay on this site. Transfers happen in your own bank, JazzCash or Easypaisa app.
