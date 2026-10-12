@@ -16,8 +16,8 @@ export const BUSINESS = {
   /** Exactly as printed on the utility bill submitted to the gateway. */
   address: "JINNAH ST ZAKRIYA TOWN, BASAN RD, MULTAN",
   email: "orders@brikc.it",
-  /** As people dial it, e.g. "0316 5511771". */
-  phone: "0316 5511771",
+  /** As people dial it from anywhere, country code first. */
+  phone: "+92 328 5511771",
 }
 
 /** The date printed under each policy's title. Change it when the words change. */
