@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
-import { Check, ChevronLeft, ChevronRight, Package, ShieldCheck, Truck } from "lucide-react"
+import { Check, ChevronLeft, ChevronRight, Download, FileText, Package, ShieldCheck, Truck } from "lucide-react"
 import { useCart } from "../cart"
 import { useViewContent } from "../lib/use-view-content"
 import { money } from "../lib/money"
+import { downloadUrl, fileSize } from "../lib/download"
 import {
   FORMAT_LABELS,
   FRAME_LABELS,
@@ -481,6 +482,33 @@ export default function ProductDetailView({
               </span>
             ))}
           </div>
+
+          {/* The build's own assembly manual, where it has one — the same file
+              /guides lists. Only a model has one, and a build whose manual isn't
+              written yet shows nothing here: /guides is where that is said.
+              The whole card is the download, as on /guides, because a small
+              link in a big card is a small target on a phone. downloadUrl()
+              is what makes it save rather than open in a tab, under its name. */}
+          {product.kind === "model" && product.manual.url && (
+            <a
+              href={downloadUrl(product.manual)}
+              className="mat-btn flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-white p-4 shadow-[var(--shadow-1)] hover:shadow-[var(--shadow-2)]"
+            >
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[var(--surface-2)]">
+                <FileText className="h-6 w-6 text-[var(--primary)]" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">Assembly manual</span>
+                <span className="block truncate text-sm text-[var(--muted)]">
+                  Step-by-step PDF{product.manual.bytes > 0 ? ` · ${fileSize(product.manual.bytes)}` : ""}
+                </span>
+              </span>
+              <span className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-[var(--primary)]">
+                <Download className="h-4 w-4" />
+                Download
+              </span>
+            </a>
+          )}
 
         </Reveal>
       </div>
