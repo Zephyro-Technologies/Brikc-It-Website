@@ -23,6 +23,14 @@ import "server-only"
 
 const BASE = "https://secure.rapid-gateway.com"
 
+/**
+ * Where every session's outcome is reported. Passed with each session as well
+ * as saved in their portal (Settings → Webhooks): the portal has no switch
+ * between TEST and LIVE settings, so the session carrying its own address is
+ * what makes sure a sandbox payment reports here too.
+ */
+const WEBHOOK_URL = "https://brikc.it/api/pay/webhook"
+
 /** The sandbox's shared client, published in their docs: "Not your live keys." */
 const TEST_CLIENT = { id: "client", secret: "secret" }
 
@@ -149,6 +157,7 @@ export async function createCheckoutSession(order: {
       basketId: order.basketId,
       customerEmail: order.email,
       customerMobile: walletNumber(order.phone),
+      webhookUrl: WEBHOOK_URL,
     }),
   })
 }
@@ -182,7 +191,9 @@ export function walletNumber(phone: string): string {
  * guide calls that the first cause of signatures that never match.
  */
 export async function verifyWebhook(rawBody: string, timestamp: string, signature: string): Promise<boolean> {
-  const secret = process.env.RAPID_WEBHOOK_SECRET
+  // Trimmed: a salt pasted into the dashboard easily brings a space or a line
+  // break with it, and one stray character fails every signature.
+  const secret = process.env.RAPID_WEBHOOK_SECRET?.trim()
   if (!secret || !timestamp || !signature) return false
 
   const sent = Number(timestamp)
