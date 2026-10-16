@@ -16,7 +16,7 @@ export const metadata: Metadata = {
  * this page changes in the same commit.
  */
 
-const UPDATED = "9 October 2026"
+const UPDATED = "16 October 2026"
 
 const link = policyLink
 
@@ -26,9 +26,10 @@ export default function PrivacyPage() {
       <Section title="When you order" wide>
         <p>
           You give us your name, email, phone number and delivery address. We use them to run your order: to email
-          you the payment details, match your transfer, confirm the order on WhatsApp, and deliver it. Once it has
-          been delivered we email you to ask for a review, and once more two days later if you haven&rsquo;t written
-          one. Those are the only emails we send.
+          you the order and payment details, take or match your payment, confirm the order, and deliver it. If you pay
+          online we email you a receipt once the payment is confirmed. Once your order has been delivered we email you
+          to ask for a review, and once more two days later if you haven&rsquo;t written one. Those are the only
+          emails we send.
         </p>
         <p>
           Orders are stored on Supabase, our database provider. Our emails are sent through Brevo, our email provider,
@@ -36,7 +37,10 @@ export default function PrivacyPage() {
           order gets your name, phone number and address.
         </p>
         <p>
-          You don&rsquo;t pay on this site. Transfers happen in your own bank, JazzCash or Easypaisa app.
+          If you pay online, you pay inside Rapid Gateway&rsquo;s payment form on our checkout page. The bank or wallet
+          details you enter go straight to Rapid Gateway, our payment gateway, and never reach us. To take the payment
+          we give them your email, your mobile number, and the order&rsquo;s reference and total. If you pay by
+          transfer, that happens in your own bank, JazzCash or Easypaisa app.
         </p>
       </Section>
 

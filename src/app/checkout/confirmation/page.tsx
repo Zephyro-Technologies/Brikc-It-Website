@@ -4,7 +4,7 @@ import { getPaymentDetails } from "../../../lib/shop"
 
 export const metadata: Metadata = {
   title: "Order placed — brikc.it",
-  description: "Transfer details for the order you've just placed.",
+  description: "Payment for the order you've just placed.",
   robots: { index: false, follow: false },
 }
 

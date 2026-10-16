@@ -6,7 +6,7 @@ import { gatewayEnv } from "../../lib/rapid-gateway"
 
 export const metadata: Metadata = {
   title: "Checkout — brikc.it",
-  description: "Confirm your order and get the transfer details.",
+  description: "Confirm your order, then pay online or by transfer.",
   robots: { index: false, follow: false },
 }
 
