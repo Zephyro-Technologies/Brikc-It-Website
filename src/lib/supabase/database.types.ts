@@ -271,6 +271,35 @@ export type Database = {
         }
         Relationships: []
       }
+      order_emails: {
+        Row: {
+          kind: string
+          order_id: string
+          queued_at: string
+          request_id: number | null
+        }
+        Insert: {
+          kind: string
+          order_id: string
+          queued_at?: string
+          request_id?: number | null
+        }
+        Update: {
+          kind?: string
+          order_id?: string
+          queued_at?: string
+          request_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_emails_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_line_members: {
         Row: {
           format: Database["public"]["Enums"]["format_key"] | null
@@ -480,6 +509,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          basket_id: string | null
           client_ip: string | null
           client_user_agent: string | null
           coupon_code: string
@@ -488,11 +518,15 @@ export type Database = {
           customer_name: string
           customer_phone: string
           discount: number
+          gateway_ref: string | null
+          gateway_session_id: string | null
           id: string
           meta_fbc: string | null
           meta_fbp: string | null
           meta_reported_at: string | null
           number: string
+          payment_attempt: number
+          payment_method: string
           ship_city: string
           ship_country: string
           ship_line1: string
@@ -510,6 +544,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          basket_id?: string | null
           client_ip?: string | null
           client_user_agent?: string | null
           coupon_code?: string
@@ -518,11 +553,15 @@ export type Database = {
           customer_name: string
           customer_phone?: string
           discount?: number
+          gateway_ref?: string | null
+          gateway_session_id?: string | null
           id?: string
           meta_fbc?: string | null
           meta_fbp?: string | null
           meta_reported_at?: string | null
           number?: string
+          payment_attempt?: number
+          payment_method?: string
           ship_city: string
           ship_country?: string
           ship_line1: string
@@ -540,6 +579,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          basket_id?: string | null
           client_ip?: string | null
           client_user_agent?: string | null
           coupon_code?: string
@@ -548,11 +588,15 @@ export type Database = {
           customer_name?: string
           customer_phone?: string
           discount?: number
+          gateway_ref?: string | null
+          gateway_session_id?: string | null
           id?: string
           meta_fbc?: string | null
           meta_fbp?: string | null
           meta_reported_at?: string | null
           number?: string
+          payment_attempt?: number
+          payment_method?: string
           ship_city?: string
           ship_country?: string
           ship_line1?: string
@@ -568,6 +612,27 @@ export type Database = {
           tracking_courier?: string | null
           tracking_number?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      payment_events: {
+        Row: {
+          basket_id: string | null
+          event_id: string
+          event_type: string
+          received_at: string
+        }
+        Insert: {
+          basket_id?: string | null
+          event_id: string
+          event_type: string
+          received_at?: string
+        }
+        Update: {
+          basket_id?: string | null
+          event_id?: string
+          event_type?: string
+          received_at?: string
         }
         Relationships: []
       }
@@ -1010,9 +1075,17 @@ export type Database = {
         Args: { p_code: string; p_subtotal: number }
         Returns: Json
       }
+      attach_payment_session: {
+        Args: { p_basket_id: string; p_session_id: string }
+        Returns: undefined
+      }
       attach_review_media: {
         Args: { p_bucket: string; p_path: string; p_token: string }
         Returns: undefined
+      }
+      pay_online_start: {
+        Args: { p_email: string; p_number: string }
+        Returns: Json
       }
       place_order: {
         Args: {
@@ -1026,6 +1099,7 @@ export type Database = {
           p_line2: string
           p_lines: Json
           p_name: string
+          p_payment_method?: string
           p_phone: string
           p_postcode: string
           p_province: string
@@ -1035,6 +1109,18 @@ export type Database = {
         Returns: Json
       }
       quote_coupon: { Args: { p_code: string; p_lines: Json }; Returns: Json }
+      settle_payment: {
+        Args: {
+          p_amount: number
+          p_basket_id: string
+          p_event_id: string
+          p_event_type: string
+          p_gateway_ref: string
+          p_status: string
+        }
+        Returns: Json
+      }
+      start_payment: { Args: { p_number: string }; Returns: Json }
       submit_review: {
         Args: {
           p_email: string
@@ -1079,12 +1165,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1108,11 +1194,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1133,11 +1219,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1158,11 +1244,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1175,11 +1261,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

@@ -35,20 +35,42 @@ export function ownerOrderEmail(
   order: OrderEvent,
   deliveryLabel: string,
   payment: Outcome | "skipped",
+  /**
+   * "paid" is the second alert an online order sends: Rapid Gateway confirmed
+   * the money, so the build can start. The customer's receipt is `payment`.
+   */
+  variant: "new" | "paid" = "new",
 ): { subject: string; html: string; text: string } {
   const total = money(order.total)
-  const where = order.source === "manual" ? "Entered in the admin" : "Placed on the site"
+  const paid = variant === "paid"
+  const online = order.paymentMethod === "online"
+  const where = paid
+    ? "Paid online through Rapid Gateway"
+    : order.source === "manual"
+      ? "Entered in the admin"
+      : online
+        ? "Placed on the site · paying online"
+        : "Placed on the site"
   const items = order.lines.reduce((n, l) => n + l.qty, 0)
   const admin = ADMIN_ORDER + encodeURIComponent(order.number)
 
-  const paymentLine =
+  const emailed = paid ? "Receipt" : online ? "Order email" : "Payment email"
+  const paymentLine = [
+    paid
+      ? "Rapid Gateway confirmed the payment, and the order is marked paid. The build can start."
+      : online
+        ? "Paying online through Rapid Gateway. A second email comes when the payment is confirmed; if none does, it didn't go through."
+        : "",
     payment === "skipped"
       ? order.paymentEmail
         ? "No payment email sent."
         : "No payment email: the order is dated more than a day ago, or has no valid email address."
       : payment.ok
-        ? `Payment email sent to ${order.customer.email}.`
-        : `Payment email NOT sent — ${payment.reason}`
+        ? `${emailed} sent to ${order.customer.email}.`
+        : `${emailed} NOT sent — ${payment.reason}`,
+  ]
+    .filter(Boolean)
+    .join(" ")
 
   const address = [
     order.address.line1,
@@ -70,11 +92,13 @@ export function ownerOrderEmail(
     ["Total", total],
   ]
 
-  const subject = `New order ${order.number} · ${total} — ${order.customer.name || "no name"}`
+  const subject = paid
+    ? `Paid online: ${order.number} · ${total} — ${order.customer.name || "no name"}`
+    : `New order ${order.number} · ${total} — ${order.customer.name || "no name"}`
 
   // ── Plain text ───────────────────────────────────────────────────────────
   const text = [
-    `New order ${order.number} · ${total}`,
+    `${paid ? "Paid online" : "New order"} ${order.number} · ${total}`,
     `${where} · ${items} ${items === 1 ? "item" : "items"}`,
     "",
     paymentLine,
@@ -130,7 +154,7 @@ export function ownerOrderEmail(
   const html = emailShell({
     subject,
     preheader: `${order.customer.name} · ${items} ${items === 1 ? "item" : "items"} · ${where.toLowerCase()}`,
-    header: `${headline("New order", esc(order.number))}
+    header: `${headline(paid ? "Paid online" : "New order", esc(order.number))}
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${PANEL}" style="margin:22px 0 0;background:${PANEL};border:1px solid ${PANEL_LINE};border-radius:18px;border-collapse:separate;">
           <tr><td style="padding:16px 20px;">
             ${label("Total", ON_DARK_MUTED)}
@@ -142,7 +166,7 @@ export function ownerOrderEmail(
         ${customer}
         ${goods}
         ${button(admin, "Open in admin", "12px 0 0")}`,
-    footer: `Sent to the shop's owners because order ${esc(order.number)} was placed.`,
+    footer: `Sent to the shop's owners because order ${esc(order.number)} was ${paid ? "paid online" : "placed"}.`,
   })
 
   return { subject, html, text }

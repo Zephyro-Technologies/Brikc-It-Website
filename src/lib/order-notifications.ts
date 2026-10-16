@@ -1,6 +1,7 @@
 import { money } from "./money"
 import { describe, sendEmail, type Outcome } from "./brevo"
 import { ownerOrderEmail } from "./owner-order-email"
+import { paidEmail } from "./paid-email"
 import { paymentEmail } from "./payment-email"
 import { reviewEmail } from "./review-email"
 import type { OrderEvent } from "./order-event"
@@ -30,6 +31,7 @@ export type Sent = Record<string, Outcome | "skipped">
 
 export async function sendOrderEmails(order: OrderEvent): Promise<Sent> {
   if (order.kind === "placed") return placed(order)
+  if (order.kind === "paid") return paidOnline(order)
 
   const to = order.customer.email
   if (!to || order.builds.length === 0) return { [order.kind]: "skipped" }
@@ -78,6 +80,44 @@ async function placed(order: OrderEvent): Promise<Sent> {
   return { payment, owners }
 }
 
+/**
+ * An online order Rapid Gateway has confirmed: the customer's receipt, then
+ * the owners' "paid online" alert carrying whether the receipt went.
+ */
+async function paidOnline(order: OrderEvent): Promise<Sent> {
+  const deliveryLabel = await deliveryLabelFor(order)
+
+  let receipt: Outcome | "skipped" = "skipped"
+  if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(order.customer.email)) {
+    try {
+      receipt = await sendEmail({
+        to: [{ email: order.customer.email, name: order.customer.name }],
+        ...paidEmail(order, deliveryLabel),
+        tag: "payment-received",
+      })
+    } catch (err) {
+      receipt = { ok: false, reason: `couldn't build the email (${describe(err)})` }
+    }
+    if (!receipt.ok) {
+      console.error(`Receipt for ${order.number} not sent: ${receipt.reason}`)
+    }
+  }
+
+  const owners = await alertOwnersByEmail(order, deliveryLabel, receipt, "paid")
+  return { receipt, owners }
+}
+
+/** The delivery method's name as the checkout showed it, or a plain fallback. */
+async function deliveryLabelFor(order: OrderEvent): Promise<string> {
+  const fallback = order.method === "teamhq" ? "Hand delivery by TEAM HQ" : "Standard delivery"
+  try {
+    const options = await getDeliveryOptions()
+    return options.find((o) => o.id === order.method)?.label ?? fallback
+  } catch {
+    return fallback
+  }
+}
+
 async function sendPayment(
   order: OrderEvent,
   deliveryLabel: string,
@@ -95,6 +135,7 @@ async function sendPayment(
         discount: order.discount,
         coupon: order.coupon,
         method: order.method,
+        payingOnline: order.paymentMethod === "online",
       },
       details,
     )
@@ -112,6 +153,7 @@ async function alertOwnersByEmail(
   order: OrderEvent,
   deliveryLabel: string,
   payment: Outcome | "skipped",
+  variant: "new" | "paid" = "new",
 ): Promise<Outcome | "skipped"> {
   const to = order.alertTo
     .split(",")
@@ -121,14 +163,14 @@ async function alertOwnersByEmail(
 
   let email: ReturnType<typeof ownerOrderEmail>
   try {
-    email = ownerOrderEmail(order, deliveryLabel, payment)
+    email = ownerOrderEmail(order, deliveryLabel, payment, variant)
   } catch (err) {
     return { ok: false, reason: `couldn't build the email (${describe(err)})` }
   }
   const outcome = await sendEmail({
     to: to.map((email) => ({ email })),
     ...email,
-    tag: "new-order",
+    tag: variant === "paid" ? "paid-online" : "new-order",
     // A reply goes to the customer, which is the reply an owner reading about a
     // new order means to send. Only to an address shaped like one: Brevo refuses
     // the whole email over a bad reply-to, and this alert must not depend on what

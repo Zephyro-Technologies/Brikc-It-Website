@@ -13,6 +13,16 @@
     "binding": "ASSETS"
   },
 
+  // ── Online payment (Rapid Gateway) ─────────────────────────────────────
+  // Here, not in the dashboard: plain variables set there are replaced on every
+  // deploy, and this switch should change in a commit anyway. "" is off, "test"
+  // is their sandbox for the testers in RAPID_TEST_EMAILS (a secret), "live" is
+  // every shopper. DEPLOYMENT.md §5d is the order to turn it on in.
+  "vars": {
+    "RAPID_ENV": "",
+    "RAPID_MERCHANT_ID": "1311"
+  },
+
   "observability": {
     "enabled": true
   },

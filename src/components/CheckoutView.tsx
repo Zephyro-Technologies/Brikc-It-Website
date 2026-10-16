@@ -18,7 +18,7 @@ import {
   type ShippingMethod,
 } from "../data"
 import { isSellable } from "../lib/product-view"
-import { CONFIRMATION_KEY } from "../lib/checkout"
+import { CONFIRMATION_KEY, PAY_TEST_KEY, type PaymentSession } from "../lib/checkout"
 import { CURRENCY, lineParams, track } from "../lib/pixel"
 import { OTHER_CITY, PROVINCES, citiesIn } from "../lib/pakistan"
 
@@ -103,12 +103,15 @@ export default function CheckoutView({
   ordersOpen,
   instagram,
   delivery,
+  gateway,
 }: {
   products: Product[]
   /** False when no payment details are set — see canCheckout(). */
   ordersOpen: boolean
   instagram: string
   delivery: DeliveryOption[]
+  /** Rapid Gateway's environment, or null while online payment is off (RAPID_ENV). */
+  gateway: "LIVE" | "TEST" | null
 }) {
   const router = useRouter()
   const { lines, clear } = useCart()
@@ -146,6 +149,28 @@ export default function CheckoutView({
   const shipping = chosen?.fee ?? 0
 
   const [busy, setBusy] = useState(false)
+
+  // Paying online is on offer when the gateway is live, or — on its sandbox —
+  // only to a browser that opened the shop with ?pay=test (PAY_TEST_KEY).
+  // Worked out after mount: it reads the URL and sessionStorage, which the
+  // server render has neither of.
+  const [canPayOnline, setCanPayOnline] = useState(false)
+  const [payBy, setPayBy] = useState<"online" | "transfer">("transfer")
+  useEffect(() => {
+    let allowed = gateway === "LIVE"
+    if (gateway === "TEST") {
+      try {
+        if (new URLSearchParams(window.location.search).get("pay") === "test") {
+          sessionStorage.setItem(PAY_TEST_KEY, "1")
+        }
+        allowed = sessionStorage.getItem(PAY_TEST_KEY) === "1"
+      } catch {
+        allowed = false
+      }
+    }
+    setCanPayOnline(allowed)
+    if (allowed) setPayBy("online")
+  }, [gateway])
   const [error, setError] = useState<string | null>(null)
 
   /**
@@ -312,6 +337,7 @@ export default function CheckoutView({
           // The code, never the amount. A code that expired while this form was
           // open is refused at this point rather than honoured.
           coupon: coupon?.code ?? "",
+          paymentMethod: canPayOnline ? payBy : "transfer",
         }),
       })
       const body = (await res.json()) as {
@@ -321,6 +347,8 @@ export default function CheckoutView({
         discount?: number
         coupon?: string
         error?: string
+        payment?: PaymentSession | null
+        paymentError?: string
       }
       if (!res.ok || !body.number) {
         setError(body.error ?? "We couldn't place that order.")
@@ -349,6 +377,16 @@ export default function CheckoutView({
           discount: body.discount ?? 0,
           coupon: body.coupon ?? "",
           deliveryLabel: chosen?.label ?? "Standard delivery",
+          // The payment form's session, opened by /api/orders, and the email
+          // /api/pay needs to open it again.
+          ...(canPayOnline &&
+            payBy === "online" && {
+              online: {
+                email: form.email.trim(),
+                ...(body.payment && { session: body.payment }),
+                ...(body.paymentError && { error: body.paymentError }),
+              },
+            }),
         }),
       )
       clear()
@@ -549,14 +587,46 @@ export default function CheckoutView({
             <h2 className="font-display text-lg" style={{ fontWeight: 700 }}>
               How you&rsquo;ll pay
             </h2>
-            {/* Two cards, not two choices: only the transfer can be picked
-                today. The second says how the payment gateway will slot into
-                this step, because its reviewers ask to see that at checkout,
-                and it is information, not a control, so nothing here is a
-                button that does nothing. Make it a real option, and drop the
-                "coming soon", in the commit that wires the gateway in. */}
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border-2 border-[var(--primary)] bg-white p-4">
+            {canPayOnline ? (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="How you'll pay">
+                {(
+                  [
+                    {
+                      id: "online",
+                      title: "Pay online now",
+                      body: "From your bank account or JazzCash / Easypaisa wallet, on the next page, through Rapid Gateway's secure form. Your order is confirmed the moment it goes through.",
+                    },
+                    {
+                      id: "transfer",
+                      title: "Bank transfer or wallet transfer",
+                      body: "The next page gives you our account details. Transfer the amount yourself and send us the receipt on WhatsApp — we start the build once it lands.",
+                    },
+                  ] as const
+                ).map((o) => {
+                  const on = payBy === o.id
+                  return (
+                    <label
+                      key={o.id}
+                      className={`cursor-pointer rounded-2xl bg-white p-4 ${
+                        on ? "border-2 border-[var(--primary)]" : "border border-[var(--border)] hover:border-[var(--foreground)]"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="payBy"
+                        value={o.id}
+                        checked={on}
+                        onChange={() => setPayBy(o.id)}
+                        className="sr-only"
+                      />
+                      <span className="text-sm font-semibold">{o.title}</span>
+                      <span className="mt-1 block text-sm leading-relaxed text-[var(--muted)]">{o.body}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-2xl border-2 border-[var(--primary)] bg-white p-4">
                 <p className="text-sm font-semibold">Bank transfer or mobile wallet</p>
                 <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
                   Place the order first. The next page gives you the account details and your order
@@ -564,23 +634,12 @@ export default function CheckoutView({
                   and we start the build once the transfer lands.
                 </p>
               </div>
-              <div className="rounded-2xl border border-dashed border-[var(--border)] bg-white/60 p-4">
-                <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">
-                  Pay online
-                  <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[10px] font-semibold tracking-wider text-[var(--muted)] uppercase">
-                    Coming soon
-                  </span>
-                </p>
-                <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
-                  You&rsquo;ll be taken to our payment partner&rsquo;s secure page to pay the exact order total
-                  from your bank account or mobile wallet, then brought back here with the order
-                  confirmed. No receipt to send.{" "}
-                  <Link href="/how-it-works" className="text-[var(--primary)] underline-offset-4 hover:underline">
-                    How it works
-                  </Link>
-                </p>
-              </div>
-            </div>
+            )}
+            <p className="mt-3 text-xs text-[var(--muted)]">
+              <Link href="/how-it-works" className="text-[var(--primary)] underline-offset-4 hover:underline">
+                How paying works
+              </Link>
+            </p>
           </section>
         </div>
 
@@ -728,7 +787,9 @@ export default function CheckoutView({
             {busy ? "Placing your order…" : "Place order"}
           </button>
           <p className="text-center text-xs text-[var(--muted)]">
-            You&rsquo;ll get the payment details on the next page.
+            {canPayOnline && payBy === "online"
+              ? "You'll pay securely on the next page."
+              : "You'll get the payment details on the next page."}
           </p>
         </aside>
       </form>

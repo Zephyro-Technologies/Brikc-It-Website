@@ -6,6 +6,7 @@ import { Check, Copy, MessageCircle } from "lucide-react"
 import { money } from "../lib/money"
 import type { PaymentDetails } from "../data"
 import { CONFIRMATION_KEY, paymentAccounts, receiptLink, type PlacedOrder } from "../lib/checkout"
+import PayOnline from "./PayOnline"
 
 function Copyable({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false)
@@ -65,6 +66,8 @@ function Account({ title, rows }: { title: string; rows: [string, string][] }) {
 export default function OrderConfirmation({ payment }: { payment: PaymentDetails }) {
   const [order, setOrder] = useState<PlacedOrder | null>(null)
   const [ready, setReady] = useState(false)
+  /** An online order whose shopper chose to pay by transfer after all. */
+  const [transfer, setTransfer] = useState(false)
 
   useEffect(() => {
     try {
@@ -100,6 +103,90 @@ export default function OrderConfirmation({ payment }: { payment: PaymentDetails
 
   const { whatsapp } = payment
   const firstName = order.name.trim().split(/\s+/)[0]
+  const online = order.online && !transfer ? order.online : null
+
+  // Remembered for this visit, so a reload says "paid" rather than asking for
+  // the money again.
+  function rememberPaid() {
+    if (!order?.online) return
+    const next = { ...order, online: { ...order.online, paid: true } }
+    setOrder(next)
+    try {
+      sessionStorage.setItem(CONFIRMATION_KEY, JSON.stringify(next))
+    } catch {
+      // Storage unavailable — the page still shows paid until it is left.
+    }
+  }
+
+  if (online) {
+    return (
+      <div className="mx-auto max-w-2xl px-5 pt-28 pb-24 md:pt-36">
+        <h1 className="font-display text-4xl tracking-tight md:text-5xl" style={{ fontWeight: 800 }}>
+          {online.paid
+            ? `Thanks${firstName ? `, ${firstName}` : ""} — you're all set.`
+            : `Thanks${firstName ? `, ${firstName}` : ""} — now pay to confirm.`}
+        </h1>
+
+        <div className="mt-8 grid gap-px overflow-hidden rounded-3xl bg-[var(--border)] shadow-[var(--shadow-1)] sm:grid-cols-2">
+          <div className="bg-white px-5 py-4">
+            <p className="text-[10px] font-semibold tracking-widest text-[var(--muted)] uppercase">Your reference</p>
+            <p className="font-display mt-1 text-2xl" style={{ fontWeight: 800 }}>
+              {order.number}
+            </p>
+          </div>
+          <div className="bg-white px-5 py-4">
+            <p className="text-[10px] font-semibold tracking-widest text-[var(--muted)] uppercase">
+              {online.paid ? "Paid" : "Amount to pay"}
+            </p>
+            <p className="font-display mt-1 text-2xl" style={{ fontWeight: 800 }}>
+              {money(order.total)}
+            </p>
+            {(order.discount ?? 0) > 0 && (
+              <p className="mt-1 text-xs font-medium text-[var(--primary)]">
+                {order.coupon} took off {money(order.discount ?? 0)}
+              </p>
+            )}
+            {order.shipping > 0 && (
+              <p className="mt-1 text-xs text-[var(--muted)]">
+                Includes {money(order.shipping)} for {order.deliveryLabel.toLowerCase()}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <PayOnline
+          session={online.session}
+          number={order.number}
+          email={online.email}
+          total={order.total}
+          startError={online.error}
+          paid={online.paid}
+          onPaid={rememberPaid}
+          onTransfer={() => setTransfer(true)}
+        />
+
+        <div className="mt-12 rounded-3xl bg-white p-5 shadow-[var(--shadow-1)]">
+          <p className="mb-3 text-[11px] font-semibold tracking-widest text-[var(--muted)] uppercase">
+            What happens next
+          </p>
+          <ol className="space-y-2 text-sm text-[var(--muted)]">
+            <li>1. You pay from your bank account or mobile wallet, right here.</li>
+            <li>2. Rapid Gateway confirms it to us, and your order is confirmed straight away.</li>
+            <li>
+              3. Your build starts.{" "}
+              {order.shipping > 0
+                ? "We arrange a time with you and bring it round in person."
+                : "We send tracking once it ships."}
+            </li>
+          </ol>
+        </div>
+
+        <p className="mt-8 text-center text-sm text-[var(--muted)]">
+          Keep this reference: <strong className="text-[var(--foreground)]">{order.number}</strong>
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-2xl px-5 pt-28 pb-24 md:pt-36">

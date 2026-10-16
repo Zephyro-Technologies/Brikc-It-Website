@@ -155,7 +155,14 @@ REVALIDATE_SECRET                     (the same value the admin uses)
 BREVO_API_KEY                         (optional — every order email, §5b)
 PUSHOVER_APP_TOKEN                    (optional — the owners' push, §5b)
 PUSHOVER_GROUP_KEY                    (optional — the owners' push, §5b)
+SUPABASE_SECRET_KEY                   (online payment, §5d — the service_role key)
+RAPID_CLIENT_SECRET                   (online payment, §5d — live only)
+RAPID_WEBHOOK_SECRET                  (online payment, §5d — per environment)
+RAPID_TEST_EMAILS                     (online payment, §5d — while testing, who may pay online)
 ```
+
+`RAPID_ENV` and `RAPID_MERCHANT_ID` are in `wrangler.jsonc` under `vars`, not
+here: a plain variable set in the dashboard is replaced on every deploy.
 
 Generate one if you haven't:
 
@@ -229,6 +236,59 @@ two. `/api/emails` answers only after Brevo has, so its answer is the record:
 in CLAUDE.md). The owners' alert also says whether the payment email went —
 "Payment email NOT sent — Brevo 401: Key not found". The shopper has the same
 details on the confirmation page either way. Worker logs carry the same lines.
+
+## 5d. Online payment — Rapid Gateway
+
+Embedded checkout, merchant **1311**. Everything below is in their merchant
+portal (rapidgateway.pk) unless it says Cloudflare.
+
+**0. The migration first.** `npx supabase db push` in the admin repo, for
+`20261016120000_pay_online_through_rapid_gateway.sql`, before `RAPID_ENV` is set.
+
+**1. The secret key for the database.** The payment routes call three
+service_role-only functions, so the Worker needs the project's secret key:
+Supabase → Project Settings → API Keys → a **secret** key (`sb_secret_…`).
+Cloudflare → brikc-it-website → Settings → Variables and Secrets → add
+`SUPABASE_SECRET_KEY` as a *Secret*.
+
+**2. Sandbox first.** Add `RAPID_TEST_EMAILS` (a Secret: the testers' own
+addresses, comma-separated), then set `"RAPID_ENV": "test"` in `wrangler.jsonc`
+and push. No client secret is needed:
+the sandbox uses Rapid Gateway's shared test login. Online payment is then shown
+only at **https://brikc.it/checkout?pay=test**, and only those emails can use
+it — the server refuses everyone else, and a sandbox webhook settles a tester's
+order and nothing else. The sandbox's login is public, so without the list
+anybody could have a real order marked paid with play money.
+
+**3. The TEST webhook.** In the portal, switch to **TEST** mode, open Settings →
+Webhooks, save `https://brikc.it/api/pay/webhook`, and copy its signing secret
+into Cloudflare as `RAPID_WEBHOOK_SECRET`. Webhook settings are per
+environment — LIVE has its own URL and secret.
+
+**4. A test payment touches the real database.** A sandbox payment marks a real
+order paid: stock comes off, owners are emailed, and Meta is told about a
+Purchase that cannot be withdrawn. Before testing, add a Meta test code
+(`select vault.create_secret('TEST…', 'meta_test_event_code');`, see §5c),
+order with a tester's email, then cancel the order — which puts the stock
+back — and delete the test code.
+
+**5. Going live.** Settings → Webhooks in **LIVE** mode: the same URL, and its
+signing secret replaces `RAPID_WEBHOOK_SECRET`. Credentials → Secret Key into
+`RAPID_CLIENT_SECRET`. Then `"RAPID_ENV": "live"` in `wrangler.jsonc`
+(`RAPID_TEST_EMAILS` no longer matters) — every shopper now sees
+"Pay online now" — and push the copy that names Rapid Gateway on /how-it-works,
+/terms, /refund-policy and /privacy in the same go.
+
+**6. Branding.** Settings → Checkout in the portal sets the colours, heading and
+logo inside the payment form (it is their iframe). brikc.it red is `#d31f2e`.
+
+**How it fails.** The order is placed before any of this runs. If a session
+can't be opened, the confirmation page says so and offers transfer, and "try
+again" opens a new one on the same BASKET_ID. If a webhook can't be recorded the
+route answers 500 and Rapid Gateway retries at 30s, 2m, 10m, 1h and 6h; their
+portal shows every delivery and can resend one. A second successful payment on a
+paid order leaves a note by "RapidGateway" on it — refund it from their
+dashboard.
 
 ## 5c. Meta Pixel
 

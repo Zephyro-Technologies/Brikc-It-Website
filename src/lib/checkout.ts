@@ -31,7 +31,35 @@ export type PlacedOrder = {
    */
   discount?: number
   coupon?: string
+  /**
+   * Set when the shopper chose to pay online. The email is what /api/pay asks
+   * for to open the payment form again; `session` is the form opened at
+   * checkout, absent if that failed; `paid` is remembered so a reload doesn't
+   * ask for the money twice.
+   */
+  online?: {
+    email: string
+    session?: PaymentSession
+    error?: string
+    paid?: boolean
+  }
 }
+
+/** What the embedded payment form needs — see src/lib/pay-online.ts. */
+export type PaymentSession = {
+  sessionId: string
+  clientSecret: string
+  publishableKey: string
+  amount: number
+  env: "LIVE" | "TEST"
+}
+
+/**
+ * Online payment while Rapid Gateway is on its sandbox is for us, not for
+ * shoppers: the checkout offers it only to a browser that has opened the shop
+ * with ?pay=test, which remembers it for the visit.
+ */
+export const PAY_TEST_KEY = "brikc.pay.test"
 
 /**
  * The message that opens in WhatsApp when a shopper taps through to send their

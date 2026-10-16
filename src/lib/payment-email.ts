@@ -49,11 +49,21 @@ export function paymentEmail(
      * carry a courier charge too, so the email asks the method when it has it.
      */
     method?: ShippingMethod
+    /**
+     * Chosen to pay online. The shopper is paying on the confirmation page as
+     * this goes out, so it says the order is in and that a receipt follows —
+     * and keeps the transfer details below, for a payment that didn't go
+     * through. A receipt (paid-email.ts) follows when Rapid Gateway confirms.
+     */
+    payingOnline?: boolean
   },
   payment: PaymentDetails,
 ): PaymentEmail {
+  const online = order.payingOnline === true
   const firstName = order.name.trim().split(/\s+/)[0]
-  const greeting = `Thanks${firstName ? `, ${firstName}` : ""} — one step left.`
+  const greeting = online
+    ? `Thanks${firstName ? `, ${firstName}` : ""} — your order is in.`
+    : `Thanks${firstName ? `, ${firstName}` : ""} — one step left.`
   const total = money(order.total)
   const discount = order.discount ?? 0
   const accounts = paymentAccounts(payment)
@@ -67,27 +77,44 @@ export function paymentEmail(
   if (discount > 0) notes.push(`${order.coupon} took off ${money(discount)}`)
   if (order.shipping > 0) notes.push(`Includes ${money(order.shipping)} for ${order.deliveryLabel.toLowerCase()}`)
 
-  const steps = [
+  const steps = online
+    ? [
+        "Paid online: your receipt follows as soon as Rapid Gateway confirms the payment, and the order is confirmed.",
+        "Paying by transfer instead: send us the receipt on WhatsApp, and we confirm once it lands.",
+        `Your build starts. ${
+          handDelivered ? "We arrange a time with you and bring it round in person." : "We send tracking once it ships."
+        }`,
+      ]
+    : [
     "You transfer the amount and send us the receipt.",
     "We check it against the order and confirm on WhatsApp.",
     `Your build starts. ${
       handDelivered ? "We arrange a time with you and bring it round in person." : "We send tracking once it ships."
     }`,
-  ]
+      ]
 
-  const subject = `Order ${order.number} — transfer details`
+  const subject = online ? `Order ${order.number} — received` : `Order ${order.number} — transfer details`
+
+  // For an online order, what the opening says before the transfer details
+  // become a fallback rather than the plan.
+  const onlineIntro =
+    `You chose to pay online. If you finished paying on the order page, you’re all set: a receipt follows as soon ` +
+    `as Rapid Gateway confirms it. If the payment didn’t go through, you can pay by transfer instead — ` +
+    `${total} to any one of the accounts below, with your reference ${order.number}, and send us the receipt on WhatsApp.`
+  const transferIntro =
+    `Nothing has been charged. Transfer ${total} to any one of the accounts below, then send us the receipt on ` +
+    `WhatsApp with your reference ${order.number}. We confirm the order as soon as the transfer shows up, and ` +
+    `that’s when the build starts.`
 
   // ── Plain text ───────────────────────────────────────────────────────────
   const text = [
     greeting,
     "",
     `Your reference: ${order.number}`,
-    `Amount to transfer: ${total}`,
+    `${online ? "Order total" : "Amount to transfer"}: ${total}`,
     ...notes,
     "",
-    `Nothing has been charged. Transfer ${total} to any one of the accounts below, then send us the receipt on ` +
-      `WhatsApp with your reference ${order.number}. We confirm the order as soon as the transfer shows up, and ` +
-      `that's when the build starts.`,
+    online ? onlineIntro : transferIntro,
     "",
     ...accounts.flatMap((a) => [a.title, ...a.rows.map(([name, value]) => `  ${name}: ${value}`), ""]),
     ...(whatsapp
@@ -147,16 +174,18 @@ export function paymentEmail(
 
   const html = emailShell({
     subject,
-    preheader: `Transfer ${total} to confirm order ${order.number}.`,
-    header: `${headline(`Thanks${firstName ? `, ${esc(firstName)}` : ""} —`, "one step left.")}
+    preheader: online
+      ? `Order ${order.number} is in. A receipt follows once your payment is confirmed.`
+      : `Transfer ${total} to confirm order ${order.number}.`,
+    header: `${headline(`Thanks${firstName ? `, ${esc(firstName)}` : ""} —`, online ? "your order is in." : "one step left.")}
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${PANEL}" style="margin:22px 0 0;background:${PANEL};border:1px solid ${PANEL_LINE};border-radius:18px;border-collapse:separate;">
           ${figure("Your reference", order.number, 24, [], false)}
-          ${figure("Amount to transfer", total, 30, notes, true)}
+          ${figure(online ? "Order total" : "Amount to transfer", total, 30, notes, true)}
         </table>`,
     body: `${p(
-      `Nothing has been charged. Transfer ${strong(total)} to any one of the accounts below, then send us the ` +
-        `receipt on WhatsApp with your reference ${strong(order.number)}. We confirm the order as soon as the ` +
-        `transfer shows up, and that&rsquo;s when the build starts.`,
+      esc(online ? onlineIntro : transferIntro)
+        .replace(esc(total), strong(total))
+        .replace(esc(order.number), strong(order.number)),
     )}
 
         <div style="margin-top:22px;">${accounts.map(account).join("")}</div>

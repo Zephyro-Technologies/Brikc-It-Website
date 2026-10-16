@@ -8,7 +8,7 @@ import { FORMAT_LABELS, FRAME_LABELS } from "../data"
  * the publishable key and cannot read an order back.
  */
 
-export type OrderEmailKind = "placed" | "review" | "review_reminder"
+export type OrderEmailKind = "placed" | "paid" | "review" | "review_reminder"
 
 export type OrderEventLine = {
   name: string
@@ -25,6 +25,8 @@ export type OrderEvent = {
   kind: OrderEmailKind
   number: string
   source: "storefront" | "manual"
+  /** "online" through Rapid Gateway, or "transfer". Missing from a payload before 20261016120000. */
+  paymentMethod: "online" | "transfer"
   placedAt: string
   /** Whether the customer is sent the payment details. The database decides. */
   paymentEmail: boolean
@@ -43,7 +45,7 @@ export type OrderEvent = {
   builds: { name: string; slug: string }[]
 }
 
-const KINDS: OrderEmailKind[] = ["placed", "review", "review_reminder"]
+const KINDS: OrderEmailKind[] = ["placed", "paid", "review", "review_reminder"]
 
 const str = (v: unknown) => (typeof v === "string" ? v : "")
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0)
@@ -63,6 +65,7 @@ export function readOrderEvent(body: unknown): OrderEvent | null {
     kind,
     number,
     source: b.source === "manual" ? "manual" : "storefront",
+    paymentMethod: b.paymentMethod === "online" ? "online" : "transfer",
     placedAt: str(b.placedAt),
     paymentEmail: b.paymentEmail === true,
     alertTo: str(b.alertTo),

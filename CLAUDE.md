@@ -237,19 +237,59 @@ compares on letters alone ("islamabad.", "Islamabad", "Islamabad Capital Territo
 and **mirrors `private.city_qualifies()` in the database** — if you change one, change both; the
 database is what actually decides.
 
-There is no payment gateway. The order is recorded as pending payment, and the confirmation page
-shows the accounts plus a `wa.me` link prefilled with the order number. `canCheckout()` closes
-the checkout entirely unless a WhatsApp number *and* at least one account are configured.
+**Two ways to pay: online through Rapid Gateway, or by transfer.** A transfer order is recorded as
+pending payment, and the confirmation page shows the accounts plus a `wa.me` link prefilled with the
+order number. `canCheckout()` closes the checkout entirely unless a WhatsApp number *and* at least one
+account are configured — transfer is always the fallback, so it stays required.
+
+**Online payment is Rapid Gateway's embedded checkout** — their iframe (`rapidpay.js`) on our
+confirmation page, so the shopper never leaves brikc.it and bank and wallet details never touch it.
+Merchant 1311; Account and Wallet are switched on in their portal, Card and Raast are not, so the
+copy says "bank account or mobile wallet" and nothing else.
+
+- `RAPID_ENV` decides it — in `wrangler.jsonc` `vars`, beside `RAPID_MERCHANT_ID`, because dashboard
+  variables are replaced on every deploy: `live`, `test` (their sandbox, shared test login) or empty
+  (off — checkout offers transfer only). **On `test`, only the emails in `RAPID_TEST_EMAILS` can pay online**, and
+  the server enforces it in `/api/orders`, `/api/pay` and the webhook (`mayPayOnline()`): sandbox
+  money is play money and its login is published, so anyone else allowed through would get a real
+  order marked paid for nothing. The page shows the option only at **`/checkout?pay=test`**
+  (`PAY_TEST_KEY`) — that is cosmetic; the list is the lock.
+- `/api/orders` places the order with `p_payment_method` and, for an online one, opens a checkout
+  session straight away (`src/lib/pay-online.ts`) and returns its client secret. `/api/pay` opens it
+  again (try again, or "pay online instead"); it needs the **email** as well as the number —
+  `pay_online_start()` checks both, so an order number alone starts nothing.
+- **The webhook is the only thing that marks an order paid.** `/api/pay/webhook` checks the HMAC
+  (`timestamp.rawBody`, upper-case hex, 5-minute window) and the environment, then calls
+  `settle_payment()`, which de-duplicates on `eventId`, matches on BASKET_ID, refuses a wrong amount,
+  only moves pending_payment → paid, and notes a second payment for refunding. The iframe's "success"
+  is a message from another window, so the page asks `/api/pay/status` (Rapid Gateway, server-side)
+  before it says "Payment received" — and that route never writes.
+- One BASKET_ID per order (`BRK-1084-1`), reused for every session: a second basket would leave a late
+  payment on the first matching nothing.
+- `pay_online_start`, `attach_payment_session` and `settle_payment` are granted to **service_role
+  only**, so the payment routes use `SUPABASE_SECRET_KEY` through `src/lib/supabase/service.ts`
+  (`server-only`). It is the one place this app holds more than the publishable key.
+- Paid moves stock, counts the coupon and tells Meta exactly as an owner marking it paid does.
+  **`settle_payment` itself sends the `paid` email** (a receipt, and "Paid online" to the owners) and
+  sets `payment_method = 'online'` — not a trigger on paid, which could not tell Rapid Gateway's money
+  from a transfer an owner marked by hand. It locks the order row first, so two payments reported at
+  once can't both see pending_payment. An online order's first email is "Order received", keeping the
+  transfer details as a fallback.
+- `/api/orders` sends `p_payment_method` only for an online order, so a transfer order is the same
+  call it always was — but apply `20261016120000` before switching `RAPID_ENV` on.
+- Schema: `20260930120000_rapidgateway_payments.sql` and `20261016120000_pay_online_through_rapid_gateway.sql`
+  in the admin repo. Their docs live in the merchant portal, rapidgateway.pk → Documentation.
 
 The placed order reaches `/checkout/confirmation` through `sessionStorage` under
 `CONFIRMATION_KEY`, not the URL — an order reference in a shareable link invites enumeration.
 
-**An order sends its own emails, and the database says when.** Three kinds, each at most once per
+**An order sends its own emails, and the database says when.** Four kinds, each at most once per
 order, recorded in `order_emails` (admin repo, `20261009120000_orders_send_their_own_emails.sql`):
 
 | Kind | When | What goes |
 | --- | --- | --- |
 | `placed` | the order's first status event | payment details to the customer, then a new-order alert to the owners |
+| `paid` | Rapid Gateway confirming a payment (`settle_payment`) | a receipt to the customer and a "Paid online" alert to the owners |
 | `review` | the first move into delivered | a request to review each model in the order |
 | `review_reminder` | two days later, hourly `pg_cron` job | the same, once more, if no review has come in and it is still delivered |
 

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { supabase } from "../../../lib/supabase/client"
 import { wireLines } from "../../../lib/order-lines"
+import { PaymentRefused, startOnlinePayment, type OnlinePayment } from "../../../lib/pay-online"
+import { mayPayOnline } from "../../../lib/rapid-gateway"
 
 /**
  * Takes an order from the checkout form.
@@ -47,6 +49,12 @@ export async function POST(request: Request) {
   // quoted against is the cart that gets priced here.
   const lines = wireLines(body)
 
+  // Online only while the gateway is on and this customer may use it — on the
+  // sandbox that is the tester list, checked here rather than trusted from the
+  // page (mayPayOnline). Anyone else's order is a transfer order.
+  const wantsOnline = body.paymentMethod === "online"
+  const online = wantsOnline && mayPayOnline(str(customer.email))
+
   if (lines.length === 0) {
     return NextResponse.json({ error: "Your cart is empty." }, { status: 400 })
   }
@@ -76,6 +84,9 @@ export async function POST(request: Request) {
     p_fbc: cookie(request, "_fbc"),
     p_client_ip: request.headers.get("cf-connecting-ip") ?? "",
     p_user_agent: request.headers.get("user-agent") ?? "",
+    // Sent only for an online order, so a transfer order is the same call it
+    // always was and works whether or not 20261016120000 is applied yet.
+    ...(online && { p_payment_method: "online" }),
   })
 
   if (error) {
@@ -111,5 +122,21 @@ export async function POST(request: Request) {
     coupon: result.coupon ?? "",
   }
 
-  return NextResponse.json(placed)
+  // Paying online: open the payment form's session now, so the confirmation
+  // page can show it straight away. The order is placed whatever happens here —
+  // if the session can't be opened, the page says so and offers transfer, and
+  // /api/pay can try again.
+  let payment: OnlinePayment | null = null
+  let paymentError = wantsOnline && !online ? "Online payment isn't available for this order. Please pay by bank transfer." : ""
+  if (online) {
+    try {
+      payment = await startOnlinePayment(result.number, str(customer.email))
+    } catch (err) {
+      paymentError =
+        err instanceof PaymentRefused ? err.message : "Online payment couldn't be started just now."
+      if (!(err instanceof PaymentRefused)) console.error(`Online payment for ${result.number}:`, err)
+    }
+  }
+
+  return NextResponse.json({ ...placed, ...(wantsOnline && { payment, paymentError }) })
 }

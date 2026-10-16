@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import CheckoutView from "../../components/CheckoutView"
 import { canCheckout } from "../../data"
 import { getDeliveryOptions, getDisplays, getPaymentDetails, getProducts, getSettings } from "../../lib/shop"
+import { gatewayEnv } from "../../lib/rapid-gateway"
 
 export const metadata: Metadata = {
   title: "Checkout — brikc.it",
@@ -31,6 +32,7 @@ export default async function CheckoutPage() {
       ordersOpen={canCheckout(payment)}
       instagram={settings.instagram}
       delivery={delivery}
+      gateway={gatewayEnv()}
     />
   )
 }
