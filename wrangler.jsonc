@@ -19,7 +19,7 @@
   // is their sandbox for the testers in RAPID_TEST_EMAILS (a secret), "live" is
   // every shopper. DEPLOYMENT.md §5d is the order to turn it on in.
   "vars": {
-    "RAPID_ENV": "",
+    "RAPID_ENV": "test",
     "RAPID_MERCHANT_ID": "1311"
   },
 
