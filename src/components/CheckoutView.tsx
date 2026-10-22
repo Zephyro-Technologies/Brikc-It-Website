@@ -443,6 +443,41 @@ export default function CheckoutView({
     )
   }
 
+  // Below the summary on a wide screen; on a phone the summary moves to the
+  // top of the page, so this goes at the bottom, after the last thing filled
+  // in, with the total beside it.
+  const submitBlock = (
+    <>
+      {blocked.length > 0 && (
+        <p className="flex gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>Remove the unavailable {blocked.length === 1 ? "item" : "items"} from your cart to carry on.</span>
+        </p>
+      )}
+
+      {error && (
+        <p className="rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/10 p-3 text-sm text-[var(--primary-deep)]">
+          {error}
+        </p>
+      )}
+
+      <button
+        type="submit"
+        disabled={busy || blocked.length > 0}
+        className="mat-btn flex w-full items-center justify-center gap-2 rounded-full bg-[var(--primary)] py-3.5 font-display text-white shadow-[var(--shadow-1)] hover:shadow-[var(--shadow-2)] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-[var(--shadow-1)] disabled:hover:brightness-100"
+        style={{ fontWeight: 700 }}
+      >
+        {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+        {busy ? "Placing your order…" : "Place order"}
+      </button>
+      <p className="text-center text-xs text-[var(--muted)]">
+        {canPayOnline && payBy === "online"
+          ? "You'll pay securely on the next page."
+          : "You'll get the payment details on the next page."}
+      </p>
+    </>
+  )
+
   return (
     <Shell>
       {/* [&>*]:min-w-0 again: the province <select> has a min-content of 248px,
@@ -451,199 +486,13 @@ export default function CheckoutView({
           wider than the form at 300px and the page scrolled sideways. */}
       <form
         onSubmit={submit}
-        className="grid gap-10 lg:grid-cols-[1fr_22rem] lg:items-start [&>*]:min-w-0"
+        className="grid gap-5 sm:gap-8 lg:grid-cols-[1fr_22rem] lg:items-start lg:gap-10 [&>*]:min-w-0"
       >
-        <div className="space-y-8">
-          <section className="rounded-3xl bg-white p-6 shadow-[var(--shadow-1)] sm:p-8">
-            <h2 className="font-display text-lg" style={{ fontWeight: 700 }}>
-              Where it&rsquo;s going
-            </h2>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <Field label="Full name" id="name" value={form.name} onChange={set("name")} required autoComplete="name" maxLength={120} />
-              <Field label="Phone" id="phone" value={form.phone} onChange={set("phone")} required autoComplete="tel" placeholder="03001234567" maxLength={40} />
-              <div className="sm:col-span-2">
-                <Field label="Email" id="email" type="email" value={form.email} onChange={set("email")} required autoComplete="email" maxLength={200} hint="So we have your order on record and can reach you about it." />
-              </div>
-              <div className="sm:col-span-2">
-                <Field label="Address" id="line1" value={form.line1} onChange={set("line1")} required autoComplete="address-line1" maxLength={200} />
-              </div>
-              <div className="sm:col-span-2">
-                <Field label="Apartment, suite, landmark" id="line2" value={form.line2} onChange={set("line2")} autoComplete="address-line2" maxLength={200} hint="Optional." />
-              </div>
-              <SelectField
-                label="Province"
-                id="province"
-                required
-                value={form.province}
-                onChange={(v) =>
-                  // A city from the old province would be nonsense under the new one.
-                  setForm((f) => ({ ...f, province: v, city: "", cityOther: "" }))
-                }
-              >
-                <option value="">Choose a province…</option>
-                {PROVINCES.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </SelectField>
-
-              <SelectField
-                label="City"
-                id="city"
-                required
-                value={form.city}
-                disabled={!form.province}
-                onChange={set("city")}
-                hint={form.province ? undefined : "Pick a province first."}
-              >
-                <option value="">{form.province ? "Choose a city…" : "—"}</option>
-                {citiesIn(form.province).map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-                {form.province && <option value={OTHER_CITY}>My town isn&apos;t listed</option>}
-              </SelectField>
-
-              {form.city === OTHER_CITY && (
-                <div className="sm:col-span-2">
-                  <Field
-                    label="Which town?"
-                    id="cityOther"
-                    value={form.cityOther}
-                    onChange={set("cityOther")}
-                    required
-                    maxLength={80}
-                    hint="We&rsquo;ll check the courier reaches it before dispatch."
-                  />
-                </div>
-              )}
-
-              <Field label="Postcode" id="postcode" value={form.postcode} onChange={set("postcode")} autoComplete="postal-code" maxLength={20} />
-            </div>
-          </section>
-
-          <section className="rounded-3xl bg-white p-6 shadow-[var(--shadow-1)] sm:p-8">
-            <h2 className="font-display text-lg" style={{ fontWeight: 700 }}>
-              How it gets to you
-            </h2>
-            <div className="mt-6 space-y-3">
-              {delivery.map((o) => {
-                const ok = cityQualifies(o, city)
-                const on = chosen?.id === o.id
-                return (
-                  <label
-                    key={o.id}
-                    className={`mat-btn flex items-start gap-3 rounded-2xl border p-4 ${
-                      on ? "border-[var(--primary)] bg-[var(--primary)]/5" : "border-[var(--border)] bg-white"
-                    } ${ok ? "cursor-pointer hover:border-[var(--foreground)]/25" : "cursor-not-allowed opacity-50"}`}
-                  >
-                    <input
-                      type="radio"
-                      name="delivery"
-                      value={o.id}
-                      checked={on}
-                      disabled={!ok}
-                      onChange={() => setMethod(o.id)}
-                      className="mt-1 h-4 w-4 shrink-0 accent-[var(--primary)]"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="flex flex-wrap items-baseline justify-between gap-x-3">
-                        <span className="font-display" style={{ fontWeight: 700 }}>
-                          {o.label}
-                        </span>
-                        <span className="font-display" style={{ fontWeight: 700 }}>
-                          {o.fee > 0 ? money(o.fee) : "Free"}
-                        </span>
-                      </span>
-                      <span className="mt-1 block text-sm text-[var(--muted)]">{o.detail}</span>
-                      {!ok && (
-                        <span className="mt-1.5 block text-xs font-semibold tracking-wide text-amber-600 uppercase">
-                          {city
-                            ? `Not available in ${city}`
-                            : "Choose your city to see if this is available"}
-                        </span>
-                      )}
-                      {ok && o.link && (
-                        <a
-                          href={o.link}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="mt-1.5 inline-block text-xs text-[var(--primary)] underline-offset-4 hover:underline"
-                        >
-                          Who&rsquo;s delivering &rarr;
-                        </a>
-                      )}
-                    </span>
-                  </label>
-                )
-              })}
-            </div>
-          </section>
-
-          <section className="rounded-3xl bg-[var(--surface-2)] p-6 sm:p-8">
-            <h2 className="font-display text-lg" style={{ fontWeight: 700 }}>
-              How you&rsquo;ll pay
-            </h2>
-            {canPayOnline ? (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="How you'll pay">
-                {(
-                  [
-                    {
-                      id: "online",
-                      title: "Pay online now",
-                      body: "From your bank account or JazzCash / Easypaisa wallet, on the next page, through Rapid Gateway's secure form. Your order is confirmed the moment it goes through.",
-                    },
-                    {
-                      id: "transfer",
-                      title: "Bank transfer or wallet transfer",
-                      body: "The next page gives you our account details. Transfer the amount yourself and send us the receipt on WhatsApp — we start the build once it lands.",
-                    },
-                  ] as const
-                ).map((o) => {
-                  const on = payBy === o.id
-                  return (
-                    <label
-                      key={o.id}
-                      className={`cursor-pointer rounded-2xl bg-white p-4 ${
-                        on ? "border-2 border-[var(--primary)]" : "border border-[var(--border)] hover:border-[var(--foreground)]"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="payBy"
-                        value={o.id}
-                        checked={on}
-                        onChange={() => setPayBy(o.id)}
-                        className="sr-only"
-                      />
-                      <span className="text-sm font-semibold">{o.title}</span>
-                      <span className="mt-1 block text-sm leading-relaxed text-[var(--muted)]">{o.body}</span>
-                    </label>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="mt-4 rounded-2xl border-2 border-[var(--primary)] bg-white p-4">
-                <p className="text-sm font-semibold">Bank transfer or mobile wallet</p>
-                <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
-                  Place the order first. The next page gives you the account details and your order
-                  number, and you send the receipt to us on WhatsApp. Nothing is charged automatically,
-                  and we start the build once the transfer lands.
-                </p>
-              </div>
-            )}
-            <p className="mt-3 text-xs text-[var(--muted)]">
-              <Link href="/how-it-works" className="text-[var(--primary)] underline-offset-4 hover:underline">
-                How paying works
-              </Link>
-            </p>
-          </section>
-        </div>
-
-        <aside className="space-y-4 rounded-3xl bg-white p-6 shadow-[var(--shadow-2)] lg:sticky lg:top-28">
+        {/* First in the page, so on a phone what is being bought and what it
+            comes to are read — and tabbed through — before the form rather
+            than after it. On a wide screen the grid puts it back on the
+            right. */}
+        <aside className="space-y-4 rounded-3xl bg-white p-5 shadow-[var(--shadow-2)] sm:p-6 lg:sticky lg:top-28 lg:col-start-2 lg:row-start-1">
           <h2 className="font-display text-lg" style={{ fontWeight: 700 }}>
             Your order
           </h2>
@@ -684,9 +533,9 @@ export default function CheckoutView({
             </p>
           )}
 
-          {/* Above the totals, because it changes them. Its own form rather
-              than an input inside the checkout form: Enter here should price a
-              code, not place the order. */}
+          {/* Above the totals, because it changes them. It sits inside the
+              checkout form, so Enter here would place the order — applyCoupon
+              cancels that, because Enter here should price a code. */}
           <div className="border-t border-[var(--border)] pt-4">
             {coupon ? (
               <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/5 px-3 py-2.5">
@@ -764,34 +613,211 @@ export default function CheckoutView({
             </div>
           </div>
 
-          {blocked.length > 0 && (
-            <p className="flex gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>Remove the unavailable {blocked.length === 1 ? "item" : "items"} from your cart to carry on.</span>
-            </p>
-          )}
-
-          {error && (
-            <p className="rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/10 p-3 text-sm text-[var(--primary-deep)]">
-              {error}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={busy || blocked.length > 0}
-            className="mat-btn flex w-full items-center justify-center gap-2 rounded-full bg-[var(--primary)] py-3.5 font-display text-white shadow-[var(--shadow-1)] hover:shadow-[var(--shadow-2)] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-[var(--shadow-1)] disabled:hover:brightness-100"
-            style={{ fontWeight: 700 }}
-          >
-            {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-            {busy ? "Placing your order…" : "Place order"}
-          </button>
-          <p className="text-center text-xs text-[var(--muted)]">
-            {canPayOnline && payBy === "online"
-              ? "You'll pay securely on the next page."
-              : "You'll get the payment details on the next page."}
-          </p>
+          <div className="hidden space-y-4 lg:block">{submitBlock}</div>
         </aside>
+
+        <div className="space-y-5 sm:space-y-8 lg:col-start-1 lg:row-start-1">
+          <section className="rounded-3xl bg-white p-5 shadow-[var(--shadow-1)] sm:p-8">
+            <h2 className="font-display text-lg" style={{ fontWeight: 700 }}>
+              Where it&rsquo;s going
+            </h2>
+            <div className="mt-5 grid gap-4 sm:mt-6 sm:grid-cols-2">
+              <Field label="Full name" id="name" value={form.name} onChange={set("name")} required autoComplete="name" maxLength={120} />
+              <Field label="Phone" id="phone" value={form.phone} onChange={set("phone")} required autoComplete="tel" placeholder="03001234567" maxLength={40} />
+              <div className="sm:col-span-2">
+                <Field label="Email" id="email" type="email" value={form.email} onChange={set("email")} required autoComplete="email" maxLength={200} hint="So we have your order on record and can reach you about it." />
+              </div>
+              <div className="sm:col-span-2">
+                <Field label="Address" id="line1" value={form.line1} onChange={set("line1")} required autoComplete="address-line1" maxLength={200} />
+              </div>
+              <div className="sm:col-span-2">
+                <Field label="Apartment, suite, landmark" id="line2" value={form.line2} onChange={set("line2")} autoComplete="address-line2" maxLength={200} hint="Optional." />
+              </div>
+              <SelectField
+                label="Province"
+                id="province"
+                required
+                value={form.province}
+                onChange={(v) =>
+                  // A city from the old province would be nonsense under the new one.
+                  setForm((f) => ({ ...f, province: v, city: "", cityOther: "" }))
+                }
+              >
+                <option value="">Choose a province…</option>
+                {PROVINCES.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </SelectField>
+
+              <SelectField
+                label="City"
+                id="city"
+                required
+                value={form.city}
+                disabled={!form.province}
+                onChange={set("city")}
+                hint={form.province ? undefined : "Pick a province first."}
+              >
+                <option value="">{form.province ? "Choose a city…" : "—"}</option>
+                {citiesIn(form.province).map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+                {form.province && <option value={OTHER_CITY}>My town isn&apos;t listed</option>}
+              </SelectField>
+
+              {form.city === OTHER_CITY && (
+                <div className="sm:col-span-2">
+                  <Field
+                    label="Which town?"
+                    id="cityOther"
+                    value={form.cityOther}
+                    onChange={set("cityOther")}
+                    required
+                    maxLength={80}
+                    hint="We&rsquo;ll check the courier reaches it before dispatch."
+                  />
+                </div>
+              )}
+
+              <Field label="Postcode" id="postcode" value={form.postcode} onChange={set("postcode")} autoComplete="postal-code" maxLength={20} />
+            </div>
+          </section>
+
+          <section className="rounded-3xl bg-white p-5 shadow-[var(--shadow-1)] sm:p-8">
+            <h2 className="font-display text-lg" style={{ fontWeight: 700 }}>
+              How it gets to you
+            </h2>
+            <div className="mt-5 space-y-3 sm:mt-6">
+              {delivery.map((o) => {
+                const ok = cityQualifies(o, city)
+                const on = chosen?.id === o.id
+                return (
+                  <label
+                    key={o.id}
+                    className={`mat-btn flex items-start gap-3 rounded-2xl border p-4 ${
+                      on ? "border-[var(--primary)] bg-[var(--primary)]/5" : "border-[var(--border)] bg-white"
+                    } ${ok ? "cursor-pointer hover:border-[var(--foreground)]/25" : "cursor-not-allowed opacity-50"}`}
+                  >
+                    <input
+                      type="radio"
+                      name="delivery"
+                      value={o.id}
+                      checked={on}
+                      disabled={!ok}
+                      onChange={() => setMethod(o.id)}
+                      className="mt-1 h-4 w-4 shrink-0 accent-[var(--primary)]"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-wrap items-baseline justify-between gap-x-3">
+                        <span className="font-display" style={{ fontWeight: 700 }}>
+                          {o.label}
+                        </span>
+                        <span className="font-display" style={{ fontWeight: 700 }}>
+                          {o.fee > 0 ? money(o.fee) : "Free"}
+                        </span>
+                      </span>
+                      <span className="mt-1 block text-sm text-[var(--muted)]">{o.detail}</span>
+                      {!ok && (
+                        <span className="mt-1.5 block text-xs font-semibold tracking-wide text-amber-600 uppercase">
+                          {city
+                            ? `Not available in ${city}`
+                            : "Choose your city to see if this is available"}
+                        </span>
+                      )}
+                      {ok && o.link && (
+                        <a
+                          href={o.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="mt-1.5 inline-block text-xs text-[var(--primary)] underline-offset-4 hover:underline"
+                        >
+                          Who&rsquo;s delivering &rarr;
+                        </a>
+                      )}
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
+          </section>
+
+          <section className="rounded-3xl bg-[var(--surface-2)] p-5 sm:p-8">
+            <h2 className="font-display text-lg" style={{ fontWeight: 700 }}>
+              How you&rsquo;ll pay
+            </h2>
+            {canPayOnline ? (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="How you'll pay">
+                {(
+                  [
+                    {
+                      id: "online",
+                      title: "Pay online now",
+                      body: "From your bank account or JazzCash / Easypaisa wallet, on the next page, through Rapid Gateway's secure form. Your order is confirmed the moment it goes through.",
+                    },
+                    {
+                      id: "transfer",
+                      title: "Bank transfer or wallet transfer",
+                      body: "The next page gives you our account details. Transfer the amount yourself and send us the receipt on WhatsApp — we start the build once it lands.",
+                    },
+                  ] as const
+                ).map((o) => {
+                  const on = payBy === o.id
+                  return (
+                    <label
+                      key={o.id}
+                      className={`cursor-pointer rounded-2xl bg-white p-4 ${
+                        on ? "border-2 border-[var(--primary)]" : "border border-[var(--border)] hover:border-[var(--foreground)]"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="payBy"
+                        value={o.id}
+                        checked={on}
+                        onChange={() => setPayBy(o.id)}
+                        className="sr-only"
+                      />
+                      <span className="text-sm font-semibold">{o.title}</span>
+                      <span className="mt-1 block text-sm leading-relaxed text-[var(--muted)]">{o.body}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-2xl border-2 border-[var(--primary)] bg-white p-4">
+                <p className="text-sm font-semibold">Bank transfer or mobile wallet</p>
+                <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
+                  Place the order first. The next page gives you the account details and your order
+                  number, and you send the receipt to us on WhatsApp. Nothing is charged automatically,
+                  and we start the build once the transfer lands.
+                </p>
+              </div>
+            )}
+            <p className="mt-3 text-xs text-[var(--muted)]">
+              <Link href="/how-it-works" className="text-[var(--primary)] underline-offset-4 hover:underline">
+                How paying works
+              </Link>
+            </p>
+          </section>
+
+          <div className="space-y-4 rounded-3xl bg-white p-5 shadow-[var(--shadow-2)] lg:hidden">
+            <div className="flex items-center justify-between">
+              <span className="font-display" style={{ fontWeight: 700 }}>
+                Total
+              </span>
+              <span className="font-display text-xl" style={{ fontWeight: 800 }}>
+                {money(total)}
+              </span>
+            </div>
+            {submitBlock}
+          </div>
+        </div>
+
       </form>
     </Shell>
   )
@@ -799,14 +825,14 @@ export default function CheckoutView({
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto max-w-6xl px-5 pt-28 pb-24 md:pt-36">
+    <div className="mx-auto max-w-6xl px-5 pt-28 pb-16 md:pt-36 md:pb-24">
       <Link
         href="/shop"
         className="mat-btn inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-[var(--muted)] uppercase hover:text-[var(--foreground)]"
       >
         <ArrowLeft className="h-3.5 w-3.5" /> Keep shopping
       </Link>
-      <h1 className="font-display mt-4 mb-10 text-4xl tracking-tight md:text-5xl" style={{ fontWeight: 800 }}>
+      <h1 className="font-display mt-3 mb-6 text-3xl tracking-tight md:mt-4 md:mb-10 md:text-5xl" style={{ fontWeight: 800 }}>
         Checkout
       </h1>
       {children}
