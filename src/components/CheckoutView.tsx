@@ -770,8 +770,8 @@ export default function CheckoutView({
                   return (
                     <label
                       key={o.id}
-                      className={`cursor-pointer rounded-2xl bg-white p-4 ${
-                        on ? "border-2 border-[var(--primary)]" : "border border-[var(--border)] hover:border-[var(--foreground)]"
+                      className={`cursor-pointer rounded-2xl border bg-white p-4 ${
+                        on ? "border-[var(--primary)] ring-1 ring-[var(--primary)]" : "border-[var(--border)] hover:border-[var(--foreground)]"
                       }`}
                     >
                       <input
