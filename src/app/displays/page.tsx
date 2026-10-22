@@ -19,7 +19,7 @@ export default async function DisplaysPage() {
   const displays = await getDisplays()
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+    <section className="mx-auto max-w-7xl px-4 pt-10 pb-16 sm:px-6">
       <Reveal>
         <SectionHead
           title="Displays"

@@ -83,7 +83,7 @@ export default function OrderConfirmation({ payment }: { payment: PaymentDetails
 
   if (!order) {
     return (
-      <div className="mx-auto max-w-2xl px-5 pt-28 pb-24 text-center md:pt-36">
+      <div className="mx-auto max-w-2xl px-5 pt-10 pb-24 text-center md:pt-16">
         <h1 className="font-display text-3xl tracking-tight" style={{ fontWeight: 800 }}>
           Nothing to show here
         </h1>
@@ -120,7 +120,7 @@ export default function OrderConfirmation({ payment }: { payment: PaymentDetails
 
   if (online) {
     return (
-      <div className="mx-auto max-w-2xl px-5 pt-28 pb-24 md:pt-36">
+      <div className="mx-auto max-w-2xl px-5 pt-8 pb-24 md:pt-10">
         <h1 className="font-display text-4xl tracking-tight md:text-5xl" style={{ fontWeight: 800 }}>
           {online.paid
             ? `Thanks${firstName ? `, ${firstName}` : ""} — you're all set.`
@@ -189,7 +189,7 @@ export default function OrderConfirmation({ payment }: { payment: PaymentDetails
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-5 pt-28 pb-24 md:pt-36">
+    <div className="mx-auto max-w-2xl px-5 pt-8 pb-24 md:pt-10">
       <h1 className="font-display text-4xl tracking-tight md:text-5xl" style={{ fontWeight: 800 }}>
         Thanks{firstName ? `, ${firstName}` : ""} — one step left.
       </h1>

@@ -32,7 +32,7 @@ export default async function BookletPage({ params }: { params: Promise<{ id: st
   if (!guide) notFound()
 
   return (
-    <article className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <article className="mx-auto max-w-3xl px-4 pt-10 pb-12 sm:px-6">
       <nav className="mb-6 flex items-center gap-2 text-sm text-[var(--muted)]">
         <Link href="/booklets" className="hover:text-[var(--foreground)]">
           Booklets

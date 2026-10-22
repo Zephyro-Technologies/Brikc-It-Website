@@ -88,7 +88,7 @@ export default function ShopView({
   const scope = [category ? ` in ${category.name}` : "", band ? ` ${band.phrase}` : ""].join("")
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
+    <div className="mx-auto max-w-7xl px-4 pt-10 pb-14 sm:px-6">
       <SectionHead
         title="Shop"
         desc="Unassembled or assembled, with a display frame if you want one — filter by what you're after, then tap any model for details."

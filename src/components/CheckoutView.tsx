@@ -825,7 +825,7 @@ export default function CheckoutView({
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto max-w-6xl px-5 pt-28 pb-16 md:pt-36 md:pb-24">
+    <div className="mx-auto max-w-6xl px-5 pt-8 pb-16 md:pt-10 md:pb-24">
       <Link
         href="/shop"
         className="mat-btn inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-[var(--muted)] uppercase hover:text-[var(--foreground)]"
