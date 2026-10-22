@@ -5,7 +5,7 @@ import { getDeliveryOptions, getSettings } from "../../lib/shop"
 import { money } from "../../lib/money"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
-export const revalidate = 60
+export const revalidate = 86400
 
 export const metadata: Metadata = {
   title: "Shipping policy — brikc.it",

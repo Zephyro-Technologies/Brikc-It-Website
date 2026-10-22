@@ -472,19 +472,31 @@ an inline script.
 
 | Route | Mode | Why |
 | --- | --- | --- |
-| `/`, `/shop/[slug]`, `/booklets/[id]` | prerendered, `revalidate = 60` | static HTML, rebuilt on demand — and at worst a minute behind anyway |
+| `/`, `/shop/[slug]`, `/booklets/[id]` | prerendered, `revalidate = 3600` | static HTML, rebuilt on demand — and at worst an hour behind anyway; an unknown `/shop/<slug>` is a 404 |
 | `/shop` | dynamic | awaits `searchParams` so `useSearchParams()` in `ShopView` resolves server-side and the grid ships as real HTML for any `?cat=`; also why a category change needs no revalidation here |
-| `/best-sellers`, `/displays`, `/displays/[slug]`, `/booklets` | prerendered, `revalidate = 60` | all read the database; a content or catalogue save rebuilds them |
+| `/best-sellers`, `/displays`, `/displays/[slug]`, `/booklets`, `/guides` | prerendered, `revalidate = 3600` | all read the database; a content or catalogue save rebuilds them |
+| `/contact`, `/how-it-works`, `/terms`, `/refund-policy`, `/shipping-policy` | prerendered, `revalidate = 86400` | read only settings, and a settings save sweeps every page |
 | `/frames` | redirect | `redirect("/displays")`, so old links don't 404 |
 | `/checkout`, `/checkout/confirmation` | `force-dynamic` | a stale copy could quote an old total or an old bank account |
 | `/api/revalidate`, `/api/revalidate/changed` | `force-dynamic` | — |
 
-**Every prerendered page carries `revalidate = 60`, and that is a floor, not the mechanism.** A
+**Every prerendered page carries a `revalidate`, and that is a floor, not the mechanism.** A
 save still rebuilds a page in about a second through the endpoints below; the floor exists because
 without one those calls were the *only* thing that could ever change a page. One wrong
 `REVALIDATE_SECRET` and the shop served deploy-time prices indefinitely — and kept taking orders,
-because `/checkout` is dynamic and quoted the real ones, so the page and the till disagreed. Sixty
-seconds is the smallest sensible value: every regeneration is a write to the cache.
+because `/checkout` is dynamic and quoted the real ones, so the page and the till disagreed.
+
+**An hour, not a minute — the floor costs Durable Object time.** A stale page that is visited is
+rebuilt through OpenNext's `DOQueueHandler`, which stays awake for the length of the rebuild (up to
+its 10 s timeout). The free plan allows 13,000 GB-s a day — about 28 hours of one 128 MB object,
+the "101,562,500,000 duration" in Cloudflare's email. At sixty seconds, 33 pages rebuilt by
+crawlers and shoppers across OpenNext's default ten queue objects went through that in October
+2026, and Cloudflare blocked the timed rebuilds until midnight UTC (pages kept serving their last
+copy). So: an hour for catalogue pages, a day for settings-only ones, and
+`MAX_REVALIDATE_CONCURRENCY = "1"` in `wrangler.jsonc` `vars`, which puts the queue in a single
+object that cannot be awake more than 24 hours a day. Don't lower the floor or raise that number
+without a paid Workers plan. Saves are unaffected: `revalidatePath` marks pages through the D1 tag
+cache and the next visit rebuilds them directly, never through the queue.
 
 **Two endpoints, and they are not interchangeable.**
 

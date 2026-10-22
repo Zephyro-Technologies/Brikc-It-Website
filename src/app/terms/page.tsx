@@ -5,7 +5,7 @@ import { BUSINESS } from "../../content/business"
 import { getSettings } from "../../lib/shop"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
-export const revalidate = 60
+export const revalidate = 86400
 
 export const metadata: Metadata = {
   title: "Terms & conditions — brikc.it",

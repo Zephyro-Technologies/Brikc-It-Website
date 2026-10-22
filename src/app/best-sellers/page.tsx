@@ -8,7 +8,7 @@ import { money } from "../../lib/money"
 import { FORMAT_LABELS } from "../../data"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
-export const revalidate = 60
+export const revalidate = 3600
 
 export const metadata: Metadata = {
   title: "Best sellers — brikc.it",

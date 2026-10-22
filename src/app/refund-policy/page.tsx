@@ -3,7 +3,7 @@ import { ContactBand, Highlights, PolicyPage, Section, Steps } from "../../compo
 import { getSettings } from "../../lib/shop"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
-export const revalidate = 60
+export const revalidate = 86400
 
 export const metadata: Metadata = {
   title: "Refund & return policy — brikc.it",

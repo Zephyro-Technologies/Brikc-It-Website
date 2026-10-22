@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { notFound } from "next/navigation"
 import ProductDetailView from "../../../components/ProductDetailView"
 import {
   getCategories,
@@ -9,7 +10,7 @@ import {
 } from "../../../lib/shop"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
-export const revalidate = 60
+export const revalidate = 3600
 
 export async function generateStaticParams() {
   return (await getProductSlugs()).map((slug) => ({ slug }))
@@ -39,7 +40,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     getProductReviews(slug),
   ])
 
-  if (!product) return <ProductDetailView product={undefined} suggestions={[]} />
+  // A 404, not a page saying so: answered with a 200, every address a
+  // scanner or a typo made up was cached as a page of its own and rebuilt on
+  // the timer like a real one, without limit.
+  if (!product) notFound()
 
   // Every other build, not a pre-picked four: the page shuffles this in the
   // browser and takes four from it, so two visitors see different ones. Picking

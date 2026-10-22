@@ -21,11 +21,18 @@ import type { Guide, Review, StoreCategory } from "../data"
  * revalidate set at all, that call was the *only* thing that could ever change
  * this page: one wrong REVALIDATE_SECRET and the shop served deploy-time prices
  * for as long as nobody looked, while /checkout, which is dynamic, quoted the
- * real ones. Sixty seconds turns "stale until someone notices" into "stale for
- * a minute". Lower buys little, and every regeneration is a write to the
- * cache.
+ * real ones. An hour turns "stale until someone notices" into "stale for an
+ * hour at most".
+ *
+ * It was sixty seconds until October 2026. Every page that is visited after
+ * going stale is rebuilt through a Durable Object, which the free plan allows
+ * about 28 hours of awake time a day across all of them; 33 pages each rebuilt
+ * up to once a minute — by crawlers as much as shoppers — ran through that, and
+ * Cloudflare blocked rebuilds for the rest of the day. An hour is sixty times
+ * less of that, and saves still land in seconds. Pages that only read settings
+ * use a day.
  */
-export const revalidate = 60
+export const revalidate = 3600
 
 
 function BestSellers({ products }: { products: Product[] }) {

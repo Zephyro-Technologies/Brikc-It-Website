@@ -7,7 +7,7 @@ import { DISPLAY_PROMISES } from "../../content/displays"
 import { getDisplays } from "../../lib/shop"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
-export const revalidate = 60
+export const revalidate = 3600
 
 export const metadata: Metadata = {
   title: "Displays — brikc.it",

@@ -4,7 +4,7 @@ import DisplayDetailView from "../../../components/DisplayDetailView"
 import { getDisplay, getDisplays } from "../../../lib/shop"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
-export const revalidate = 60
+export const revalidate = 3600
 
 export async function generateStaticParams() {
   return (await getDisplays()).map((d) => ({ slug: d.slug }))

@@ -20,7 +20,13 @@
   // every shopper. DEPLOYMENT.md §5d is the order to turn it on in.
   "vars": {
     "RAPID_ENV": "live",
-    "RAPID_MERCHANT_ID": "1311"
+    "RAPID_MERCHANT_ID": "1311",
+    // How many Durable Objects the page-rebuild queue spreads over (OpenNext's
+    // default is 10). Each is billed for its own awake time, and the free plan
+    // allows about 28 hours a day in total; one object cannot be awake more
+    // than 24, so the queue can never be blocked for the day again. It still
+    // runs up to five rebuilds at once.
+    "MAX_REVALIDATE_CONCURRENCY": "1"
   },
 
   "observability": {
