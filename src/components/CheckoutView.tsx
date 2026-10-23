@@ -22,19 +22,40 @@ import { CONFIRMATION_KEY, PAY_TEST_KEY, type PaymentSession } from "../lib/chec
 import { CURRENCY, lineParams, track } from "../lib/pixel"
 import { OTHER_CITY, PROVINCES, citiesIn } from "../lib/pakistan"
 
+// The outline is --muted at 70%, not --border: with the label inside the field
+// the edge is all that shows where one is, and --border is 1.25:1 on white.
 const FIELD =
-  "w-full rounded-xl border border-[var(--border)] bg-white px-3.5 py-2.5 text-[var(--foreground)] outline-none " +
+  "w-full rounded-xl border border-[var(--muted)]/70 bg-white px-3.5 text-[var(--foreground)] outline-none " +
   "placeholder:text-[var(--muted)] transition-shadow focus:border-[var(--primary)] focus:ring-4 " +
   "focus:ring-[var(--primary)]/15 disabled:cursor-not-allowed disabled:bg-[var(--surface-2)] disabled:opacity-60"
 
-const LABEL = "mb-1.5 block text-xs font-semibold tracking-wide text-[var(--muted)] uppercase"
+/** Room at the top of a field for the label to sit in once it has floated. */
+const FLOATING = "h-[3.25rem] pt-5 pb-1"
 
+// Sits on the field's top edge by default; drops to the middle and reads as a
+// placeholder only while the field is empty and not focused. Written as one
+// arbitrary variant rather than peer-placeholder-shown plus peer-focus, so the
+// two never compete over which comes later in the stylesheet.
+const FLOAT_LABEL =
+  "pointer-events-none absolute top-1.5 left-3.5 right-3.5 truncate text-[11px] text-[var(--muted)] transition-all " +
+  "peer-[:placeholder-shown:not(:focus)]:top-1/2 peer-[:placeholder-shown:not(:focus)]:-translate-y-1/2 " +
+  "peer-[:placeholder-shown:not(:focus)]:text-sm"
+
+const HINT = "mt-1 px-1 text-xs text-[var(--muted)]"
+
+/**
+ * A real <label> inside the field, Shopify-style. The input always carries a
+ * placeholder — a single space when there is no example to show — because
+ * :placeholder-shown is how the label knows the field is empty; the example
+ * itself stays invisible until focus, when the label has moved out of its way.
+ */
 function Field({
   label,
   id,
   value,
   onChange,
   hint,
+  placeholder,
   ...rest
 }: {
   label: string
@@ -45,11 +66,25 @@ function Field({
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "id">) {
   return (
     <div>
-      <label htmlFor={id} className={LABEL}>
-        {label}
-      </label>
-      <input id={id} value={value} onChange={(e) => onChange(e.target.value)} className={FIELD} {...rest} />
-      {hint && <p className="mt-1 text-xs text-[var(--muted)]">{hint}</p>}
+      <div className="relative">
+        <input
+          id={id}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder ?? " "}
+          aria-describedby={hint ? `${id}-hint` : undefined}
+          className={`peer ${FIELD} ${FLOATING} placeholder:text-transparent focus:placeholder:text-[var(--muted)]`}
+          {...rest}
+        />
+        <label htmlFor={id} className={FLOAT_LABEL}>
+          {label}
+        </label>
+      </div>
+      {hint && (
+        <p id={`${id}-hint`} className={HINT}>
+          {hint}
+        </p>
+      )}
     </div>
   )
 }
@@ -75,27 +110,49 @@ function SelectField({
 }) {
   return (
     <div>
-      <label htmlFor={id} className={LABEL}>
-        {label}
-      </label>
       <div className="relative">
         <select
           id={id}
           value={value}
           disabled={disabled}
           required={required}
+          // The hint is the only thing that says why the city is disabled.
+          aria-describedby={hint ? `${id}-hint` : undefined}
           onChange={(e) => onChange(e.target.value)}
           // appearance-none drops the native arrow, so one is drawn below —
           // without it the control reads as a text box that won't accept typing.
-          className={`${FIELD} appearance-none pr-10`}
+          className={`${FIELD} ${FLOATING} appearance-none pr-10`}
         >
           {children}
         </select>
+        {/* Always floated: a select is never empty, it shows its first option. */}
+        <label htmlFor={id} className="pointer-events-none absolute top-1.5 left-3.5 text-[11px] text-[var(--muted)]">
+          {label}
+        </label>
         <ChevronDown className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
       </div>
-      {hint && <p className="mt-1 text-xs text-[var(--muted)]">{hint}</p>}
+      {hint && (
+        <p id={`${id}-hint`} className={HINT}>
+          {hint}
+        </p>
+      )}
     </div>
   )
+}
+
+/** Joined rows: one rounded box, a hairline between rows, the chosen one tinted. */
+const ROWS = "divide-y divide-[var(--border)] rounded-xl border border-[var(--muted)]/70 bg-white"
+
+function rowTint(on: boolean) {
+  // first:/last: round the row itself, so the inset outline of a chosen first
+  // or last row follows the box's corner instead of being clipped square.
+  return `px-4 py-3.5 first:rounded-t-xl last:rounded-b-xl ${
+    on ? "bg-[var(--primary)]/5 ring-1 ring-[var(--primary)] ring-inset" : ""
+  }`
+}
+
+function rowClass(on: boolean) {
+  return `flex items-start gap-3 ${rowTint(on)}`
 }
 
 export default function CheckoutView({
@@ -237,6 +294,12 @@ export default function CheckoutView({
 
   const blocked = priced.filter((l) => l.unavailable)
   const repriced = priced.filter((l) => l.changed)
+
+  // The phone's summary is the only place that says which line is unavailable
+  // or that prices moved, so it opens itself when there is something to read.
+  useEffect(() => {
+    if (blocked.length > 0 || repriced.length > 0) setSummaryOpen(true)
+  }, [blocked.length, repriced.length])
   const subtotal = priced.reduce((n, l) => (l.unavailable ? n : n + l.unitPrice * l.qty), 0)
 
   // Once per visit, when the cart — which fills in after mount — first has
@@ -269,6 +332,11 @@ export default function CheckoutView({
   const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null)
   const [couponError, setCouponError] = useState<string | null>(null)
   const [checkingCoupon, setCheckingCoupon] = useState(false)
+  // The code field stays behind an "Add discount" button until asked for —
+  // most shoppers have no code, and an empty box reads as a missed saving.
+  const [couponOpen, setCouponOpen] = useState(false)
+  // The phone's summary bar starts shut; the total is on it either way.
+  const [summaryOpen, setSummaryOpen] = useState(false)
 
   // Shown, but never the last word: place_order works the discount out again
   // from the same function, so this is a preview of that number and not a
@@ -443,9 +511,142 @@ export default function CheckoutView({
     )
   }
 
-  // Below the summary on a wide screen; on a phone the summary moves to the
-  // top of the page, so this goes at the bottom, after the last thing filled
-  // in, with the total beside it.
+  const itemCount = priced.reduce((n, l) => n + l.qty, 0)
+
+  const itemList = (
+    <ul className="space-y-3">
+      {priced.map((l) => (
+        <li key={l.key} className="flex items-center gap-3">
+          <div className="relative h-14 w-14 shrink-0">
+            <div className="h-full w-full overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-2)]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={l.image}
+                alt={l.name}
+                loading="lazy"
+                style={{ backgroundColor: "#eceae7" }}
+                className="h-full w-full object-cover"
+              />
+            </div>
+            {l.qty > 1 && (
+              <span className="absolute -top-1.5 -right-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-[var(--foreground)] px-1 text-[11px] font-semibold text-white">
+                {l.qty}
+              </span>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold">{l.name}</p>
+            <p className="text-xs text-[var(--muted)]">
+              {lineLabel(l)} × {l.qty}
+            </p>
+            {l.unavailable && <p className="mt-0.5 text-xs text-amber-700">This one is {l.unavailable}.</p>}
+          </div>
+          <span className={`shrink-0 text-sm font-semibold ${l.unavailable ? "text-[var(--muted)] line-through" : ""}`}>
+            {money(l.unitPrice * l.qty)}
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
+
+  const repricedNote = repriced.length > 0 && (
+    <p className="rounded-xl bg-[var(--surface-2)] p-3 text-xs text-[var(--muted)]">
+      Prices have changed since you added {repriced.length === 1 ? "that build" : "those builds"}. The figures
+      above are current.
+    </p>
+  )
+
+  // It sits inside the checkout form, so Enter in the code field would place
+  // the order — applyCoupon cancels that, because Enter here should price a
+  // code. Rendered in both the phone and the wide layout; only one is shown.
+  const couponBlock = (
+    <div>
+      {coupon ? (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/5 px-3 py-2.5">
+          <span className="inline-flex min-w-0 items-center gap-2 text-sm">
+            <Tag className="h-4 w-4 shrink-0 text-[var(--primary)]" />
+            <span className="truncate font-semibold">{coupon.code}</span>
+          </span>
+          <span className="ml-auto shrink-0 text-sm font-semibold text-[var(--primary)]">−{money(discount)}</span>
+          <button
+            type="button"
+            onClick={dropCoupon}
+            aria-label={`Remove code ${coupon.code}`}
+            className="mat-btn grid h-6 w-6 shrink-0 place-items-center rounded-full hover:bg-[var(--primary)]/15"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : couponOpen ? (
+        <div className="flex gap-2">
+          <input
+            value={couponInput}
+            onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") applyCoupon(e)
+            }}
+            placeholder="Discount code"
+            aria-label="Discount code"
+            autoComplete="off"
+            spellCheck={false}
+            maxLength={24}
+            // Opened by a tap on "Add discount", so the next thing is typing.
+            autoFocus
+            // min-w-0 so it gives way to Apply below 300px; 16px on a phone,
+            // because iOS zooms into a focused field set smaller than that.
+            className={`${FIELD} h-11 min-w-0 font-mono text-base uppercase sm:text-sm`}
+          />
+          <button
+            type="button"
+            onClick={applyCoupon}
+            disabled={!couponInput.trim() || checkingCoupon}
+            className="mat-btn shrink-0 rounded-xl border border-[var(--border)] bg-white px-4 text-sm font-semibold hover:bg-[var(--surface-2)] disabled:opacity-50"
+          >
+            {checkingCoupon ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setCouponOpen(true)}
+          className="mat-btn inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold hover:bg-[var(--surface-2)]"
+        >
+          <Tag className="h-4 w-4 text-[var(--muted)]" /> Add discount
+        </button>
+      )}
+      {couponError && <p role="alert" className="mt-2 text-xs text-[var(--primary-deep)]">{couponError}</p>}
+    </div>
+  )
+
+  const totals = (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-3 text-sm text-[var(--muted)]">
+        <span>Subtotal · {itemCount === 1 ? "1 item" : `${itemCount} items`}</span>
+        <span className="shrink-0 text-[var(--foreground)]">{money(subtotal)}</span>
+      </div>
+      {discount > 0 && (
+        <div className="flex items-center justify-between gap-3 text-sm">
+          <span className="min-w-0 truncate text-[var(--muted)]">Discount · {coupon?.code}</span>
+          <span className="shrink-0 font-semibold text-[var(--primary)]">−{money(discount)}</span>
+        </div>
+      )}
+      <div className="flex items-center justify-between gap-3 text-sm text-[var(--muted)]">
+        <span className="min-w-0 truncate">{chosen?.label ?? "Delivery"}</span>
+        <span className="shrink-0 text-[var(--foreground)]">{shipping > 0 ? money(shipping) : "Free"}</span>
+      </div>
+      <div className="flex items-center justify-between pt-1">
+        <span className="font-display" style={{ fontWeight: 700 }}>
+          Total
+        </span>
+        <span className="font-display text-xl" style={{ fontWeight: 800 }}>
+          {money(total)}
+        </span>
+      </div>
+    </div>
+  )
+
+  // Below the summary on a wide screen; on a phone it goes at the bottom of
+  // the form, after the last thing filled in, with the total beside it.
   const submitBlock = (
     <>
       {blocked.length > 0 && (
@@ -456,7 +657,7 @@ export default function CheckoutView({
       )}
 
       {error && (
-        <p className="rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/10 p-3 text-sm text-[var(--primary-deep)]">
+        <p role="alert" className="rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/10 p-3 text-sm text-[var(--primary-deep)]">
           {error}
         </p>
       )}
@@ -464,7 +665,7 @@ export default function CheckoutView({
       <button
         type="submit"
         disabled={busy || blocked.length > 0}
-        className="mat-btn flex w-full items-center justify-center gap-2 rounded-full bg-[var(--primary)] py-3.5 font-display text-white shadow-[var(--shadow-1)] hover:shadow-[var(--shadow-2)] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-[var(--shadow-1)] disabled:hover:brightness-100"
+        className="mat-btn flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-4 font-display text-white shadow-[var(--shadow-1)] hover:shadow-[var(--shadow-2)] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-[var(--shadow-1)] disabled:hover:brightness-100"
         style={{ fontWeight: 700 }}
       >
         {busy && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -478,6 +679,8 @@ export default function CheckoutView({
     </>
   )
 
+  const heading = "font-display text-lg"
+
   return (
     <Shell>
       {/* [&>*]:min-w-0 again: the province <select> has a min-content of 248px,
@@ -486,152 +689,59 @@ export default function CheckoutView({
           wider than the form at 300px and the page scrolled sideways. */}
       <form
         onSubmit={submit}
-        className="grid gap-5 sm:gap-8 lg:grid-cols-[1fr_22rem] lg:items-start lg:gap-10 [&>*]:min-w-0"
+        className="grid gap-6 lg:grid-cols-[1fr_24rem] lg:items-start lg:gap-12 [&>*]:min-w-0"
       >
-        {/* First in the page, so on a phone what is being bought and what it
-            comes to are read — and tabbed through — before the form rather
-            than after it. On a wide screen the grid puts it back on the
-            right. */}
-        <aside className="space-y-4 rounded-3xl bg-white p-5 shadow-[var(--shadow-2)] sm:p-6 lg:sticky lg:top-28 lg:col-start-2 lg:row-start-1">
-          <h2 className="font-display text-lg" style={{ fontWeight: 700 }}>
-            Your order
-          </h2>
-
-          <ul className="space-y-3">
-            {priced.map((l) => (
-              <li key={l.key} className="flex gap-3">
-                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[var(--surface-2)]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={l.image}
-                    alt={l.name}
-                    loading="lazy"
-                    style={{ backgroundColor: "#eceae7" }}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{l.name}</p>
-                  <p className="text-xs font-semibold tracking-wide text-[var(--primary)] uppercase">
-                    {lineLabel(l)} × {l.qty}
-                  </p>
-                  {l.unavailable && (
-                    <p className="mt-1 text-xs text-amber-600">This one is {l.unavailable}.</p>
-                  )}
-                </div>
-                <span className={`font-display text-sm font-bold ${l.unavailable ? "text-[var(--muted)] line-through" : ""}`}>
-                  {money(l.unitPrice * l.qty)}
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          {repriced.length > 0 && (
-            <p className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-3 text-xs text-[var(--muted)]">
-              Prices have changed since you added {repriced.length === 1 ? "that build" : "those builds"}
-              . The figures above are current.
-            </p>
-          )}
-
-          {/* Above the totals, because it changes them. It sits inside the
-              checkout form, so Enter here would place the order — applyCoupon
-              cancels that, because Enter here should price a code. */}
-          <div className="border-t border-[var(--border)] pt-4">
-            {coupon ? (
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/5 px-3 py-2.5">
-                <span className="inline-flex min-w-0 items-center gap-2 text-sm">
-                  <Tag className="h-4 w-4 shrink-0 text-[var(--primary)]" />
-                  <span className="truncate font-semibold">{coupon.code}</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={dropCoupon}
-                  aria-label={`Remove code ${coupon.code}`}
-                  className="mat-btn grid h-6 w-6 shrink-0 place-items-center rounded-full hover:bg-[var(--primary)]/15"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  value={couponInput}
-                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") applyCoupon(e)
-                  }}
-                  placeholder="Discount code"
-                  aria-label="Discount code"
-                  autoComplete="off"
-                  spellCheck={false}
-                  maxLength={24}
-                  className={`${FIELD} font-mono text-sm uppercase`}
-                />
-                <button
-                  type="button"
-                  onClick={applyCoupon}
-                  disabled={!couponInput.trim() || checkingCoupon}
-                  className="mat-btn shrink-0 rounded-xl border border-[var(--border)] px-4 text-sm font-semibold hover:bg-[var(--surface-2)] disabled:opacity-50"
-                >
-                  {checkingCoupon ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
-                </button>
-              </div>
-            )}
-            {couponError && (
-              <p className="mt-2 text-xs text-[var(--primary-deep)]">{couponError}</p>
-            )}
+        {/* A phone gets the summary as one bar across the top: what it comes
+            to is read first, the items are a tap away, and the form starts
+            right under it instead of under a screenful of thumbnails. */}
+        <div className="-mx-5 border-y border-[var(--border)] bg-[var(--surface-2)] lg:hidden">
+          <button
+            type="button"
+            onClick={() => setSummaryOpen((o) => !o)}
+            aria-expanded={summaryOpen}
+            aria-controls="order-summary"
+            className="mat-btn flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
+          >
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--primary)]">
+              {summaryOpen ? "Hide order summary" : "Order summary"}
+              <ChevronDown className={`h-4 w-4 transition-transform ${summaryOpen ? "rotate-180" : ""}`} />
+            </span>
+            <span className="font-display text-lg" style={{ fontWeight: 800 }}>
+              {money(total)}
+            </span>
+          </button>
+          {/* Hidden rather than unmounted, so aria-controls always has a target. */}
+          <div id="order-summary" hidden={!summaryOpen} className="space-y-4 border-t border-[var(--border)] px-5 pt-4 pb-5">
+            {itemList}
+            {repricedNote}
+            <div className="border-t border-[var(--border)] pt-4">{totals}</div>
           </div>
+        </div>
 
-          <div className="space-y-2 border-t border-[var(--border)] pt-4">
-            {discount > 0 && (
-              <>
-                <div className="flex items-center justify-between gap-3 text-sm text-[var(--muted)]">
-                  <span>Subtotal</span>
-                  <span className="shrink-0 text-[var(--foreground)]">{money(subtotal)}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="min-w-0 truncate text-[var(--muted)]">
-                    Discount · {coupon?.code}
-                  </span>
-                  <span className="shrink-0 font-semibold text-[var(--primary)]">
-                    −{money(discount)}
-                  </span>
-                </div>
-              </>
-            )}
-            <div className="flex items-center justify-between gap-3 text-sm text-[var(--muted)]">
-              <span className="min-w-0 truncate">{chosen?.label ?? "Delivery"}</span>
-              <span className="shrink-0 text-[var(--foreground)]">{shipping > 0 ? money(shipping) : "Free"}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="font-display" style={{ fontWeight: 700 }}>
-                Total
-              </span>
-              <span className="font-display text-xl" style={{ fontWeight: 800 }}>
-                {money(total)}
-              </span>
-            </div>
-          </div>
-
-          <div className="hidden space-y-4 lg:block">{submitBlock}</div>
-        </aside>
-
-        <div className="space-y-5 sm:space-y-8 lg:col-start-1 lg:row-start-1">
-          <section className="rounded-3xl bg-white p-5 shadow-[var(--shadow-1)] sm:p-8">
-            <h2 className="font-display text-lg" style={{ fontWeight: 700 }}>
-              Where it&rsquo;s going
+        <div className="space-y-8 lg:col-start-1 lg:row-start-1">
+          <section>
+            <h2 className={heading} style={{ fontWeight: 700 }}>
+              Contact
             </h2>
-            <div className="mt-5 grid gap-4 sm:mt-6 sm:grid-cols-2">
-              <Field label="Full name" id="name" value={form.name} onChange={set("name")} required autoComplete="name" maxLength={120} />
-              <Field label="Phone" id="phone" value={form.phone} onChange={set("phone")} required autoComplete="tel" placeholder="03001234567" maxLength={40} />
+            <div className="mt-3 grid gap-3">
+              <Field label="Email" id="email" type="email" value={form.email} onChange={set("email")} required autoComplete="email" maxLength={200} hint="So we have your order on record and can reach you about it." />
+              <Field label="Phone" id="phone" type="tel" value={form.phone} onChange={set("phone")} required autoComplete="tel" placeholder="03001234567" maxLength={40} />
+            </div>
+          </section>
+
+          <section>
+            <h2 className={heading} style={{ fontWeight: 700 }}>
+              Delivery
+            </h2>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <Field label="Email" id="email" type="email" value={form.email} onChange={set("email")} required autoComplete="email" maxLength={200} hint="So we have your order on record and can reach you about it." />
+                <Field label="Full name" id="name" value={form.name} onChange={set("name")} required autoComplete="name" maxLength={120} />
               </div>
               <div className="sm:col-span-2">
                 <Field label="Address" id="line1" value={form.line1} onChange={set("line1")} required autoComplete="address-line1" maxLength={200} />
               </div>
               <div className="sm:col-span-2">
-                <Field label="Apartment, suite, landmark" id="line2" value={form.line2} onChange={set("line2")} autoComplete="address-line2" maxLength={200} hint="Optional." />
+                <Field label="Apartment, landmark (optional)" id="line2" value={form.line2} onChange={set("line2")} autoComplete="address-line2" maxLength={200} />
               </div>
               <SelectField
                 label="Province"
@@ -678,139 +788,154 @@ export default function CheckoutView({
                     onChange={set("cityOther")}
                     required
                     maxLength={80}
-                    hint="We&rsquo;ll check the courier reaches it before dispatch."
+                    hint="We’ll check the courier reaches it before dispatch."
                   />
                 </div>
               )}
 
-              <Field label="Postcode" id="postcode" value={form.postcode} onChange={set("postcode")} autoComplete="postal-code" maxLength={20} />
+              <Field label="Postcode (optional)" id="postcode" value={form.postcode} onChange={set("postcode")} autoComplete="postal-code" maxLength={20} />
             </div>
           </section>
 
-          <section className="rounded-3xl bg-white p-5 shadow-[var(--shadow-1)] sm:p-8">
-            <h2 className="font-display text-lg" style={{ fontWeight: 700 }}>
-              How it gets to you
+          <section>
+            <h2 id="shipping-heading" className={heading} style={{ fontWeight: 700 }}>
+              Shipping method
             </h2>
-            <div className="mt-5 space-y-3 sm:mt-6">
+            <div className={`mt-3 ${ROWS}`} role="radiogroup" aria-labelledby="shipping-heading">
               {delivery.map((o) => {
                 const ok = cityQualifies(o, city)
                 const on = chosen?.id === o.id
+                // The link sits outside the <label>, so it is not read as part
+                // of the option's name and a tap on it doesn't pick the row.
                 return (
-                  <label
-                    key={o.id}
-                    className={`mat-btn flex items-start gap-3 rounded-2xl border p-4 ${
-                      on ? "border-[var(--primary)] bg-[var(--primary)]/5" : "border-[var(--border)] bg-white"
-                    } ${ok ? "cursor-pointer hover:border-[var(--foreground)]/25" : "cursor-not-allowed opacity-50"}`}
-                  >
-                    <input
-                      type="radio"
-                      name="delivery"
-                      value={o.id}
-                      checked={on}
-                      disabled={!ok}
-                      onChange={() => setMethod(o.id)}
-                      className="mt-1 h-4 w-4 shrink-0 accent-[var(--primary)]"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="flex flex-wrap items-baseline justify-between gap-x-3">
-                        <span className="font-display" style={{ fontWeight: 700 }}>
-                          {o.label}
+                  <div key={o.id} className={rowTint(on)}>
+                    <label className={`flex items-start gap-3 ${ok ? "cursor-pointer" : "cursor-not-allowed"}`}>
+                      <input
+                        type="radio"
+                        name="delivery"
+                        value={o.id}
+                        checked={on}
+                        disabled={!ok}
+                        onChange={() => setMethod(o.id)}
+                        className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--primary)]"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className={`flex items-baseline justify-between gap-3 ${ok ? "" : "opacity-50"}`}>
+                          <span className="text-sm font-semibold">{o.label}</span>
+                          <span className="shrink-0 text-sm font-semibold">{o.fee > 0 ? money(o.fee) : "Free"}</span>
                         </span>
-                        <span className="font-display" style={{ fontWeight: 700 }}>
-                          {o.fee > 0 ? money(o.fee) : "Free"}
-                        </span>
+                        {/* The long explanation only under the chosen row: the
+                            others are read by their name and price alone. */}
+                        {on && <span className="mt-1 block text-xs leading-relaxed text-[var(--muted)]">{o.detail}</span>}
+                        {!ok && (
+                          <span className="mt-1 block text-xs text-amber-700">
+                            {city ? `Not available in ${city}` : "Choose your city to see if this is available"}
+                          </span>
+                        )}
                       </span>
-                      <span className="mt-1 block text-sm text-[var(--muted)]">{o.detail}</span>
-                      {!ok && (
-                        <span className="mt-1.5 block text-xs font-semibold tracking-wide text-amber-600 uppercase">
-                          {city
-                            ? `Not available in ${city}`
-                            : "Choose your city to see if this is available"}
-                        </span>
-                      )}
-                      {ok && o.link && (
-                        <a
-                          href={o.link}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="mt-1.5 inline-block text-xs text-[var(--primary)] underline-offset-4 hover:underline"
-                        >
-                          Who&rsquo;s delivering &rarr;
-                        </a>
-                      )}
-                    </span>
-                  </label>
+                    </label>
+                    {/* On every row it applies to, chosen or not, so who does the
+                        delivering can be checked before picking it. ml-7 lines it
+                        up with the title: the radio's 16px plus the 12px gap. */}
+                    {ok && o.link && (
+                      <a
+                        href={o.link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-1 ml-7 inline-block text-xs text-[var(--primary)] underline-offset-4 hover:underline"
+                      >
+                        Who&rsquo;s delivering &rarr;
+                      </a>
+                    )}
+                  </div>
                 )
               })}
             </div>
           </section>
 
-          <section className="rounded-3xl bg-[var(--surface-2)] p-5 sm:p-8">
-            <h2 className="font-display text-lg" style={{ fontWeight: 700 }}>
-              How you&rsquo;ll pay
+          <section>
+            <h2 id="payment-heading" className={heading} style={{ fontWeight: 700 }}>
+              Payment
             </h2>
             {canPayOnline ? (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="How you'll pay">
+              <div className={`mt-3 ${ROWS}`} role="radiogroup" aria-labelledby="payment-heading">
                 {(
                   [
                     {
                       id: "online",
-                      title: "Pay online now",
+                      title: "Pay online",
                       body: "From your bank account or JazzCash / Easypaisa wallet, on the next page, through Rapid Gateway's secure form. Your order is confirmed the moment it goes through.",
                     },
                     {
                       id: "transfer",
-                      title: "Bank transfer or wallet transfer",
+                      title: "Bank or wallet transfer",
                       body: "The next page gives you our account details. Transfer the amount yourself and send us the receipt on WhatsApp — we start the build once it lands.",
                     },
                   ] as const
                 ).map((o) => {
                   const on = payBy === o.id
                   return (
-                    <label
-                      key={o.id}
-                      className={`cursor-pointer rounded-2xl border bg-white p-4 ${
-                        on ? "border-[var(--primary)] ring-1 ring-[var(--primary)]" : "border-[var(--border)] hover:border-[var(--foreground)]"
-                      }`}
-                    >
+                    <label key={o.id} className={`${rowClass(on)} cursor-pointer`}>
                       <input
                         type="radio"
                         name="payBy"
                         value={o.id}
                         checked={on}
                         onChange={() => setPayBy(o.id)}
-                        className="sr-only"
+                        className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--primary)]"
                       />
-                      <span className="text-sm font-semibold">{o.title}</span>
-                      <span className="mt-1 block text-sm leading-relaxed text-[var(--muted)]">{o.body}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-semibold">{o.title}</span>
+                        {on && <span className="mt-1 block text-xs leading-relaxed text-[var(--muted)]">{o.body}</span>}
+                      </span>
                     </label>
                   )
                 })}
               </div>
             ) : (
-              <div className="mt-4 rounded-2xl border-2 border-[var(--primary)] bg-white p-4">
-                <p className="text-sm font-semibold">Bank transfer or mobile wallet</p>
-                <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
-                  Place the order first. The next page gives you the account details and your order
-                  number, and you send the receipt to us on WhatsApp. Nothing is charged automatically,
-                  and we start the build once the transfer lands.
-                </p>
+              // One way to pay, so a row with nothing to choose and no radio.
+              <div className={`mt-3 ${ROWS}`}>
+                <div className={rowClass(true)}>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold">Bank or wallet transfer</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-[var(--muted)]">
+                      Place the order first. The next page gives you the account details and your order
+                      number, and you send the receipt to us on WhatsApp. Nothing is charged automatically,
+                      and we start the build once the transfer lands.
+                    </span>
+                  </span>
+                </div>
               </div>
             )}
-            <p className="mt-3 text-xs text-[var(--muted)]">
+            <p className="mt-2 text-xs text-[var(--muted)]">
               <Link href="/how-it-works" className="text-[var(--primary)] underline-offset-4 hover:underline">
                 How paying works
               </Link>
             </p>
           </section>
 
-          <div className="space-y-4 rounded-3xl bg-white p-5 shadow-[var(--shadow-2)] lg:hidden">
-            <div className="flex items-center justify-between">
-              <span className="font-display" style={{ fontWeight: 700 }}>
-                Total
+          {/* The phone's end of the page: the code, what it all comes to, and
+              the button. On a wide screen these live in the summary instead. */}
+          <div className="space-y-4 border-t border-[var(--border)] pt-6 lg:hidden">
+            {couponBlock}
+            <div className="flex items-center gap-3">
+              {priced[0] && (
+                <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface-2)]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={priced[0].image} alt="" loading="lazy" className="h-full w-full object-cover" />
+                </div>
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="block font-display" style={{ fontWeight: 700 }}>
+                  Total
+                </span>
+                <span className="block text-xs text-[var(--muted)]">
+                  {itemCount === 1 ? "1 item" : `${itemCount} items`}
+                  {discount > 0 && ` · ${money(discount)} off`}
+                  {` · ${shipping > 0 ? `${money(shipping)} delivery` : "free delivery"}`}
+                </span>
               </span>
-              <span className="font-display text-xl" style={{ fontWeight: 800 }}>
+              <span className="shrink-0 font-display text-xl" style={{ fontWeight: 800 }}>
                 {money(total)}
               </span>
             </div>
@@ -818,6 +943,20 @@ export default function CheckoutView({
           </div>
         </div>
 
+        {/* A wide screen keeps the summary beside the form, always open and
+            in view while scrolling, with the button at its foot. */}
+        <aside className="hidden space-y-5 rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] p-6 lg:sticky lg:top-28 lg:col-start-2 lg:row-start-1 lg:block">
+          <h2 className={heading} style={{ fontWeight: 700 }}>
+            Order summary
+          </h2>
+          {/* Capped so a long cart can't push the button below a laptop's
+              fold while the aside is pinned; pt-2 leaves room for the qty badge. */}
+          <div className="max-h-[max(8rem,calc(100dvh_-_30rem))] overflow-y-auto pt-2 pr-1">{itemList}</div>
+          {repricedNote}
+          {couponBlock}
+          <div className="border-t border-[var(--border)] pt-4">{totals}</div>
+          <div className="space-y-3">{submitBlock}</div>
+        </aside>
       </form>
     </Shell>
   )
@@ -825,14 +964,15 @@ export default function CheckoutView({
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto max-w-6xl px-5 pt-8 pb-16 md:pt-10 md:pb-24">
+    <div className="mx-auto max-w-6xl px-5 pt-5 pb-16 md:pt-10 md:pb-24">
       <Link
         href="/shop"
         className="mat-btn inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-[var(--muted)] uppercase hover:text-[var(--foreground)]"
       >
         <ArrowLeft className="h-3.5 w-3.5" /> Keep shopping
       </Link>
-      <h1 className="font-display mt-3 mb-6 text-3xl tracking-tight md:mt-4 md:mb-10 md:text-5xl" style={{ fontWeight: 800 }}>
+      {/* Small on a phone, so the summary bar under it is in the first screen. */}
+      <h1 className="font-display mt-2 mb-4 text-2xl tracking-tight md:mt-4 md:mb-10 md:text-5xl" style={{ fontWeight: 800 }}>
         Checkout
       </h1>
       {children}
