@@ -26,6 +26,8 @@ export const ON_DARK_MUTED = "#a19ea2"
 export const SHADOW = "0 1px 2px rgba(28,27,31,0.06),0 1px 3px rgba(28,27,31,0.08)"
 export const SANS = "Roboto, Helvetica, Arial, sans-serif"
 export const SLAB = "'Roboto Slab', Georgia, 'Times New Roman', serif"
+/** For a tracking number: every character distinct, so an O is never read as a 0. */
+export const MONO = "ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace"
 
 export const SITE = "https://brikc.it"
 /** Cut by scripts/brand-assets.py. PNG, because Outlook on Windows can't show WebP. */

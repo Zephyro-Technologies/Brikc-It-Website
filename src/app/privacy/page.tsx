@@ -16,7 +16,7 @@ export const metadata: Metadata = {
  * this page changes in the same commit.
  */
 
-const UPDATED = "16 October 2026"
+const UPDATED = "30 October 2026"
 
 const link = policyLink
 
@@ -27,13 +27,16 @@ export default function PrivacyPage() {
         <p>
           You give us your name, email, phone number and delivery address. We use them to run your order: to email
           you the order and payment details, take or match your payment, confirm the order, and deliver it. If you pay
-          online we email you a receipt once the payment is confirmed. Once your order has been delivered we email you
-          to ask for a review, and once more two days later if you haven&rsquo;t written one. Those are the only
-          emails we send.
+          online we email you a receipt once the payment is confirmed; if you&rsquo;ve already paid us when we take
+          your order down for you, we email you a receipt instead of the payment details. When your order ships we
+          email you the courier&rsquo;s name and the tracking number, or, if we&rsquo;re bringing it by hand, that
+          it&rsquo;s on its way. Once your order has been delivered we email you to ask for a review, and once more
+          two days later if you haven&rsquo;t written one. Those are the only emails we send.
         </p>
         <p>
           Orders are stored on Supabase, our database provider. Our emails are sent through Brevo, our email provider,
-          and a copy of each new order&rsquo;s details goes to the shop&rsquo;s owners by email. Whoever delivers your
+          and a copy of each new order&rsquo;s details goes to the shop&rsquo;s owners by email, unless you&rsquo;d
+          already paid when we took it down for you. Whoever delivers your
           order gets your name, phone number and address.
         </p>
         <p>

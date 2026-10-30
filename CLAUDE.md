@@ -302,13 +302,14 @@ copy says "bank account or mobile wallet" and nothing else.
 The placed order reaches `/checkout/confirmation` through `sessionStorage` under
 `CONFIRMATION_KEY`, not the URL — an order reference in a shareable link invites enumeration.
 
-**An order sends its own emails, and the database says when.** Four kinds, each at most once per
+**An order sends its own emails, and the database says when.** Five kinds, each at most once per
 order, recorded in `order_emails` (admin repo, `20261009120000_orders_send_their_own_emails.sql`):
 
 | Kind | When | What goes |
 | --- | --- | --- |
 | `placed` | the order's first status event | payment details to the customer, then a new-order alert to the owners |
-| `paid` | Rapid Gateway confirming a payment (`settle_payment`) | a receipt to the customer and a "Paid online" alert to the owners |
+| `paid` | Rapid Gateway confirming a payment (`settle_payment`), or a manual order entered as already paid | online: a receipt to the customer and a "Paid online" alert to the owners. Entered paid: a receipt to the customer, nothing to the owners, and no `placed` |
+| `shipped` | the first move into shipped | the courier and tracking number to the customer, or for hand delivery that TEAM HQ is bringing it; nothing to the owners |
 | `review` | the first move into delivered | a request to review each model in the order |
 | `review_reminder` | two days later, hourly `pg_cron` job | the same, once more, if no review has come in and it is still delivered |
 
@@ -329,17 +330,39 @@ order, recorded in `order_emails` (admin repo, `20261009120000_orders_send_their
   public. A reply to the alert goes to the customer.
 - **A manual order backdated by more than a day gets no payment email** — that is the operator writing
   up an order taken earlier, usually one already paid. The owners still hear about it.
+- **A manual order can be entered as already paid.** The admin's form asks Pending or Already paid;
+  paid, `createOrder` moves the order into paid before writing its first status event, so stock, the
+  coupon and Meta move exactly as when an owner marks one paid. When that first event lands on an
+  order already paid, `private.email_new_order()` sends `paid` instead of `placed`, with
+  `enteredPaid: true` and an empty `alertTo` — the customer gets a receipt
+  (`src/lib/manual-receipt-email.ts`: what they ordered, where it is going, no bank details, and never
+  the word "online", since nothing on the site took the money), and the owners get nothing, because
+  one of them typed it in. `order-notifications.ts` doesn't send the owners' alert for it even if
+  `alertTo` were filled, since that alert says "paid online". The backdating rule holds for the
+  receipt too: written up more than a day late, nothing goes, and the order says so in a note. The
+  online receipt (`paid-email.ts`) is untouched. Schema: `20261030160000_a_manual_order_can_arrive_paid.sql`
+  in the admin. **Ship the storefront first**: a storefront that doesn't read `enteredPaid` would draw
+  this receipt as the online one, "Rapid Gateway has confirmed your payment", which it wasn't.
 - **Only models are asked about**, because only a model's page has a review form, and only lines on
   the order itself, because `submit_review` checks `order_lines`. The button goes to
   `/shop/<slug>#review`, which opens the form (`ProductReviews.tsx`). Nothing about the customer goes
   in the link: the page address reaches Meta with every page view. Any review on the order, published
   or not, stops the reminder; nothing older than a week is reminded.
+- **A courier order cannot be shipped without its tracking.** The database refuses the move into
+  `shipped` unless `tracking_courier` and `tracking_number` are both filled, and refuses clearing them
+  while the order is shipped (errcode `22023`, naming the order); the admin asks for both before it
+  tries. Hand delivery needs neither. Orders shipped before the rule keep whatever they had. The
+  payload carries `tracking: { courier, number }` for every kind, and `readOrderEvent()` reads a
+  payload without it as empty, so the storefront can ship before the migration. The courier is
+  free text, so the email names it and prints the number (`src/lib/shipped-email.ts`) and links to
+  nothing: there is no one tracking page that would be right. It promises no arrival date,
+  because nothing on the order knows one.
 - **At most once.** Nothing retries: a second payment email is worse than a missing one, and the
   confirmation page has already shown the same details.
 - **The payment email says what the page says.** `src/lib/payment-email.ts` repeats
   `OrderConfirmation.tsx` sentence for sentence, and both list accounts from `paymentAccounts()`
   in `src/lib/checkout.ts` — change the copy in both, and an account added there reaches both.
-  All four emails are drawn in `src/lib/email-layout.ts`, HTML built here rather than as Brevo
+  Every email is drawn in `src/lib/email-layout.ts`, HTML built here rather than as Brevo
   templates, because a second copy of the bank details in another dashboard is one nobody would
   update. Everything interpolated goes through `esc()`.
 - `BREVO_API_KEY` is a Worker secret and optional; unset, every email reports it was not sent. Keep it

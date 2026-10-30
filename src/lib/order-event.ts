@@ -8,7 +8,7 @@ import { FORMAT_LABELS, FRAME_LABELS } from "../data"
  * the publishable key and cannot read an order back.
  */
 
-export type OrderEmailKind = "placed" | "paid" | "review" | "review_reminder"
+export type OrderEmailKind = "placed" | "paid" | "shipped" | "review" | "review_reminder"
 
 export type OrderEventLine = {
   name: string
@@ -30,11 +30,29 @@ export type OrderEvent = {
   placedAt: string
   /** Whether the customer is sent the payment details. The database decides. */
   paymentEmail: boolean
-  /** Who hears about a new order: comma-separated, from Vault. Empty except for "placed". */
+  /**
+   * A manual order an owner entered as already paid, and this "paid" event is
+   * its receipt: no Rapid Gateway, no owners' alert, and copy that never says
+   * online (manual-receipt-email.ts). Added by
+   * `20261030160000_a_manual_order_can_arrive_paid.sql`; a payload without it
+   * is an online receipt, which is every "paid" event before that migration.
+   */
+  enteredPaid: boolean
+  /**
+   * Who hears about a new order: comma-separated, from Vault. Empty except for
+   * "placed" and an online "paid"; empty for a receipt that is `enteredPaid`.
+   */
   alertTo: string
   customer: { name: string; email: string; phone: string }
   address: { line1: string; line2: string; city: string; province: string; postcode: string }
   method: ShippingMethod
+  /**
+   * Who is carrying a courier order and the number they track it by, as the
+   * owner typed them when marking it shipped. The database refuses that move
+   * without both, so a "shipped" event for a courier order carries them; empty
+   * for hand delivery, and for a payload from before the database sent them.
+   */
+  tracking: { courier: string; number: string }
   subtotal: number
   shipping: number
   discount: number
@@ -45,7 +63,7 @@ export type OrderEvent = {
   builds: { name: string; slug: string }[]
 }
 
-const KINDS: OrderEmailKind[] = ["placed", "paid", "review", "review_reminder"]
+const KINDS: OrderEmailKind[] = ["placed", "paid", "shipped", "review", "review_reminder"]
 
 const str = (v: unknown) => (typeof v === "string" ? v : "")
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0)
@@ -60,6 +78,7 @@ export function readOrderEvent(body: unknown): OrderEvent | null {
 
   const customer = obj(b.customer)
   const address = obj(b.address)
+  const tracking = obj(b.tracking)
 
   return {
     kind,
@@ -68,6 +87,7 @@ export function readOrderEvent(body: unknown): OrderEvent | null {
     paymentMethod: b.paymentMethod === "online" ? "online" : "transfer",
     placedAt: str(b.placedAt),
     paymentEmail: b.paymentEmail === true,
+    enteredPaid: b.enteredPaid === true,
     alertTo: str(b.alertTo),
     customer: { name: str(customer.name).trim(), email: str(customer.email).trim(), phone: str(customer.phone).trim() },
     address: {
@@ -78,6 +98,7 @@ export function readOrderEvent(body: unknown): OrderEvent | null {
       postcode: str(address.postcode),
     },
     method: b.method === "teamhq" ? "teamhq" : "standard",
+    tracking: { courier: str(tracking.courier).trim(), number: str(tracking.number).trim() },
     subtotal: num(b.subtotal),
     shipping: num(b.shipping),
     discount: num(b.discount),

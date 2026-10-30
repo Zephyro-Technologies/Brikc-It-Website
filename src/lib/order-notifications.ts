@@ -1,21 +1,32 @@
 import { money } from "./money"
 import { describe, sendEmail, type Outcome } from "./brevo"
+import { manualReceiptEmail } from "./manual-receipt-email"
 import { ownerOrderEmail } from "./owner-order-email"
 import { paidEmail } from "./paid-email"
 import { paymentEmail } from "./payment-email"
 import { reviewEmail } from "./review-email"
+import { shippedEmail } from "./shipped-email"
 import type { OrderEvent } from "./order-event"
 import { getDeliveryOptions, getPaymentDetails } from "./shop"
 
 /**
  * Every email an order sends, worked out from what the database says happened
  * to it. The database decides when — a new order's first status event, the
- * first move into delivered, two days after that — and posts it to /api/emails;
- * see `20261009120000_orders_send_their_own_emails.sql` in the admin repo. This
+ * first move into shipped, the first move into delivered, two days after that —
+ * and posts it to /api/emails; see
+ * `20261009120000_orders_send_their_own_emails.sql` in the admin repo. This
  * decides what goes and to whom.
  *
  *   placed           the payment details to the customer, then the new-order
  *                    alert to the owners, carrying whether the first one went
+ *   paid             the receipt for an online payment, then the owners'
+ *                    "paid online" alert. Or, for a manual order an owner
+ *                    entered as already paid (`enteredPaid`), a receipt that
+ *                    never says online, and no alert: an owner is the one
+ *                    who entered it, and the payment details never go
+ *   shipped          the courier and tracking number to the customer, or for
+ *                    hand delivery that TEAM HQ is bringing it. No alert: an
+ *                    owner is the one who marked it shipped
  *   review           a request to review each build in the order
  *   review_reminder  the same, once more, if no review has come in
  *
@@ -31,7 +42,8 @@ export type Sent = Record<string, Outcome | "skipped">
 
 export async function sendOrderEmails(order: OrderEvent): Promise<Sent> {
   if (order.kind === "placed") return placed(order)
-  if (order.kind === "paid") return paidOnline(order)
+  if (order.kind === "paid") return order.enteredPaid ? enteredPaid(order) : paidOnline(order)
+  if (order.kind === "shipped") return shipped(order)
 
   const to = order.customer.email
   if (!to || order.builds.length === 0) return { [order.kind]: "skipped" }
@@ -105,6 +117,55 @@ async function paidOnline(order: OrderEvent): Promise<Sent> {
 
   const owners = await alertOwnersByEmail(order, deliveryLabel, receipt, "paid")
   return { receipt, owners }
+}
+
+/**
+ * A manual order entered as already paid: the receipt, and nothing to the
+ * owners. The database leaves alertTo empty for this one, and it isn't read
+ * here either — the only alert this kind knows how to send says "paid online",
+ * which this wasn't, and the owner who typed the order in needs no email about
+ * it. An address that isn't one is skipped, as the online receipt is.
+ */
+async function enteredPaid(order: OrderEvent): Promise<Sent> {
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(order.customer.email)) return { receipt: "skipped" }
+
+  const deliveryLabel = await deliveryLabelFor(order)
+  let receipt: Outcome
+  try {
+    receipt = await sendEmail({
+      to: [{ email: order.customer.email, name: order.customer.name }],
+      ...manualReceiptEmail(order, deliveryLabel),
+      tag: "order-confirmed",
+    })
+  } catch (err) {
+    receipt = { ok: false, reason: `couldn't build the email (${describe(err)})` }
+  }
+  if (!receipt.ok) console.error(`Receipt for ${order.number} not sent: ${receipt.reason}`)
+  return { receipt }
+}
+
+/**
+ * The customer's "on its way" email, and nothing to the owners. An address that
+ * isn't one is skipped, as the receipt is, rather than handed to Brevo to refuse.
+ */
+async function shipped(order: OrderEvent): Promise<Sent> {
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(order.customer.email)) return { shipped: "skipped" }
+
+  // Only hand delivery shows the method's name; a courier order shows the courier.
+  const deliveryLabel = order.method === "teamhq" ? await deliveryLabelFor(order) : ""
+
+  let outcome: Outcome
+  try {
+    outcome = await sendEmail({
+      to: [{ email: order.customer.email, name: order.customer.name }],
+      ...shippedEmail(order, deliveryLabel),
+      tag: "order-shipped",
+    })
+  } catch (err) {
+    outcome = { ok: false, reason: `couldn't build the email (${describe(err)})` }
+  }
+  if (!outcome.ok) console.error(`Shipped email for ${order.number} not sent: ${outcome.reason}`)
+  return { shipped: outcome }
 }
 
 /** The delivery method's name as the checkout showed it, or a plain fallback. */

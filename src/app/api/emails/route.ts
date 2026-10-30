@@ -10,8 +10,9 @@ import { readOrderEvent } from "../../../lib/order-event"
  *   { "kind": "placed", "number": "BRK-1083", "customer": {…}, "lines": […], … }
  *
  * Called by `private.send_order_email()` through pg_net: on a new order's first
- * status event, on the first move into delivered, and by the hourly reminder
- * job. The body carries everything the emails need, because this app holds only
+ * status event (a receipt rather than the payment details, for a manual order
+ * entered as already paid), on Rapid Gateway confirming a payment, on the first moves into
+ * shipped and into delivered, and by the hourly reminder job. The body carries everything the emails need, because this app holds only
  * the publishable key and cannot read an order.
  *
  * The same secret as /api/revalidate/changed, because the same two parties hold
