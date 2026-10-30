@@ -3,14 +3,17 @@ import Link from "next/link"
 import { ContactBand, PolicyPage, Section, policyLink } from "../../components/Policy"
 import { BUSINESS } from "../../content/business"
 import { getSettings } from "../../lib/shop"
+import { pageMetadata } from "../../lib/seo"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
 export const revalidate = 86400
 
-export const metadata: Metadata = {
-  title: "Terms & conditions — brikc.it",
-  description: "The terms on which brikc.it sells its builds and display frames.",
-}
+export const metadata: Metadata = pageMetadata({
+  title: "Terms & conditions",
+  description:
+    "The terms on which BrikcIt sells its builds and display frames.",
+  path: "/terms",
+})
 
 export default async function TermsPage() {
   const settings = await getSettings()
@@ -36,8 +39,8 @@ export default async function TermsPage() {
           finished build; colours and lighting can look slightly different on your screen.
         </p>
         <p>
-          Our models are brick-built and are not made by or connected with the LEGO Group. Names of real vehicles,
-          manufacturers or teams are used only to describe what a model depicts.
+          LEGO&reg; is a trademark of the LEGO Group, and we are not affiliated with or endorsed by it. Names of real
+          vehicles, manufacturers or teams are used only to describe what a model depicts.
         </p>
       </Section>
 

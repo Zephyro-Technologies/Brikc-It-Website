@@ -522,6 +522,8 @@ an inline script.
 | `/best-sellers`, `/displays`, `/displays/[slug]`, `/booklets`, `/guides` | prerendered, `revalidate = 3600` | all read the database; a content or catalogue save rebuilds them |
 | `/contact`, `/how-it-works`, `/terms`, `/refund-policy`, `/shipping-policy` | prerendered, `revalidate = 86400` | read only settings, and a settings save sweeps every page |
 | `/frames` | redirect | `redirect("/displays")`, so old links don't 404 |
+| `/sitemap.xml` | prerendered, `revalidate = 3600` | names every build and booklet; a product or guide change rebuilds it |
+| `/robots.txt` | static | — |
 | `/checkout`, `/checkout/confirmation` | `force-dynamic` | a stale copy could quote an old total or an old bank account |
 | `/api/revalidate`, `/api/revalidate/changed` | `force-dynamic` | — |
 
@@ -595,11 +597,61 @@ emailed the owner each time. R2's free tier is a million writes and ten million 
 strongly consistent, and nothing is charged inside it — a card is now on the account for that
 reason. Don't move it back to KV.
 
+### SEO
+
+**The brand is "BrikcIt"** in every title, preview and piece of structured data — Google kept
+"correcting" brikc to an unrelated app. "Brikc It" and "brikc.it" are its `alternateName`s.
+Visible copy still says brikc.it where it always did; only metadata was changed.
+
+**The models are LEGO sets, imported, and the pages never say so.** LEGO has no presence in
+Pakistan, so the owner's rule is firm: "LEGO" appears **only in metadata** — `<title>`, meta
+description, Open Graph and Twitter tags, JSON-LD — and never in a heading, subline, body text,
+button, label or `alt`. The one visible exception is the trademark notice in the footer, which
+must stay. **Never "genuine", "original", "authentic", "official" or "authorised"**, metadata
+included. A **display** is the shop's own frame or desk and is never called LEGO anywhere; a
+**bundle** isn't either, because it can hold a display beside a set. **A model whose own
+description disclaims LEGO** ("brick-compatible", "not made or endorsed by the LEGO Group") is not
+called LEGO either — `isLegoSet()` in `seo.ts` gives it a "brick-built model" title and no brand,
+because metadata that contradicts the page under it is a false brand claim and markup Google treats
+as misleading. Fix the description in the admin and the metadata follows. The Terms and the footer
+say only that LEGO is the LEGO Group's trademark and the shop isn't affiliated with or endorsed by
+it — true of every model, and silent on which are LEGO-made, as the pages are.
+
+- `src/lib/seo.ts` holds the brand strings, `pageMetadata()` and the descriptions derived from a
+  row. Metadata merges **shallowly**, so a page that sets `openGraph` replaces the layout's whole
+  object — every indexable page takes the full set (title, description, canonical, OG, Twitter)
+  from `pageMetadata()` rather than relying on inheritance. The root layout has `metadataBase`, the
+  `"%s | BrikcIt"` template and a default preview (`/brand/hero.jpg`), and **no canonical**: one there
+  would be inherited by any page that forgot its own and tell Google it is the homepage.
+- Canonical is the page's own path. `/shop?cat=` and `?price=` canonicalise to `/shop` — the same
+  grid filtered in the browser, with no copy of their own. A display reached at `/shop/<slug>`
+  canonicalises to `/displays/<slug>`.
+- Every claim in a description comes from the row through the same helpers the cards use: a price
+  only when `isSellable()`, the assemblies only those switched on, pieces only when recorded.
+- `src/app/sitemap.ts` lists the pages and every build and booklet, read through
+  `getSitemapProducts()` in `shop.ts`; `/displays` only while there are displays, as in the nav.
+  It is in `revalidate-paths.ts`, so a new build appears without waiting for the hour.
+  `src/app/robots.ts` disallows `/checkout` and `/api/` and names the sitemap; Cloudflare puts its
+  managed block in front of it.
+- JSON-LD is built in `src/lib/structured-data.ts` and printed by `src/components/JsonLd.tsx`, which
+  escapes `<` so admin text cannot close the tag. The homepage carries Organization and WebSite
+  (WebSite's `name` is what Google shows as the site name). Product pages carry Product and
+  BreadcrumbList: a model's brand is LEGO (when `isLegoSet()`), a display's is BrikcIt, a bundle
+  names none. One `Offer` per sold assembly or variant, never an `AggregateOffer` (merchant listings
+  need a concrete price); a display's variant is in stock only when the display and the variant both
+  are, as its page decides. No price, no offer; and a Product with neither an offer nor a rating is
+  not printed at all — Google counts that as an error — so the breadcrumb goes out alone. `aggregateRating` is the published reviews the page itself lists, and only when there
+  are some. No SKU: there is no set number in the data, and none is invented.
+
 ### Conventions
 
-- Unmatched URLs are caught by `src/app/[...notfound]/page.tsx`, which renders `Home` and returns
-  200. `src/app/not-found.tsx` is a backstop and **must not import `Home`** — Next serialises the
-  not-found boundary into every route's payload, so that shipped the whole homepage with every page.
+- Unmatched URLs get `src/app/not-found.tsx` with a **404** — a short message and links to the
+  shop and the best sellers. It reads nothing: that page is built once at deploy and no
+  revalidation reaches it, so anything catalogue-dependent on it would go stale. There used to be a
+  `[...notfound]` route that drew `Home` with a 200, which made every mistyped address and
+  `/sitemap.xml` itself a copy of the homepage to Google; don't bring it back. `not-found.tsx`
+  **must not import `Home`** — Next serialises the not-found boundary into every route's payload,
+  so that shipped the whole homepage with every page.
 - Plain `<img>` everywhere, not `next/image`, deliberately.
 - Cart lives in `CartProvider` (`src/cart.tsx`), persisted to localStorage under `brikc.cart.v2`.
   A line carries either a `format` (model) or a `variantId` (display); the key was

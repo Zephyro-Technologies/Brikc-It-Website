@@ -268,6 +268,26 @@ export async function getProductSlugs(): Promise<string[]> {
   return unwrap("product slugs", res).map((r) => r.slug)
 }
 
+/**
+ * Every build with a page, for the sitemap: where it lives, when it last
+ * changed, and its first photograph. Leaner than PRODUCT_SELECT on purpose —
+ * the sitemap names pages, it does not price them.
+ */
+export async function getSitemapProducts(): Promise<
+  { slug: string; kind: ProductKind; updatedAt: string; image: string }[]
+> {
+  const res = await supabase()
+    .from("products")
+    .select("slug, kind, updated_at, product_images ( url, sort )")
+    .order("created_at")
+  return unwrap("sitemap products", res).map((r) => ({
+    slug: r.slug,
+    kind: r.kind,
+    updatedAt: r.updated_at,
+    image: firstImage(r.product_images),
+  }))
+}
+
 /** /displays lists these — the display products, each with its sizes embedded. */
 export async function getDisplays(): Promise<Product[]> {
   const res = await supabase()

@@ -3,14 +3,17 @@ import Link from "next/link"
 import { ContactBand, PolicyPage, Section, policyLink } from "../../components/Policy"
 import { BUSINESS, telHref } from "../../content/business"
 import { getSettings } from "../../lib/shop"
+import { pageMetadata } from "../../lib/seo"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
 export const revalidate = 86400
 
-export const metadata: Metadata = {
-  title: "Contact us — brikc.it",
-  description: "Email, phone, address and Instagram for brikc.it, and what to include about an order.",
-}
+export const metadata: Metadata = pageMetadata({
+  title: "Contact us",
+  description:
+    "Email, phone, address and Instagram for BrikcIt, and what to include about an order.",
+  path: "/contact",
+})
 
 /**
  * The Contact Us page the payment gateway's screening asks for. Every channel

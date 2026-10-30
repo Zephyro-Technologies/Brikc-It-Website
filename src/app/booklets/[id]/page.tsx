@@ -3,6 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import { getGuide, getGuides } from "../../../lib/shop"
+import { metaText, pageMetadata } from "../../../lib/seo"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
 export const revalidate = 3600
@@ -19,11 +20,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params
   const guide = await getGuide(id)
-  if (!guide) return { title: "Guide not found — brikc.it" }
-  return {
-    title: `${guide.title} — brikc.it`,
-    description: guide.desc,
-  }
+  if (!guide) return { title: "Guide not found" }
+  return pageMetadata({
+    title: guide.title,
+    description: metaText(guide.desc),
+    path: `/booklets/${id}`,
+  })
 }
 
 export default async function BookletPage({ params }: { params: Promise<{ id: string }> }) {

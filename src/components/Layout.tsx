@@ -485,10 +485,11 @@ export function Footer({
             © {YEAR} {BUSINESS.operator ? `${BUSINESS.operator} · ` : ""}brikc.it — built by hand, framed with
             care.
           </p>
-          {/* Kept from the previous chrome: the shop calls its models
-              "LEGO-style" throughout, so saying plainly that the LEGO Group
-              has nothing to do with us is what keeps that descriptive rather
-              than a suggestion of endorsement. */}
+          {/* The page titles and search data name LEGO sets, so this says
+              plainly that the LEGO Group has nothing to do with the shop: that
+              keeps the name descriptive rather than a suggestion of
+              endorsement. It says nothing about whether a given set is made by
+              LEGO — the pages don't either. */}
           <p className="max-w-2xl text-xs leading-relaxed text-white/45">
             LEGO&reg; is a trademark of the LEGO Group, which does not sponsor, authorise or endorse this
             site. brikc.it is not affiliated with the LEGO Group, nor with any vehicle manufacturer, racing

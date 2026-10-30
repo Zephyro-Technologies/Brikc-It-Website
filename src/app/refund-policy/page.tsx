@@ -1,14 +1,17 @@
 import type { Metadata } from "next"
 import { ContactBand, Highlights, PolicyPage, Section, Steps } from "../../components/Policy"
 import { getSettings } from "../../lib/shop"
+import { pageMetadata } from "../../lib/seo"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
 export const revalidate = 86400
 
-export const metadata: Metadata = {
-  title: "Refund & return policy — brikc.it",
-  description: "What you can return to brikc.it, how to claim a refund or replacement, and how long it takes.",
-}
+export const metadata: Metadata = pageMetadata({
+  title: "Refund & return policy",
+  description:
+    "What you can return to BrikcIt, how to claim a refund or replacement, and how long it takes.",
+  path: "/refund-policy",
+})
 
 export default async function RefundPolicyPage() {
   const settings = await getSettings()

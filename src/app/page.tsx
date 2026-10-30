@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRight, BadgeCheck, Star } from "lucide-react"
 import { ComingSoon, Reveal, SectionHead, ExploreMore, ProductCard } from "../components/ui"
@@ -8,10 +9,13 @@ import ReviewQuote from "../components/ReviewQuote"
 import ReviewSlider from "../components/ReviewSlider"
 import { money } from "../lib/money"
 import type { Product } from "../data"
-import { getCategories, getDisplays, getGuides, getProducts, getFeaturedReviews } from "../lib/shop"
+import { JsonLd } from "../components/JsonLd"
+import { getCategories, getDisplays, getGuides, getProducts, getFeaturedReviews, getSettings } from "../lib/shop"
 import { cardTag, fromPrice, productImage, subline } from "../lib/product-view"
 import { imageProps, smallImage } from "../lib/media"
 import { STEPS } from "../content/site"
+import { BRAND, SITE_DESCRIPTION, pageMetadata } from "../lib/seo"
+import { siteJsonLd } from "../lib/structured-data"
 import type { Guide, Review, StoreCategory } from "../data"
 
 /**
@@ -35,6 +39,12 @@ import type { Guide, Review, StoreCategory } from "../data"
  */
 export const revalidate = 3600
 
+export const metadata: Metadata = pageMetadata({
+  title: `${BRAND} — LEGO sets in Pakistan, built or boxed`,
+  description: SITE_DESCRIPTION,
+  path: "/",
+  absolute: true,
+})
 
 function BestSellers({ products }: { products: Product[] }) {
   const featured = products.filter((p) => p.featured).slice(0, 3)
@@ -431,16 +441,20 @@ function BookletsPreview({ guides }: { guides: Guide[] }) {
 
 export default async function Home() {
   // Independent reads — fire them together rather than in series.
-  const [products, categories, displays, guides, reviews] = await Promise.all([
+  const [products, categories, displays, guides, reviews, settings] = await Promise.all([
     getProducts(),
     getCategories(),
     getDisplays(),
     getGuides(),
     getFeaturedReviews(),
+    getSettings(),
   ])
 
   return (
     <>
+      {/* The shop and the site's name, for search results. Here rather than in
+          the layout because Google reads both from the homepage. */}
+      <JsonLd data={siteJsonLd(settings.instagram)} />
       <Hero categories={categories} />
       <BestSellers products={products} />
       <ShopPreview products={products} />

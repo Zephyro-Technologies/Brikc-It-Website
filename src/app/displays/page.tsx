@@ -5,15 +5,17 @@ import { ComingSoon, Reveal, SectionHead } from "../../components/ui"
 import { DisplayCard } from "../../components/DisplayCard"
 import { DISPLAY_PROMISES } from "../../content/displays"
 import { getDisplays } from "../../lib/shop"
+import { pageMetadata } from "../../lib/seo"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
 export const revalidate = 3600
 
-export const metadata: Metadata = {
-  title: "Displays — brikc.it",
+export const metadata: Metadata = pageMetadata({
+  title: "Display frames and desks",
   description:
-    "Frames, desks and the rest of the range — the pieces a build lives on once it is finished.",
-}
+    "BrikcIt's own frames, desks and the rest of the range — the pieces a build lives on once it is finished. Free delivery across Pakistan.",
+  path: "/displays",
+})
 
 export default async function DisplaysPage() {
   const displays = await getDisplays()

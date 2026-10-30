@@ -3,15 +3,17 @@ import type { ReactNode } from "react"
 import Link from "next/link"
 import { ContactBand, PolicyPage, Section, Steps, policyLink } from "../../components/Policy"
 import { getDisplays, getSettings } from "../../lib/shop"
+import { pageMetadata } from "../../lib/seo"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
 export const revalidate = 86400
 
-export const metadata: Metadata = {
-  title: "How it works — brikc.it",
+export const metadata: Metadata = pageMetadata({
+  title: "How it works",
   description:
-    "brikc.it's business model, target customers and operations, the customer journey from browsing to delivery, and how we use our payment gateway.",
-}
+    "BrikcIt's business model, target customers and operations, the customer journey from browsing to delivery, and how we use our payment gateway.",
+  path: "/how-it-works",
+})
 
 /**
  * The business model and the customer journey, end to end — what the payment

@@ -4,14 +4,17 @@ import { ArrowRight } from "lucide-react"
 import { ComingSoon, Reveal, SectionHead } from "../../components/ui"
 import GuidesBrowser from "../../components/GuidesBrowser"
 import { getCategories, getProducts } from "../../lib/shop"
+import { pageMetadata } from "../../lib/seo"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
 export const revalidate = 3600
 
-export const metadata: Metadata = {
-  title: "Assembly guides — brikc.it",
-  description: "Download the step-by-step assembly manual for any build in the shop.",
-}
+export const metadata: Metadata = pageMetadata({
+  title: "Assembly manuals",
+  description:
+    "Step-by-step assembly manuals as PDFs, free to download, for LEGO sets and builds in the shop, with more on the way.",
+  path: "/guides",
+})
 
 export default async function GuidesPage() {
   // Models only. A display arrives built and a bundle is a way of buying

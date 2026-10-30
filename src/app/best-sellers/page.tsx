@@ -7,14 +7,17 @@ import { cardTag, fromPrice, productImage, soldFormats, subline } from "../../li
 import { money } from "../../lib/money"
 import { imageProps } from "../../lib/media"
 import { FORMAT_LABELS } from "../../data"
+import { pageMetadata } from "../../lib/seo"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
 export const revalidate = 3600
 
-export const metadata: Metadata = {
-  title: "Best sellers — brikc.it",
-  description: "The builds our collectors reach for most, unassembled or assembled, with an optional display frame.",
-}
+export const metadata: Metadata = pageMetadata({
+  title: "Best-selling LEGO sets",
+  description:
+    "The LEGO sets our collectors reach for most, unassembled or assembled, with an optional display frame. Free delivery across Pakistan.",
+  path: "/best-sellers",
+})
 
 // The one dark band in an otherwise light storefront — reserved for this page.
 export default async function BestSellersPage() {

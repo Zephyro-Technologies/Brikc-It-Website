@@ -1,10 +1,13 @@
 import type { Metadata } from "next"
 import { PolicyPage, Section, policyLink } from "../../components/Policy"
+import { pageMetadata } from "../../lib/seo"
 
-export const metadata: Metadata = {
-  title: "Privacy — brikc.it",
-  description: "What brikc.it collects when you order, who else receives it, and how Meta's ads use it.",
-}
+export const metadata: Metadata = pageMetadata({
+  title: "Privacy",
+  description:
+    "What BrikcIt collects when you order, who else receives it, and how Meta's ads use it.",
+  path: "/privacy",
+})
 
 /**
  * The notice Meta's Business Tools Terms ask for on every page the pixel runs

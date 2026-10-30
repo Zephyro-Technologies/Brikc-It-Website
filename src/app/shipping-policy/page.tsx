@@ -3,14 +3,17 @@ import Link from "next/link"
 import { ContactBand, Highlights, PolicyPage, Section, policyLink } from "../../components/Policy"
 import { getDeliveryOptions, getSettings } from "../../lib/shop"
 import { money } from "../../lib/money"
+import { pageMetadata } from "../../lib/seo"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
 export const revalidate = 86400
 
-export const metadata: Metadata = {
-  title: "Shipping policy — brikc.it",
-  description: "How and when brikc.it orders are built, packed and delivered across Pakistan.",
-}
+export const metadata: Metadata = pageMetadata({
+  title: "Shipping policy",
+  description:
+    "How and when BrikcIt orders are built, packed and delivered, with free courier delivery anywhere in Pakistan.",
+  path: "/shipping-policy",
+})
 
 /**
  * Lead times and the hand-delivery towns are read from settings rather than

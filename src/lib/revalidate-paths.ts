@@ -28,6 +28,9 @@ const BEST_SELLERS = "/best-sellers"
 const DISPLAYS = "/displays"
 const BOOKLETS = "/booklets"
 const GUIDES = "/guides"
+// Names every build and booklet, so one arriving, going or being renamed
+// changes it. Prices are not in it, but it rides along when everything goes.
+const SITEMAP = "/sitemap.xml"
 // The written pages. They read the Instagram handle, the lead times and the
 // hand-delivery towns from settings, and every page carries the footer.
 const WRITTEN = ["/contact", "/how-it-works", "/shipping-policy", "/refund-policy", "/terms", "/privacy"]
@@ -48,6 +51,7 @@ async function everything(): Promise<string[]> {
     DISPLAYS,
     BOOKLETS,
     GUIDES,
+    SITEMAP,
     ...WRITTEN,
     ...models.map((s) => `/shop/${s}`),
     ...displays.map((d) => `/displays/${d.slug}`),
@@ -66,12 +70,12 @@ async function productPages(change: Change): Promise<string[]> {
   // A bundle lives in the shop grid and has a page there, but it is not a
   // build you assemble, so it never appears on /guides.
   if (change.kind === "bundle") {
-    return [HOME, BEST_SELLERS, ...slugs.map((s) => `/shop/${s}`)]
+    return [HOME, BEST_SELLERS, SITEMAP, ...slugs.map((s) => `/shop/${s}`)]
   }
   // GUIDES lists every model by name and photograph whether or not it has a
   // manual yet, so a build arriving, being renamed, or having its PDF swapped
   // changes that page as surely as it changes the catalogue.
-  return [HOME, BEST_SELLERS, GUIDES, ...slugs.map((s) => `/shop/${s}`)]
+  return [HOME, BEST_SELLERS, GUIDES, SITEMAP, ...slugs.map((s) => `/shop/${s}`)]
 }
 
 export async function pathsFor(change: Change): Promise<string[]> {
@@ -107,7 +111,7 @@ export async function pathsFor(change: Change): Promise<string[]> {
     case "guides":
     case "guide_chapters": {
       const slugs = [change.slug, change.oldSlug].filter((s): s is string => !!s)
-      return [HOME, BOOKLETS, ...slugs.map((s) => `/booklets/${s}`)]
+      return [HOME, BOOKLETS, SITEMAP, ...slugs.map((s) => `/booklets/${s}`)]
     }
 
     default:

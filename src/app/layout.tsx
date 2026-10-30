@@ -6,13 +6,27 @@ import { ScrollToTop } from "../components/ScrollToTop"
 import MetaPixel from "../components/MetaPixel"
 import { getDisplays, getSettings } from "../lib/shop"
 import { ShopSettingsProvider } from "../lib/shop-settings"
+import { BRAND, SITE_DESCRIPTION, SITE_URL, TITLE_TEMPLATE } from "../lib/seo"
 import "./globals.css"
 
+// The defaults every page starts from. Each indexable page sets its own title,
+// description, canonical and preview through pageMetadata() in src/lib/seo.ts;
+// what is here is the base URL those resolve against, the " | BrikcIt" suffix,
+// and a preview for anything that sets none. No canonical here: a page that
+// forgot its own would inherit "/" and tell Google it is the homepage.
 export const metadata: Metadata = {
-  title: "brikc.it — Brick-built scale models & LED display frames",
-  description:
-    "Cars, bikes, F1 and collector sets — built, boxed, or mounted in LED-lit display frames. Made to sit on your wall, not in a drawer.",
+  metadataBase: new URL(SITE_URL),
+  title: { default: `${BRAND} — LEGO sets in Pakistan, built or boxed`, template: TITLE_TEMPLATE },
+  description: SITE_DESCRIPTION,
+  applicationName: BRAND,
   icons: { icon: "/brand/icon.png", apple: "/brand/icon.png" },
+  openGraph: {
+    type: "website",
+    siteName: BRAND,
+    locale: "en_PK",
+    images: [{ url: "/brand/hero.jpg", width: 1920, height: 1071, alt: "Builds on lit display shelves" }],
+  },
+  twitter: { card: "summary_large_image", images: ["/brand/hero.jpg"] },
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
@@ -24,7 +38,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const hasDisplays = displays.length > 0
 
   return (
-    <html lang="en">
+    <html lang="en-PK">
       <body>
         <MetaPixel id={settings.metaPixelId} />
         <ShopSettingsProvider value={{ lowStockAt: settings.lowStockAt }}>
