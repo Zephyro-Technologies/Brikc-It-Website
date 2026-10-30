@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import type { StoreCategory } from "../data"
+import { imageProps } from "../lib/media"
 
 /**
  * The homepage hero: the categories' own cover images, as a carousel you can
@@ -164,7 +165,13 @@ export function Hero({ categories }: { categories: StoreCategory[] }) {
             {(mounted || i === 0) && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={src}
+                // Full width on every screen, but below about 1150px the slide
+                // is at least 480px tall, so a cover crop of a 2.4:1 photo is
+                // drawn about 1150px wide whatever the screen. Telling the
+                // browser 100vw there would hand a phone the 1280 copy where
+                // it draws three times that, so it is told the drawn width.
+                // The original stays in the set for that and for wide screens.
+                {...imageProps(src, { sizes: "(max-width: 1152px) 1152px, 100vw", full: true })}
                 alt=""
                 // Eager, all of them, and this is not an oversight. A slide
                 // sits translated off to the side, which a lazy image reads as

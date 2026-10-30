@@ -6,6 +6,7 @@ import Link from "next/link"
 import { AlertTriangle, ArrowLeft, ChevronDown, Loader2, ShoppingBag, Tag, X } from "lucide-react"
 import { lineLabel, useCart } from "../cart"
 import { money } from "../lib/money"
+import { imageProps } from "../lib/media"
 import {
   FORMAT_LABELS,
   cityQualifies,
@@ -521,7 +522,7 @@ export default function CheckoutView({
             <div className="h-full w-full overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-2)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={l.image}
+                {...imageProps(l.image, { thumb: true })}
                 alt={l.name}
                 loading="lazy"
                 style={{ backgroundColor: "#eceae7" }}
@@ -922,7 +923,7 @@ export default function CheckoutView({
               {priced[0] && (
                 <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface-2)]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={priced[0].image} alt="" loading="lazy" className="h-full w-full object-cover" />
+                  <img {...imageProps(priced[0].image, { thumb: true })} alt="" loading="lazy" className="h-full w-full object-cover" />
                 </div>
               )}
               <span className="min-w-0 flex-1">

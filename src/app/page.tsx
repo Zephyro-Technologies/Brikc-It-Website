@@ -10,6 +10,7 @@ import { money } from "../lib/money"
 import type { Product } from "../data"
 import { getCategories, getDisplays, getGuides, getProducts, getFeaturedReviews } from "../lib/shop"
 import { cardTag, fromPrice, productImage, subline } from "../lib/product-view"
+import { imageProps, smallImage } from "../lib/media"
 import { STEPS } from "../content/site"
 import type { Guide, Review, StoreCategory } from "../data"
 
@@ -88,7 +89,9 @@ function BestSellers({ products }: { products: Product[] }) {
                     <div className="relative overflow-hidden">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={productImage(p)}
+                        {...imageProps(productImage(p), {
+                          sizes: "(min-width: 1280px) 400px, (min-width: 768px) 33vw, 100vw",
+                        })}
                         alt={p.name}
                         loading="lazy"
                         style={{ backgroundColor: "var(--foreground)" }}
@@ -264,7 +267,9 @@ function ReviewCard({ review }: { review: Review }) {
       src={video.url}
       controls
       preload="metadata"
-      poster={photo}
+      // A poster is one address with no srcset, so a catalogue photo goes in
+      // as its 640 copy. A reviewer's own photo is on Supabase and has none.
+      poster={photo ? smallImage(photo) : undefined}
       className="h-40 w-full bg-black object-cover"
     />
   ) : photos.length > 0 ? (
@@ -272,7 +277,9 @@ function ReviewCard({ review }: { review: Review }) {
   ) : photo ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={photo}
+      {...imageProps(photo, {
+        sizes: "(min-width: 1280px) 400px, (min-width: 1024px) 33vw, (min-width: 768px) 50vw, 85vw",
+      })}
       alt={review.build}
       loading="lazy"
       className="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-105"

@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from "react"
+import { imageProps } from "./media"
 
 /**
  * A small Markdown renderer — enough for a product description and no more.
@@ -218,7 +219,9 @@ function inline(text: string, keys: Counter): ReactNode[] {
           out.push(
             <img
               key={keys.n++}
-              src={href}
+              // Copies only for an address on the media origin, which safeUrl()
+              // has already let through; anything else is drawn as written.
+              {...imageProps(href, { sizes: "(min-width: 1024px) 940px, 100vw" })}
               alt={link.label}
               loading="lazy"
               className="my-4 w-full rounded-2xl shadow-[var(--shadow-1)]"

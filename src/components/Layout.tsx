@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { Mail, MapPin, Menu, MessageCircle, Minus, Phone, Plus, ShoppingBag, Trash2, X } from "lucide-react"
 import { lineLabel, useCart } from "../cart"
 import { money } from "../lib/money"
+import { imageProps } from "../lib/media"
 import { navLinks } from "../content/site"
 import { BUSINESS, POLICY_LINKS, telHref } from "../content/business"
 
@@ -287,7 +288,7 @@ export function CartDrawer() {
                   <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-white">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={l.image}
+                      {...imageProps(l.image, { thumb: true })}
                       alt={l.name}
                       loading="lazy"
                       style={{ backgroundColor: "#eceae7" }}

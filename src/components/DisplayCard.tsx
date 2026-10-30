@@ -16,6 +16,7 @@ import {
   subline,
 } from "../lib/product-view"
 import { useShopSettings } from "../lib/shop-settings"
+import { imageProps } from "../lib/media"
 
 /**
  * A display's card on /displays and the homepage preview — the display
@@ -24,7 +25,10 @@ import { useShopSettings } from "../lib/shop-settings"
  * instead, and a display with nothing sellable gets neither a price nor a
  * button rather than one that would fail at checkout.
  */
-export function DisplayCard({ product }: { product: Product }) {
+/** The grid's sizes, which /displays and the homepage share; another grid passes its own. */
+const GRID_SIZES = "(min-width: 1024px) 300px, (min-width: 640px) 50vw, 100vw"
+
+export function DisplayCard({ product, sizes = GRID_SIZES }: { product: Product; sizes?: string }) {
   const { lowStockAt } = useShopSettings()
   const tag = cardTag(product)
   const sellable = isSellable(product)
@@ -42,7 +46,7 @@ export function DisplayCard({ product }: { product: Product }) {
         {visual.kind === "image" ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={visual.value}
+            {...imageProps(visual.value, { sizes })}
             alt={product.name}
             loading="lazy"
             style={{ backgroundColor: "#eceae7" }}

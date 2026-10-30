@@ -84,6 +84,23 @@ price, and the screen has to agree with what the database will charge.
   the video's id are kept, and `embedUrl()` builds the player address from those, so nothing anybody
   types can reach an iframe. The database checks the same shapes, because a form check protects
   nobody who writes to the table another way.
+- **Media is on R2, not Supabase storage.** What the admin uploads — product photos, category
+  covers and description images, product videos, assembly manuals — is in the R2 bucket
+  `brikc-it-media`, served on its own custom domain, `https://media.brikc.it`, with no Worker in
+  the path. The key keeps the Supabase layout, `<bucket>/<YYYY>/<uuid>.<ext>` with `<bucket>` one of
+  `product-images`, `content-images`, `product-videos`, `product-manuals`, so moving an old file was
+  a prefix swap on its URL. It moved because every card downloaded the full photograph — up to
+  2800px of WebP, most of a megabyte, for a square three hundred pixels wide — and that ran
+  Supabase's cached egress past twice the free allowance. So the admin also writes two copies of
+  every photo when it uploads it, `<key minus extension>.w640.webp` and `.w1280.webp`, that width
+  or narrower, never upscaled. Their names are derived and nothing about them is stored:
+  `src/lib/media.ts` works them out from the URL, and `imageProps()` is what every `<img>` of a
+  catalogue photo spreads, giving a `srcSet` only for an address on the media origin — anything
+  still on Supabase, or pasted in from elsewhere, is drawn as written. The Lightbox gets the
+  originals; `og:image` gets the 1280. Everything there is immutable and cached for a year, so a
+  replaced photo is a new key, never an overwrite. **Customer review media stays on Supabase**
+  (below), and nothing was deleted there: a cart in localStorage and an order line's `image` are
+  snapshots, and may still name the old address.
 - **A customer can write a review, and that is the shop's only public write besides an order.**
   It is built exactly like the checkout: `anon` has no INSERT on `reviews`, only EXECUTE on
   `submit_review()`. Four things hold the abuse surface shut and none of them is in the browser:
@@ -99,7 +116,9 @@ price, and the screen has to agree with what the database will charge.
   pending, was submitted within the hour, and holds fewer than three photos or fewer than one
   video. `attach_review_media()` then ties a file to the review, and refuses a path outside the
   token or an object that is not actually in the bucket. This is `anon`'s only write anywhere in
-  storage. `src/lib/supabase/upload.ts` is the one place the *browser* talks to Supabase —
+  storage, and why review media did not move to R2 with the rest: the token, the policy and that
+  existence check are all Supabase's. `mediaUrl()` in `shop.ts` builds its addresses on the
+  Supabase host and must not go through `src/lib/media.ts`. `src/lib/supabase/upload.ts` is the one place the *browser* talks to Supabase —
   everywhere else `src/lib/shop.ts` reads it on the server — because a 50 MB video should not go
   through the Worker twice.
 - **`featured` is what the homepage shows**, and it is separate from `published` on purpose: a
@@ -357,16 +376,19 @@ all three empty, so a row can never claim a manual it hasn't got. A second CHECK
 `http`/`https` scheme — not https-only, because the local stack serves storage over
 `http://127.0.0.1` and a constraint nobody can satisfy locally is one that gets worked around.
 
-**The `download` attribute does nothing here.** The file is on Supabase storage, a different
+**The `download` attribute does nothing here.** The file is on `media.brikc.it`, a different
 origin from the shop, and `download` is ignored cross-origin — left alone the browser opens the
-PDF in a tab. `downloadUrl()` in `src/lib/download.ts` appends `?download=<name>`, which is what
-makes Supabase answer with `Content-Disposition: attachment` *and* name the file.
+PDF in a tab. So the object itself carries `Content-Disposition: attachment` with the manual's
+name, set when it is put in R2 (`manual_name` for the ones moved from Supabase, the uploaded
+file's name for new ones). R2 has nothing like Supabase's `?download=`, so renaming a manual
+means putting that header again. `downloadUrl()` in `src/lib/download.ts` hands a media-origin
+URL back unchanged, and still appends `?download=<name>` to one left on Supabase storage, which
+is what makes Supabase answer with the same header.
 
 Uploads go through `src/lib/upload-manual.ts` in the admin, modelled on `uploadVideo` and **not**
 on `uploadImage` — the image path decodes and re-encodes to WebP, which is the wrong thing to do
-to a document. The bucket is `product-manuals`, public, `application/pdf`, with no size limit of
-its own — it takes the project's, 50 MB on Supabase's free plan — and the same
-four policies the other buckets use.
+to a document. Its objects are under `product-manuals/` in `brikc-it-media`, as
+`application/pdf`.
 
 **Only a model has one.** A display arrives built, so there is nothing to assemble: the admin
 only offers the field on a model, `productColumns()` writes it empty for a display, and `/guides`

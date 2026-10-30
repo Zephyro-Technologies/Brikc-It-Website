@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import DisplayDetailView from "../../../components/DisplayDetailView"
 import { getDisplay, getDisplays } from "../../../lib/shop"
+import { largeImage } from "../../../lib/media"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
 export const revalidate = 3600
@@ -21,7 +22,9 @@ export async function generateMetadata({
   return {
     title: `${display.name} — brikc.it`,
     description: display.blurb,
-    openGraph: { images: display.images[0] ? [display.images[0]] : [] },
+    // The 1280 copy: a link preview is never drawn wider, and a chat app is
+    // likelier to fetch a small file than the 2800px original.
+    openGraph: { images: display.images[0] ? [largeImage(display.images[0])] : [] },
   }
 }
 

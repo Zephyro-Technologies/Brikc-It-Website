@@ -22,6 +22,7 @@ import {
   type Review,
 } from "../data"
 import { Markdown } from "../lib/markdown"
+import { imageProps } from "../lib/media"
 import { cardTag, isSellable, lowStockNote, productImage, soldFormats, specs, subline } from "../lib/product-view"
 import { useShopSettings } from "../lib/shop-settings"
 import { ProductCard, Reveal } from "./ui"
@@ -191,7 +192,9 @@ export default function ProductDetailView({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={productImage(product, activeImg)}
+                {...imageProps(productImage(product, activeImg), {
+                  sizes: "(min-width: 1024px) 600px, 100vw",
+                })}
                 alt={product.name}
                 loading="lazy"
                 style={{ backgroundColor: "#eceae7" }}
@@ -246,7 +249,7 @@ export default function ProductDetailView({
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={img}
+                    {...imageProps(img, { thumb: true })}
                     alt=""
                     loading="lazy"
                     style={{ backgroundColor: "#eceae7" }}
@@ -320,7 +323,7 @@ export default function ProductDetailView({
                 <li key={`${item.slug}-${i}`} className="flex items-center gap-3 p-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={item.image || productImage(product)}
+                    {...imageProps(item.image || productImage(product), { thumb: true })}
                     alt=""
                     loading="lazy"
                     className={`h-12 w-12 shrink-0 rounded-xl object-cover ${item.available ? "" : "opacity-40 grayscale"}`}
@@ -621,6 +624,8 @@ export default function ProductDetailView({
 
       {lightbox && count > 0 && (
         <Lightbox
+          // The originals, not the copies the gallery draws: this is the one
+          // place somebody asked to see the photograph at full size.
           images={images.map((_, i) => productImage(product, i))}
           index={activeImg}
           onIndex={setActiveImg}

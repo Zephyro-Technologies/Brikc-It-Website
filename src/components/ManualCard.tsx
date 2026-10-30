@@ -1,6 +1,7 @@
 import { Download, FileText } from "lucide-react"
 import { productImage, subline } from "../lib/product-view"
 import { downloadUrl, fileSize } from "../lib/download"
+import { imageProps } from "../lib/media"
 import type { Product } from "../data"
 
 /**
@@ -18,7 +19,7 @@ export function ManualCard({ product }: { product: Product }) {
       <div className="flex items-center gap-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={productImage(product)}
+          {...imageProps(productImage(product), { thumb: true })}
           alt=""
           loading="lazy"
           className={`h-16 w-16 shrink-0 rounded-xl object-cover ${has ? "" : "opacity-40 grayscale"}`}

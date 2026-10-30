@@ -5,6 +5,7 @@ import { getProducts, getSettings } from "../../lib/shop"
 import { ComingSoon, Reveal } from "../../components/ui"
 import { cardTag, fromPrice, productImage, soldFormats, subline } from "../../lib/product-view"
 import { money } from "../../lib/money"
+import { imageProps } from "../../lib/media"
 import { FORMAT_LABELS } from "../../data"
 
 /** A floor under the cache; see the note in src/app/page.tsx. */
@@ -97,7 +98,9 @@ export default async function BestSellersPage() {
                         <div className="relative overflow-hidden">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={productImage(p)}
+                            {...imageProps(productImage(p), {
+                              sizes: "(min-width: 1280px) 400px, (min-width: 768px) 33vw, 100vw",
+                            })}
                             alt={p.name}
                             loading="lazy"
                             style={{ backgroundColor: "#eceae7" }}

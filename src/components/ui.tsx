@@ -17,6 +17,7 @@ import {
   lowStockNote,
   subline,
 } from "../lib/product-view"
+import { imageProps } from "../lib/media"
 
 /**
  * The shared vocabulary of the storefront: reveal-on-scroll, section headings,
@@ -202,7 +203,7 @@ export function ProductCard({ product }: { product: Product }) {
         {visual.kind === "image" ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={visual.value}
+            {...imageProps(visual.value, { sizes: "(min-width: 1024px) 300px, 50vw" })}
             alt={product.name}
             loading="lazy"
             style={{ backgroundColor: "#eceae7" }}

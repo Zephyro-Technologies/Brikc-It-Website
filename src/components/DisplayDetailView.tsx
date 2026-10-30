@@ -9,6 +9,7 @@ import { money } from "../lib/money"
 import type { Product } from "../data"
 import { cardTag, displayVisual, lowVariantStockNote, specs, subline } from "../lib/product-view"
 import { useShopSettings } from "../lib/shop-settings"
+import { imageProps } from "../lib/media"
 import { DisplayCard } from "./DisplayCard"
 import { Reveal } from "./ui"
 
@@ -90,7 +91,9 @@ export default function DisplayDetailView({
             {visual.kind === "image" ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={product.images[activeImg] ?? visual.value}
+                {...imageProps(product.images[activeImg] ?? visual.value, {
+                  sizes: "(min-width: 1024px) 600px, 100vw",
+                })}
                 alt={product.name}
                 loading="lazy"
                 style={{ backgroundColor: "#eceae7" }}
@@ -116,7 +119,7 @@ export default function DisplayDetailView({
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={img}
+                    {...imageProps(img, { thumb: true })}
                     alt=""
                     loading="lazy"
                     style={{ backgroundColor: "#eceae7" }}
@@ -261,7 +264,12 @@ export default function DisplayDetailView({
           </h2>
           <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
             {suggestions.map((p) => (
-              <DisplayCard key={p.slug} product={p} />
+              <DisplayCard
+                key={p.slug}
+                product={p}
+                // Two columns even on a phone here, unlike the /displays grid.
+                sizes="(min-width: 1024px) 300px, 50vw"
+              />
             ))}
           </div>
         </div>
