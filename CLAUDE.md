@@ -310,7 +310,7 @@ order, recorded in `order_emails` (admin repo, `20261009120000_orders_send_their
 | `placed` | the order's first status event | payment details to the customer, then a new-order alert to the owners |
 | `paid` | Rapid Gateway confirming a payment (`settle_payment`), or a manual order entered as already paid | online: a receipt to the customer and a "Paid online" alert to the owners. Entered paid: a receipt to the customer, nothing to the owners, and no `placed` |
 | `shipped` | the first move into shipped | the courier and tracking number to the customer, or for hand delivery that TEAM HQ is bringing it; nothing to the owners |
-| `review` | the first move into delivered | a request to review each model in the order |
+| `review` | the first move into delivered | a request to review each model in the order, and below it a quieter one for a Google review (`BUSINESS.googleReview`) |
 | `review_reminder` | two days later, hourly `pg_cron` job | the same, once more, if no review has come in and it is still delivered |
 
 - **Site and manual orders alike.** The trigger is on the first `order_status_events` row, not on

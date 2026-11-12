@@ -18,6 +18,12 @@ export const BUSINESS = {
   email: "orders@brikc.it",
   /** As people dial it from anywhere, country code first. */
   phone: "+92 328 5511771",
+  /**
+   * The verified Google Business Profile's own "Ask for reviews" link. Its
+   * token decodes to the profile's Maps place id, so it lands on BrikcIt and
+   * nowhere else. The review email asks for one here as well as on the site.
+   */
+  googleReview: "https://g.page/r/Cav_i6Vjd_uUEBM/review",
 }
 
 /** The date printed under each policy's title. Change it when the words change. */

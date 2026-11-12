@@ -1,6 +1,8 @@
+import { BUSINESS } from "../content/business"
 import { firstName, type OrderEvent } from "./order-event"
 import {
   INK,
+  RED,
   SITE,
   SLAB,
   button,
@@ -27,6 +29,12 @@ import {
  * Every claim here is what the form does: three photos and a video
  * (src/lib/supabase/upload.ts), and nothing shown until somebody publishes it
  * (submit_review stores it pending).
+ *
+ * Below the builds it asks, more quietly, for a review on Google too — the
+ * profile is how people who have never heard of the shop find it. Every
+ * delivered customer gets the same ask, worded the same: Google forbids
+ * steering only the happy ones there. A Google review doesn't stop the
+ * reminder, because nothing here can see one; only a review on the site does.
  */
 
 export function reviewEmail(
@@ -60,6 +68,9 @@ export function reviewEmail(
     `comes from somebody who bought the build. You can add up to three photos and a video. We read each one ` +
     `before it goes up.`
 
+  const google = BUSINESS.googleReview
+  const googleAsk = `We&rsquo;re on Google too. A review there helps people who have never heard of us find the shop.`
+
   // ── Plain text ───────────────────────────────────────────────────────────
   const text = [
     reminder ? `${name ? `${name}, got` : "Got"} a minute for a review?` : `${name ? `${name}, how` : "How"} did it turn out?`,
@@ -68,6 +79,7 @@ export function reviewEmail(
     "",
     ...links.flatMap((l) => [`Review the ${l.name}:`, l.href, ""]),
     how,
+    ...(google ? ["", googleAsk.replace(/&rsquo;/g, "’"), `Review BrikcIt on Google: ${google}`] : []),
   ].join("\n")
 
   // ── HTML ─────────────────────────────────────────────────────────────────
@@ -90,7 +102,16 @@ export function reviewEmail(
 
         <div style="margin-top:22px;">${links.map(buildCard).join("")}</div>
 
-        ${p(how.replace(order.number, strong(order.number)), "margin-top:12px;font-size:14px;")}`,
+        ${p(how.replace(order.number, strong(order.number)), "margin-top:12px;font-size:14px;")}${
+          google
+            ? `
+
+        ${p(
+          `${googleAsk} <a href="${esc(google)}" style="color:${RED};font-weight:600;text-decoration:none;white-space:nowrap;">Review BrikcIt on Google</a>`,
+          "margin-top:18px;font-size:14px;",
+        )}`
+            : ""
+        }`,
     footer: `Sent because order ${esc(order.number)}, placed with ${siteLink} using this email address, was delivered.`,
   })
 
