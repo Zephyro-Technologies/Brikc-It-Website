@@ -28,7 +28,7 @@ export const BF_END_MS = Date.UTC(2026, 10, 30, 18, 59, 59, 999)
  * five-car price", not a price of its own.
  */
 export const BUILDER_TIERS: Record<number, number> = {
-  2: 6_999,
+  2: 5_999,
   3: 8_999,
   5: 14_499,
 }

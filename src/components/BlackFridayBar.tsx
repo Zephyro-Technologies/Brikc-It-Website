@@ -34,7 +34,7 @@ export default function BlackFridayBar() {
       href="/blessed-friday"
       className="block bg-gradient-to-r from-[#b81022] to-[#d31f2e] px-4 py-2 text-center text-sm font-semibold text-white transition-[filter] hover:brightness-110"
     >
-      Blessed Friday is live — bundles from Rs 6,999, ends 30 Nov&nbsp;→
+      Blessed Friday is live — bundles from Rs 5,999, ends 30 Nov&nbsp;→
     </Link>
   )
 }
