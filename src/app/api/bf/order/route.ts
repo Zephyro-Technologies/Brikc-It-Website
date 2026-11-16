@@ -8,6 +8,7 @@ import {
   BF_DOUBLE,
   BUILDER_SLUGS,
   BUILDER_TIERS,
+  builderPrice,
   bfState,
   saleFormat,
   type BfSelection,
@@ -306,8 +307,8 @@ export async function POST(request: Request) {
         // picks must add up to exactly that many cars, and every pick must be
         // a Speed Champions single from the list — the page can't be made to
         // sell three big models for Rs 8,999 by editing localStorage.
-        const price = BUILDER_TIERS[bf.tier]
-        if (!price) throw new Refused("That bundle size is not part of the sale.")
+        if (!BUILDER_TIERS[bf.tier])
+          throw new Refused("That bundle size is not part of the sale.")
         const picks = (bf.picks ?? []).map((p) => ({
           slug: str(p.slug),
           qty: Number(p.qty) || 0,
@@ -339,6 +340,7 @@ export async function POST(request: Request) {
             _name: row.name,
           }
         })
+        const price = builderPrice(bf.tier, picks, (s) => bySlug.get(s)?.price_boxed ?? 0)
         priced.push({
           product_id: null,
           slug: `blessed-friday-pick-${bf.tier}`,

@@ -17,7 +17,9 @@ import {
   BF_START_MS,
   BUILDER_SLUGS,
   BUILDER_TIERS,
+  PICK2_BUDGET_PRICE,
   bfLineKey,
+  builderPrice,
   bfUnitPrice,
   saleFormat,
   type BfSelection,
@@ -150,7 +152,11 @@ export default function BlackFridayView({ products }: { products: Product[] }) {
     (n, [slug, q]) => n + (bySlug.get(slug)?.prices.boxed ?? 0) * q,
     0,
   )
-  const tierPrice = BUILDER_TIERS[count]
+  const tierPrice = builderPrice(
+    count,
+    Object.entries(picks).map(([slug, qty]) => ({ slug, qty })),
+    (slug) => bySlug.get(slug)?.prices.boxed ?? 0,
+  )
   const maxPicks = Math.max(...Object.keys(BUILDER_TIERS).map(Number))
 
   const bump = (p: Product, d: number) =>
@@ -315,7 +321,8 @@ export default function BlackFridayView({ products }: { products: Product[] }) {
             Build your own Speed&nbsp;Champions bundle
           </h2>
           <p className="mt-3 max-w-2xl leading-relaxed text-[var(--muted)]">
-            Pick any <strong>2 for {money(BUILDER_TIERS[2])}</strong>, any{" "}
+            Pick any <strong>2 for {money(BUILDER_TIERS[2])}</strong> — just{" "}
+            <strong>{money(PICK2_BUDGET_PRICE)}</strong> when both are Rs 3,500 cars — any{" "}
             <strong>3 for {money(BUILDER_TIERS[3])}</strong>, or any{" "}
             <strong>5 for {money(BUILDER_TIERS[5])}</strong> — mix whichever cars you like,
             sealed kits, while they last.
@@ -407,7 +414,7 @@ export default function BlackFridayView({ products }: { products: Product[] }) {
                         <strong className="text-[var(--primary-deep)]">{money(compareAt - tierPrice)}</strong>
                       </>
                     ) : (
-                      `Any 2 · ${money(BUILDER_TIERS[2])}   ·   any 3 · ${money(BUILDER_TIERS[3])}   ·   any 5 · ${money(BUILDER_TIERS[5])}`
+                      `Any 2 from ${money(PICK2_BUDGET_PRICE)}   ·   any 3 · ${money(BUILDER_TIERS[3])}   ·   any 5 · ${money(BUILDER_TIERS[5])}`
                     )}
                   </p>
                 </div>

@@ -28,9 +28,40 @@ export const BF_END_MS = Date.UTC(2026, 10, 30, 18, 59, 59, 999)
  * five-car price", not a price of its own.
  */
 export const BUILDER_TIERS: Record<number, number> = {
-  2: 5_999,
+  2: 6_999,
   3: 8_999,
   5: 14_499,
+}
+
+/**
+ * A two-car bundle made only of the Rs 3,500 cars costs less; a pair with any
+ * Rs 4,500 car in it stays at the full pick-2 price above. Three- and
+ * five-car bundles are one price whatever the mix.
+ */
+export const PICK2_BUDGET_PRICE = 5_999
+/** A car at this everyday (boxed) price or under counts as a budget car. */
+export const BUDGET_CAR_MAX = 3_500
+
+/**
+ * What a builder bundle costs, given the picks and a way to look up each
+ * car's everyday boxed price — the page passes its product list, the checkout
+ * its catalogue, the order route its database rows, so all three agree and
+ * none trusts a price the browser sent.
+ */
+export function builderPrice(
+  tier: number,
+  picks: { slug: string; qty: number }[],
+  priceOf: (slug: string) => number,
+): number {
+  const base = BUILDER_TIERS[tier] ?? 0
+  if (tier !== 2 || !base) return base
+  const allBudget =
+    picks.length > 0 &&
+    picks.every((p) => {
+      const price = priceOf(p.slug)
+      return price > 0 && price <= BUDGET_CAR_MAX
+    })
+  return allBudget ? PICK2_BUDGET_PRICE : base
 }
 
 /**
@@ -128,10 +159,15 @@ export function bfLineKey(sel: BfSelection): string {
   return `${BF_LINE_SLUG.builder(sel.tier)}:${picks}`
 }
 
-/** What one unit of this selection costs. The config is the whole answer. */
-export function bfUnitPrice(sel: BfSelection): number {
+/**
+ * What one unit of this selection costs. For a builder bundle the answer can
+ * depend on which cars are in it, so callers that have catalogue prices pass
+ * `priceOf`; without it the full tier price is assumed (never undercharges).
+ */
+export function bfUnitPrice(sel: BfSelection, priceOf?: (slug: string) => number): number {
   if (sel.kind === "deal") return BF_DEALS[sel.slug] ?? 0
   if (sel.kind === "double") return BF_DOUBLE.price
+  if (priceOf) return builderPrice(sel.tier, sel.picks, priceOf)
   return BUILDER_TIERS[sel.tier] ?? 0
 }
 

@@ -275,7 +275,7 @@ export default function CheckoutView({
             break
           }
         }
-        const unitPrice = bfUnitPrice(l.bf)
+        const unitPrice = bfUnitPrice(l.bf, (slug) => bySlug.get(slug)?.prices.boxed ?? 0)
         if (!unavailable && unitPrice <= 0) unavailable = "no longer on offer"
         return { ...l, unitPrice, unavailable, changed: !unavailable && unitPrice !== l.unitPrice }
       }
