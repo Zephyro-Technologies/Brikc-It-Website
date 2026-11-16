@@ -2,6 +2,7 @@ import { Suspense, type ReactNode } from "react"
 import type { Metadata } from "next"
 import { CartProvider } from "../cart"
 import { Nav, Footer, CartDrawer } from "../components/Layout"
+import BlackFridayBar from "../components/BlackFridayBar"
 import { ScrollToTop } from "../components/ScrollToTop"
 import MetaPixel from "../components/MetaPixel"
 import { getDisplays, getSettings } from "../lib/shop"
@@ -47,6 +48,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               <ScrollToTop />
             </Suspense>
             <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+              {/* Client-gated to the sale window — see the component. */}
+              <BlackFridayBar />
               <Nav banner={settings.banner} hasDisplays={hasDisplays} />
               <CartDrawer />
               <main>{children}</main>
