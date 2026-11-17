@@ -196,8 +196,10 @@ export async function POST(request: Request) {
         if (!Number.isInteger(qty) || qty < 1 || qty > 10)
           throw new Refused("Quantities have to be whole numbers between 1 and 10.")
         bfLines.push({ bf: (l as BfWireLine).bf, qty })
-      } else {
+      } else if (l && typeof l === "object") {
         normalRaw.push(l)
+      } else {
+        throw new Refused("One of the cart items can't be read — clear the cart and try again.")
       }
     }
     if (bfLines.length === 0)
@@ -316,7 +318,8 @@ export async function POST(request: Request) {
         // picks must add up to exactly that many cars, and every pick must be
         // a Speed Champions single from the list — the page can't be made to
         // sell three big models for Rs 8,999 by editing localStorage.
-        if (!BUILDER_TIERS[bf.tier])
+        const tier = Number(bf.tier)
+        if (!BUILDER_TIERS[tier])
           throw new Refused("That bundle size is not part of the sale.")
         const rawPicks = Array.isArray(bf.picks) ? bf.picks : []
         const picks = rawPicks.map((p) => ({
@@ -331,8 +334,8 @@ export async function POST(request: Request) {
         if (new Set(picks.map((p) => p.slug)).size !== picks.length)
           throw new Refused("That bundle lists the same car twice — add it again.")
         const count = picks.reduce((n, p) => n + p.qty, 0)
-        if (count !== bf.tier)
-          throw new Refused(`That bundle needs exactly ${bf.tier} cars — it has ${count}.`)
+        if (count !== tier)
+          throw new Refused(`That bundle needs exactly ${tier} cars — it has ${count}.`)
 
         const members = picks.map((p, sort) => {
           const row = saleModel(p.slug)
@@ -352,11 +355,11 @@ export async function POST(request: Request) {
             _name: row.name,
           }
         })
-        const price = builderPrice(bf.tier, picks, (s) => bySlug.get(s)?.price_boxed ?? 0)
+        const price = builderPrice(tier, picks, (s) => bySlug.get(s)?.price_boxed ?? 0)
         priced.push({
           product_id: null,
-          slug: `blessed-friday-pick-${bf.tier}`,
-          name: `Speed Champions Bundle — pick ${bf.tier} (Blessed Friday)`,
+          slug: `blessed-friday-pick-${tier}`,
+          name: `Speed Champions Bundle — pick ${tier} (Blessed Friday)`,
           image: firstImage(need(picks[0].slug)),
           format: null,
           with_frame: false,
@@ -507,9 +510,8 @@ export async function POST(request: Request) {
     // Three requests, in an order that matters: the lines must exist before
     // the first status event lands, because that event is what makes the
     // database email the customer and the owners — and the email reads the
-    // lines. A failure in the middle leaves an order with no event: nothing
-    // is emailed, nothing moves, and it shows in the admin to be finished or
-    // cancelled by hand.
+    // lines. A failure in the middle is cleaned up by the catch below, which
+    // deletes the orders row so nothing half-written is left behind.
     const cookieVal = (name: string): string => {
       for (const part of (request.headers.get("cookie") ?? "").split(";")) {
         const [key, ...value] = part.trim().split("=")
@@ -591,7 +593,16 @@ export async function POST(request: Request) {
       })
       if (eventError) throw new Error(`recording the order: ${eventError.message}`)
     } catch (err) {
-      await db.from("orders").delete().eq("id", order.id)
+      // Best effort: if the delete itself fails, the orphan stays, so log the
+      // order number for someone to remove it in the admin. And when the
+      // failure was a lost response AFTER the status event actually committed,
+      // this deletes an order whose "placed" email is already queued — rare,
+      // and better than the retry minting a sibling order.
+      const { error: cleanupError } = await db.from("orders").delete().eq("id", order.id)
+      if (cleanupError)
+        console.error(
+          `bf/order: order ${order.number} failed mid-write and could not be deleted — remove it in the admin. ${cleanupError.message}`,
+        )
       throw err
     }
 

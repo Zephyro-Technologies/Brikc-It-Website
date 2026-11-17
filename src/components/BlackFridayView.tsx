@@ -84,7 +84,7 @@ function Countdown({ until, label }: { until: number; label: string }) {
   )
   return (
     <div>
-      <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold tracking-widest text-white/70 uppercase">
+      <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold text-white/70">
         <Timer className="h-3.5 w-3.5" /> {label}
       </p>
       <div className="flex gap-2">
@@ -566,8 +566,8 @@ export default function BlackFridayView({
         <ul className="space-y-1.5 text-xs leading-relaxed text-[var(--muted)]">
           <li>
             The bundles are sold <strong>unassembled</strong> (sealed kits); each big-model deal&rsquo;s
-            card says whether it comes sealed or assembled. Framed and other options stay available at
-            everyday prices on each build&rsquo;s own page.
+            card says whether it comes sealed or assembled. Other assemblies and frames, where a build
+            offers them, stay at everyday prices on its own page.
           </li>
           <li>
             Stock is limited and is confirmed again when your order is placed — if something
@@ -575,8 +575,8 @@ export default function BlackFridayView({
           </li>
           <li>Sale prices can&rsquo;t be combined with discount codes.</li>
           <li>
-            All kits are brick-built models; each build&rsquo;s own page carries its full details and
-            compatibility notes, and the notice in the footer applies shop-wide.
+            All kits are brick-built models; each build&rsquo;s own page carries its full details,
+            and the notice in the footer applies shop-wide.
           </li>
         </ul>
       </section>

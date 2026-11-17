@@ -15,7 +15,7 @@ export async function generateMetadata() {
   return Date.now() > BF_END_MS ? { ...base, robots: { index: false, follow: false } } : base
 }
 
-// Never cached. The page quotes live stock on items that are one to three
+// Never cached. The page quotes live stock on items that run only a few
 // deep, so a prerendered copy could sell a shelf that emptied an hour ago —
 // and being dynamic keeps it off the revalidation queue entirely, which the
 // free Durable Objects plan will thank us for. The sale window itself is
