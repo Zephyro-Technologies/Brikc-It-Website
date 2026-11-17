@@ -15,6 +15,7 @@ import {
   BF_DOUBLE,
   BF_END_MS,
   BF_START_MS,
+  BUDGET_CAR_MAX,
   BUILDER_SLUGS,
   BUILDER_TIERS,
   PICK2_BUDGET_PRICE,
@@ -127,14 +128,21 @@ function SalePrice({ was, now }: { was: number; now: number }) {
 
 /* ── The page ──────────────────────────────────────────────────────────── */
 
-export default function BlackFridayView({ products }: { products: Product[] }) {
+export default function BlackFridayView({
+  products,
+  initialState,
+}: {
+  products: Product[]
+  initialState: BfState
+}) {
   const { addBfLine } = useCart()
   const bySlug = useMemo(() => new Map(products.map((p) => [p.slug, p])), [products])
 
-  // The visitor's clock decides what the page says; checked once a second so
-  // the stroke of midnight flips it without a reload. The server's clock
-  // decides what can actually be ordered.
-  const [state, setState] = useState<BfState | null>(null)
+  // The server rendered this page knowing the date (it is never cached), so
+  // the first paint matches its HTML; after that the visitor's clock takes
+  // over, checked once a second so midnight flips the page without a reload.
+  // The server's clock still decides what can actually be ordered.
+  const [state, setState] = useState<BfState>(initialState)
   useEffect(() => {
     setState(bfState())
     const t = setInterval(() => setState(bfState()), 1000)
@@ -204,7 +212,8 @@ export default function BlackFridayView({ products }: { products: Product[] }) {
 
   function addDeal(p: Product) {
     if (!live) return
-    const sel: BfSelection = { kind: "deal", slug: p.slug }
+    const sold = dealSold(p)
+    const sel: BfSelection = { kind: "deal", slug: p.slug, format: sold?.format ?? "boxed" }
     addBfLine(
       {
         key: bfLineKey(sel),
@@ -213,6 +222,8 @@ export default function BlackFridayView({ products }: { products: Product[] }) {
         team: p.team,
         image: productImage(p),
         kind: "model",
+        format: sold?.format ?? "boxed",
+        frame: "none",
         bf: sel,
         unitPrice: bfUnitPrice(sel),
         qty: 1,
@@ -244,8 +255,7 @@ export default function BlackFridayView({ products }: { products: Product[] }) {
   if (state === "ended") {
     return (
       <div className="mx-auto max-w-3xl px-5 py-24 text-center">
-        <p className="text-xs font-semibold tracking-widest text-[var(--primary)] uppercase">Blessed Friday</p>
-        <h1 className="font-display mt-3 text-4xl tracking-tight" style={{ fontWeight: 800 }}>
+        <h1 className="font-display text-4xl tracking-tight" style={{ fontWeight: 800 }}>
           That&rsquo;s a wrap.
         </h1>
         <p className="mx-auto mt-4 max-w-md leading-relaxed text-[var(--muted)]">
@@ -280,11 +290,8 @@ export default function BlackFridayView({ products }: { products: Product[] }) {
           style={{ background: "radial-gradient(80% 120% at 85% 0%, #b8102233 0%, transparent 60%)" }}
         />
         <div className="relative mx-auto max-w-6xl px-5 py-16 md:py-24">
-          <p className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-1 text-[11px] font-semibold tracking-widest text-white/80 uppercase">
-            24 – 30 November · Pakistan time
-          </p>
           <h1
-            className="font-display mt-5 max-w-3xl text-5xl tracking-tight text-white md:text-7xl"
+            className="font-display max-w-3xl text-5xl tracking-tight text-white md:text-7xl"
             style={{ fontWeight: 800 }}
           >
             Blessed Friday,
@@ -293,12 +300,12 @@ export default function BlackFridayView({ products }: { products: Product[] }) {
             </span>
           </h1>
           <p className="mt-5 max-w-xl leading-relaxed text-white/70">
-            Build your own Speed Champions bundle and take the big models at their lowest
-            prices of the year. Every item is stocked one to three deep —{" "}
+            Build your own Speed Champions bundle and take the big models at straight
+            slashed prices, until 30 November, Pakistan time. Stock runs shallow —{" "}
             <strong className="text-white">when it&rsquo;s gone, it&rsquo;s gone.</strong>
           </p>
           <div className="mt-8">
-            {state === null ? null : state === "upcoming" ? (
+            {state === "upcoming" ? (
               <Countdown until={BF_START_MS} label="The sale opens in" />
             ) : (
               <Countdown until={BF_END_MS} label="The sale ends in" />
@@ -316,13 +323,12 @@ export default function BlackFridayView({ products }: { products: Product[] }) {
       {/* ── Builder ── */}
       <section className="mx-auto max-w-6xl px-5 py-14 md:py-20">
         <Reveal>
-          <p className="text-xs font-semibold tracking-widest text-[var(--primary)] uppercase">The hero offer</p>
-          <h2 className="font-display mt-2 text-3xl tracking-tight md:text-4xl" style={{ fontWeight: 800 }}>
+          <h2 className="font-display text-3xl tracking-tight md:text-4xl" style={{ fontWeight: 800 }}>
             Build your own Speed&nbsp;Champions bundle
           </h2>
           <p className="mt-3 max-w-2xl leading-relaxed text-[var(--muted)]">
             Pick any <strong>2 for {money(BUILDER_TIERS[2])}</strong> — just{" "}
-            <strong>{money(PICK2_BUDGET_PRICE)}</strong> when both are Rs 3,500 cars — any{" "}
+            <strong>{money(PICK2_BUDGET_PRICE)}</strong> when both are {money(BUDGET_CAR_MAX)} cars — any{" "}
             <strong>3 for {money(BUILDER_TIERS[3])}</strong>, or any{" "}
             <strong>5 for {money(BUILDER_TIERS[5])}</strong> — mix whichever cars you like,
             sealed kits, while they last.
@@ -369,6 +375,7 @@ export default function BlackFridayView({ products }: { products: Product[] }) {
                               type="button"
                               disabled={!canAdd}
                               onClick={() => bump(p, 1)}
+                              aria-label={`Pick ${p.name}`}
                               className="mat-btn w-full rounded-full border border-[var(--border)] bg-white py-1.5 text-sm font-semibold hover:bg-[var(--surface-2)] disabled:opacity-40"
                             >
                               Pick
@@ -395,7 +402,7 @@ export default function BlackFridayView({ products }: { products: Product[] }) {
             {/* The tally — sticks to the bottom while picking. */}
             <div className="sticky bottom-3 z-10 mt-6">
               <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-white/95 px-5 py-4 shadow-[var(--shadow-3)] backdrop-blur">
-                <div>
+                <div aria-live="polite">
                   <p className="text-sm font-semibold">
                     {count === 0
                       ? "Pick your cars"
@@ -438,8 +445,7 @@ export default function BlackFridayView({ products }: { products: Product[] }) {
       <section className="border-t border-[var(--border)] bg-[var(--surface-2)]">
         <div className="mx-auto max-w-6xl px-5 py-14 md:py-20">
           <Reveal>
-            <p className="text-xs font-semibold tracking-widest text-[var(--primary)] uppercase">Big model deals</p>
-            <h2 className="font-display mt-2 text-3xl tracking-tight md:text-4xl" style={{ fontWeight: 800 }}>
+            <h2 className="font-display text-3xl tracking-tight md:text-4xl" style={{ fontWeight: 800 }}>
               The shelf queens, slashed
             </h2>
           </Reveal>
@@ -564,8 +570,8 @@ export default function BlackFridayView({ products }: { products: Product[] }) {
             everyday prices on each build&rsquo;s own page.
           </li>
           <li>
-            Stock is genuinely one to three units per item and is confirmed again when your order is
-            placed — if something sells out under you, the checkout will say so.
+            Stock is limited and is confirmed again when your order is placed — if something
+            sells out under you, the checkout will say so.
           </li>
           <li>Sale prices can&rsquo;t be combined with discount codes.</li>
           <li>

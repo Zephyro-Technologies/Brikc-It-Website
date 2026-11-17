@@ -240,6 +240,13 @@ export default function CheckoutView({
    */
   const priced = useMemo(() => {
     const bySlug = new Map(products.map((p) => [p.slug, p]))
+    // What the whole cart asks of each shelf, so two lines that share a scarce
+    // car are flagged here and not only by the server at the final button.
+    const cartWant = new Map<string, number>()
+    for (const l of lines) {
+      if (l.bf) for (const d of bfDemand(l.bf)) cartWant.set(d.slug, (cartWant.get(d.slug) ?? 0) + d.qty * l.qty)
+      else if (l.kind === "model") cartWant.set(l.slug, (cartWant.get(l.slug) ?? 0) + l.qty)
+    }
     return lines.map((l) => {
       // A Blessed Friday line is priced from the sale config, never the
       // catalogue, and is only orderable while the sale window is open and
@@ -270,8 +277,8 @@ export default function CheckoutView({
             unavailable = `unavailable — ${member.name} is sold out`
             break
           }
-          if (d.qty * l.qty > member.stock) {
-            unavailable = `down to ${member.stock} of ${member.name} — lower the quantity`
+          if ((cartWant.get(d.slug) ?? d.qty * l.qty) > member.stock) {
+            unavailable = `down to ${member.stock} of ${member.name} across your cart — lower the quantity`
             break
           }
         }

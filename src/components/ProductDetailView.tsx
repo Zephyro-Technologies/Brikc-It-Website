@@ -176,8 +176,8 @@ export default function ProductDetailView({
 
   const onAdd = () => {
     if (!canAdd) return
-    if (dealOn && dealPrice) {
-      const sel: BfSelection = { kind: "deal", slug: product.slug }
+    if (dealOn && dealPrice && dealSold) {
+      const sel: BfSelection = { kind: "deal", slug: product.slug, format: dealSold.format }
       addBfLine({
         key: bfLineKey(sel),
         slug: product.slug,
@@ -185,6 +185,8 @@ export default function ProductDetailView({
         team: product.team,
         image: productImage(product),
         kind: "model",
+        format: dealSold.format,
+        frame: "none",
         bf: sel,
         unitPrice: dealPrice,
         qty,

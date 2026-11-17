@@ -139,7 +139,9 @@ export type BfPick = { slug: string; name: string; qty: number }
 
 export type BfSelection =
   | { kind: "builder"; tier: number; picks: BfPick[] }
-  | { kind: "deal"; slug: string }
+  /** `format` is which assembly this deal sells (the Shelby is built-only) — set
+   *  where the line is added, shown in the cart, re-derived by the server. */
+  | { kind: "deal"; slug: string; format?: "boxed" | "built" }
   | { kind: "double" }
 
 /** A deliberately un-slug-like prefix, so no catalogue row can collide. */
@@ -172,7 +174,10 @@ export function bfUnitPrice(sel: BfSelection, priceOf?: (slug: string) => number
 }
 
 export function describeBf(sel: BfSelection): string {
-  if (sel.kind === "deal") return "Unassembled · Blessed Friday price"
+  if (sel.kind === "deal")
+    return sel.format === "built"
+      ? "Assembled · Blessed Friday price"
+      : "Unassembled · Blessed Friday price"
   if (sel.kind === "double") return "2 kits, unassembled · Blessed Friday price"
   return sel.picks.map((p) => (p.qty > 1 ? `${p.name} ×${p.qty}` : p.name)).join(", ")
 }

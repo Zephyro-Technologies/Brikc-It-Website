@@ -193,7 +193,8 @@ export async function POST(request: Request) {
     for (const l of rawLines) {
       if (isBfLine(l)) {
         const qty = Number((l as { qty?: unknown }).qty) || 0
-        if (qty < 1 || qty > 10) throw new Refused("Quantities have to be between 1 and 10.")
+        if (!Number.isInteger(qty) || qty < 1 || qty > 10)
+          throw new Refused("Quantities have to be whole numbers between 1 and 10.")
         bfLines.push({ bf: (l as BfWireLine).bf, qty })
       } else {
         normalRaw.push(l)
@@ -209,7 +210,11 @@ export async function POST(request: Request) {
       const sel = l.bf
       if (sel.kind === "deal") slugs.add(sel.slug)
       else if (sel.kind === "double") BF_DOUBLE.slugs.forEach((s) => slugs.add(s))
-      else sel.picks.forEach((p) => slugs.add(p.slug))
+      else if (Array.isArray(sel.picks))
+        sel.picks.forEach((p) => {
+          const slug = (p as { slug?: unknown } | null)?.slug
+          if (typeof slug === "string" && slug) slugs.add(slug)
+        })
     }
     for (const l of normalLines) slugs.add(l.slug)
 
@@ -241,7 +246,11 @@ export async function POST(request: Request) {
     // How many units of each build this whole order wants — checked against
     // the shelf once, across every line, so two lines can't share one unit.
     const demand = new Map<string, number>()
-    const wants = (row: Row, qty: number) => demand.set(row.id, (demand.get(row.id) ?? 0) + qty)
+    const shelf = new Map<string, { name: string; stock: number }>()
+    const wants = (row: { id: string; name: string; stock: number }, qty: number) => {
+      demand.set(row.id, (demand.get(row.id) ?? 0) + qty)
+      shelf.set(row.id, { name: row.name, stock: row.stock })
+    }
     const variantDemand = new Map<string, { label: string; owner: string; qty: number }>()
 
     for (const { bf, qty } of bfLines) {
@@ -309,12 +318,15 @@ export async function POST(request: Request) {
         // sell three big models for Rs 8,999 by editing localStorage.
         if (!BUILDER_TIERS[bf.tier])
           throw new Refused("That bundle size is not part of the sale.")
-        const picks = (bf.picks ?? []).map((p) => ({
-          slug: str(p.slug),
-          qty: Number(p.qty) || 0,
+        const rawPicks = Array.isArray(bf.picks) ? bf.picks : []
+        const picks = rawPicks.map((p) => ({
+          slug: str((p as { slug?: unknown } | null)?.slug),
+          qty: Number((p as { qty?: unknown } | null)?.qty),
         }))
         if (picks.length === 0) throw new Refused("Pick some cars for the bundle first.")
-        if (picks.some((p) => p.qty < 1 || !BUILDER_SLUGS.includes(p.slug)))
+        if (picks.some((p) => !Number.isInteger(p.qty) || p.qty < 1))
+          throw new Refused("Quantities have to be whole numbers.")
+        if (picks.some((p) => !BUILDER_SLUGS.includes(p.slug)))
           throw new Refused("One of those cars is not part of this offer.")
         if (new Set(picks.map((p) => p.slug)).size !== picks.length)
           throw new Refused("That bundle lists the same car twice — add it again.")
@@ -366,7 +378,8 @@ export async function POST(request: Request) {
     // second order (and a second transfer) for anything bought alongside a
     // sale item.
     for (const l of normalLines) {
-      if (l.qty < 1 || l.qty > 10) throw new Refused("Quantities have to be between 1 and 10.")
+      if (!Number.isInteger(l.qty) || l.qty < 1 || l.qty > 10)
+        throw new Refused("Quantities have to be whole numbers between 1 and 10.")
       const row = need(l.slug)
       if (row.stock <= 0) throw new Refused(`${row.name} is sold out.`)
 
@@ -417,6 +430,16 @@ export async function POST(request: Request) {
           .order("sort")
         if (itemsError) throw new Error(`reading bundle items: ${itemsError.message}`)
         if (!items?.length) throw new Refused(`${row.name} has nothing in it.`)
+        const { data: memberStock, error: memberStockError } = await db
+          .from("products")
+          .select("id, name, stock")
+          .in("id", items.map((i) => i.product_id as unknown as string))
+        if (memberStockError)
+          throw new Error(`reading bundle member stock: ${memberStockError.message}`)
+        for (const i of items) {
+          const m = (memberStock ?? []).find((r) => r.id === (i.product_id as unknown as string))
+          if (m) wants(m, i.qty * l.qty)
+        }
         priced.push({
           product_id: row.id, slug: row.slug, name: row.name, image: firstImage(row),
           format: null, with_frame: false, frame_led: false,
@@ -431,7 +454,7 @@ export async function POST(request: Request) {
               slug: p?.slug ?? "",
               name: p?.name ?? "",
               image: [...(p?.product_images ?? [])].sort((x, y) => x.sort - y.sort)[0]?.url ?? "",
-              format: (i.format ?? "boxed") as "boxed",
+              format: (i.format ?? (i.variant_id ? null : "boxed")) as "boxed",
               with_frame: Boolean(i.with_frame) as false,
               frame_led: Boolean(i.frame_led) as false,
               variant_label: (v?.label ?? "") as "",
@@ -445,7 +468,7 @@ export async function POST(request: Request) {
 
     // ── The shelf, once, for the whole order ──────────────────────────────
     for (const [productId, qty] of demand) {
-      const row = [...bySlug.values()].find((r) => r.id === productId)
+      const row = shelf.get(productId)
       if (!row) continue
       if (qty > row.stock)
         throw new Refused(
@@ -524,44 +547,53 @@ export async function POST(request: Request) {
       .single()
     if (orderError || !order) throw new Error(`creating the order: ${orderError?.message}`)
 
-    const { data: lineRows, error: linesError } = await db
-      .from("order_lines")
-      .insert(
-        priced.map((l) => ({
-          order_id: order.id,
-          product_id: l.product_id,
-          slug: l.slug,
-          name: l.name,
-          image: l.image,
-          format: l.format,
-          with_frame: l.with_frame,
-          frame_led: l.frame_led,
-          variant_label: l.variant_label,
-          variant_id: l.variant_id,
-          unit_price: l.unit_price,
-          qty: l.qty,
-          bundle: l.bundle,
-        })),
+    // place_order writes the whole order in one transaction; this route cannot,
+    // so a failure after the orders row exists must take that row with it
+    // (lines and members cascade) — otherwise "please try again" would leave an
+    // itemless order behind and mint a second one beside it.
+    try {
+      const { data: lineRows, error: linesError } = await db
+        .from("order_lines")
+        .insert(
+          priced.map((l) => ({
+            order_id: order.id,
+            product_id: l.product_id,
+            slug: l.slug,
+            name: l.name,
+            image: l.image,
+            format: l.format,
+            with_frame: l.with_frame,
+            frame_led: l.frame_led,
+            variant_label: l.variant_label,
+            variant_id: l.variant_id,
+            unit_price: l.unit_price,
+            qty: l.qty,
+            bundle: l.bundle,
+          })),
+        )
+        .select("id")
+      if (linesError || !lineRows) throw new Error(`saving the order items: ${linesError?.message}`)
+
+      const memberRows = priced.flatMap((l, i) =>
+        l.members.map((m) => ({ ...m, order_line_id: lineRows[i].id })),
       )
-      .select("id")
-    if (linesError || !lineRows) throw new Error(`saving the order items: ${linesError?.message}`)
+      if (memberRows.length) {
+        const { error: membersError } = await db.from("order_line_members").insert(memberRows)
+        if (membersError) throw new Error(`saving the bundle contents: ${membersError.message}`)
+      }
 
-    const memberRows = priced.flatMap((l, i) =>
-      l.members.map((m) => ({ ...m, order_line_id: lineRows[i].id })),
-    )
-    if (memberRows.length) {
-      const { error: membersError } = await db.from("order_line_members").insert(memberRows)
-      if (membersError) throw new Error(`saving the bundle contents: ${membersError.message}`)
+      const { error: eventError } = await db.from("order_status_events").insert({
+        order_id: order.id,
+        status: "pending_payment",
+        note: online
+          ? "Placed on the storefront — Blessed Friday offer, paying online through Rapid Gateway."
+          : "Placed on the storefront — Blessed Friday offer, waiting on the transfer receipt.",
+      })
+      if (eventError) throw new Error(`recording the order: ${eventError.message}`)
+    } catch (err) {
+      await db.from("orders").delete().eq("id", order.id)
+      throw err
     }
-
-    const { error: eventError } = await db.from("order_status_events").insert({
-      order_id: order.id,
-      status: "pending_payment",
-      note: online
-        ? "Placed on the storefront — Blessed Friday offer, paying online through Rapid Gateway."
-        : "Placed on the storefront — Blessed Friday offer, waiting on the transfer receipt.",
-    })
-    if (eventError) throw new Error(`recording the order: ${eventError.message}`)
 
     // ── Online payment session, exactly as /api/orders does it ────────────
     let payment: OnlinePayment | null = null

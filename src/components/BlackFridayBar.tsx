@@ -12,14 +12,17 @@ import { bfLive } from "../lib/black-friday"
  * flips at midnight sharp, on every page, with nothing to redeploy — the same
  * two dates the page and the order route read.
  *
- * Renders nothing outside the sale window, nothing on /black-friday itself,
+ * Renders nothing outside the sale window, nothing on /blessed-friday itself,
  * and nothing at checkout, where an upsell banner has no business.
  */
 export default function BlackFridayBar() {
   const pathname = usePathname()
-  // Mounted false and decided after hydration, so the server markup (no bar)
-  // and the first client paint agree; it pops in a frame later during the sale.
-  const [show, setShow] = useState(false)
+  // Shown by default: the sale start is already past, so every render between
+  // now and 30 Nov is inside the window, and starting visible means the bar is
+  // in the server HTML and never pops in and shifts the page after hydration.
+  // The effect's only real job is to take it DOWN after the sale ends (a brief
+  // flash on stale prerendered pages, until they rebuild or the code goes).
+  const [show, setShow] = useState(true)
   useEffect(() => {
     const decide = () => setShow(bfLive())
     decide()

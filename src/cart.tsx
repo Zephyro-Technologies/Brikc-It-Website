@@ -112,6 +112,10 @@ const Ctx = createContext<CartCtx | null>(null)
 // checkout. A lost cart is better than one that fails at the last step.
 //
 // (v2 did the same when display lines started carrying a variant.)
+//
+// Blessed Friday: when the sale code is deleted after 30 Nov, bump this to v5.
+// A saved sale line (the `bf` field) must not reach a checkout that no longer
+// knows what it is.
 const STORAGE_KEY = "brikc.cart.v4"
 
 export function CartProvider({ children }: { children: ReactNode }) {
