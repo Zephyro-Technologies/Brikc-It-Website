@@ -25,6 +25,7 @@ import { Markdown } from "../lib/markdown"
 import { imageProps } from "../lib/media"
 import { cardTag, isSellable, lowStockNote, productImage, soldFormats, specs, subline } from "../lib/product-view"
 import { useShopSettings } from "../lib/shop-settings"
+import { BF_DEALS, bfLineKey, bfLive, saleFormat, type BfSelection } from "../lib/black-friday"
 import { ProductCard, Reveal } from "./ui"
 import Lightbox from "./Lightbox"
 import ProductReviews from "./ProductReviews"
@@ -70,7 +71,17 @@ export default function ProductDetailView({
   const [frame, setFrame] = useState<FrameChoice>("none")
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
-  const { add } = useCart()
+  // Blessed Friday, on the shopper's clock, decided after mount: this page is
+  // prerendered, so the HTML carries the everyday price and the browser flips
+  // it on (and off again on 1 Dec) itself — nothing to redeploy.
+  const [saleNow, setSaleNow] = useState(false)
+  useEffect(() => {
+    const check = () => setSaleNow(bfLive())
+    check()
+    const t = window.setInterval(check, 30_000)
+    return () => window.clearInterval(t)
+  }, [])
+  const { add, addBfLine } = useCart()
   useViewContent(product)
 
   const images = product?.images ?? []
@@ -142,6 +153,22 @@ export default function ProductDetailView({
   const activeFrame: FrameChoice = frames.includes(frame) ? frame : "none"
   const total = isBundle ? product.bundlePrice : priceOf(product, activeFormat, activeFrame)
 
+  // A Blessed Friday deal sells exactly one configuration — the build's sale
+  // assembly, no frame. That configuration shows the sale price and goes to
+  // the cart as a sale line (the sale checkout prices it); any other assembly,
+  // or a frame on top, is the everyday product at the everyday price.
+  const dealPrice = isBundle ? undefined : BF_DEALS[product.slug]
+  const dealSold = dealPrice
+    ? saleFormat({
+        sellsBoxed: product.formats.boxed,
+        sellsBuilt: product.formats.built,
+        priceBoxed: product.prices.boxed,
+        priceBuilt: product.prices.built,
+      })
+    : null
+  const dealOn =
+    saleNow && !!dealPrice && !!dealSold && activeFormat === dealSold.format && activeFrame === "none"
+
   // Both assemblies come off the same kit, so one count caps the quantity
   // whichever is chosen — and a frame does not consume another one. place_order refuses more than this anyway; stopping the
   // stepper is how the shopper finds out before the checkout, not at it.
@@ -149,7 +176,24 @@ export default function ProductDetailView({
 
   const onAdd = () => {
     if (!canAdd) return
-    add(product, isBundle ? { bundle: true } : { format: activeFormat, frame: activeFrame }, qty)
+    if (dealOn && dealPrice && dealSold) {
+      const sel: BfSelection = { kind: "deal", slug: product.slug, format: dealSold.format }
+      addBfLine({
+        key: bfLineKey(sel),
+        slug: product.slug,
+        name: `${product.name} — Blessed Friday`,
+        team: product.team,
+        image: productImage(product),
+        kind: "model",
+        format: dealSold.format,
+        frame: "none",
+        bf: sel,
+        unitPrice: dealPrice,
+        qty,
+      })
+    } else {
+      add(product, isBundle ? { bundle: true } : { format: activeFormat, frame: activeFrame }, qty)
+    }
     setAdded(true)
     setQty(1)
   }
@@ -420,7 +464,25 @@ export default function ProductDetailView({
           )}
 
           <div>
-            <div className="text-3xl font-bold">{money(total)}</div>
+            {dealOn && dealPrice ? (
+              <div className="flex flex-wrap items-baseline gap-3">
+                <span className="text-3xl font-bold text-[var(--primary-deep)]">
+                  {money(dealPrice)}
+                </span>
+                <span className="text-xl text-[var(--muted)] line-through">{money(total)}</span>
+                <span className="rounded-full bg-[var(--primary)] px-2.5 py-1 text-xs font-bold text-white">
+                  Blessed Friday
+                </span>
+              </div>
+            ) : (
+              <div className="text-3xl font-bold">{money(total)}</div>
+            )}
+            {!isBundle && saleNow && !!dealPrice && !!dealSold && !dealOn && (
+              <p className="mt-1 text-sm text-[var(--muted)]">
+                Blessed Friday: the {dealSold.format === "boxed" ? "unassembled kit" : "assembled build"}{" "}
+                without a frame is {money(dealPrice)} — this configuration is at its everyday price.
+              </p>
+            )}
             {isBundle && bundleSaving(product) > 0 && (
               <p className="mt-1 text-sm text-[var(--muted)]">
                 <span className="line-through">{money(bundleWorth(product))}</span>{" "}

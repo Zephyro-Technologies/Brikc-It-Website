@@ -19,6 +19,7 @@ import {
   type ShippingMethod,
 } from "../data"
 import { isSellable } from "../lib/product-view"
+import { bfDemand, bfState, bfUnitPrice } from "../lib/black-friday"
 import { CONFIRMATION_KEY, PAY_TEST_KEY, type PaymentSession } from "../lib/checkout"
 import { CURRENCY, lineParams, track } from "../lib/pixel"
 import { OTHER_CITY, PROVINCES, citiesIn } from "../lib/pakistan"
@@ -239,7 +240,52 @@ export default function CheckoutView({
    */
   const priced = useMemo(() => {
     const bySlug = new Map(products.map((p) => [p.slug, p]))
+    // What the whole cart asks of each shelf, so two lines that share a scarce
+    // car are flagged here and not only by the server at the final button.
+    const cartWant = new Map<string, number>()
+    for (const l of lines) {
+      if (l.bf) for (const d of bfDemand(l.bf)) cartWant.set(d.slug, (cartWant.get(d.slug) ?? 0) + d.qty * l.qty)
+      else if (l.kind === "model") cartWant.set(l.slug, (cartWant.get(l.slug) ?? 0) + l.qty)
+    }
     return lines.map((l) => {
+      // A Blessed Friday line is priced from the sale config, never the
+      // catalogue, and is only orderable while the sale window is open and
+      // every build inside it is still on the shelf. The server checks all of
+      // this again in /api/bf/order — this is the courtesy copy that turns a
+      // refusal at the last step into something fixable in the cart.
+      if (l.bf) {
+        const state = bfState()
+        if (state !== "live") {
+          const why = state === "ended" ? "a Blessed Friday offer — the sale has ended" : "a Blessed Friday offer — the sale hasn't started yet"
+          return { ...l, unitPrice: l.unitPrice, unavailable: why, changed: false }
+        }
+        let unavailable: string | null = null
+        // The builder and the double sell sealed kits, so their members must
+        // still be sold boxed; a deal sells the build's own assembly (the
+        // Shelby is built-only), so either format keeps it available.
+        const boxedOnly = l.bf.kind !== "deal"
+        for (const d of bfDemand(l.bf)) {
+          const member = bySlug.get(d.slug)
+          const sellable =
+            member?.kind === "model" &&
+            (boxedOnly ? member.formats.boxed : member.formats.boxed || member.formats.built)
+          if (!member || !sellable) {
+            unavailable = `no longer available — ${member?.name ?? "one of its builds"} left the catalogue`
+            break
+          }
+          if (member.stock <= 0) {
+            unavailable = `unavailable — ${member.name} is sold out`
+            break
+          }
+          if ((cartWant.get(d.slug) ?? d.qty * l.qty) > member.stock) {
+            unavailable = `down to ${member.stock} of ${member.name} across your cart — lower the quantity`
+            break
+          }
+        }
+        const unitPrice = bfUnitPrice(l.bf, (slug) => bySlug.get(slug)?.prices.boxed ?? 0)
+        if (!unavailable && unitPrice <= 0) unavailable = "no longer on offer"
+        return { ...l, unitPrice, unavailable, changed: !unavailable && unitPrice !== l.unitPrice }
+      }
       const product = bySlug.get(l.slug)
       if (!product) {
         return { ...l, unitPrice: l.unitPrice, unavailable: "no longer in the catalogue", changed: false }
@@ -320,14 +366,30 @@ export default function CheckoutView({
   const wire = useMemo(
     () =>
       priced.map((l) =>
-        l.kind === "bundle"
-          ? { slug: l.slug, qty: l.qty }
-          : l.kind === "display"
-            ? { slug: l.slug, variant: l.variantId, qty: l.qty }
-            : { slug: l.slug, format: l.format, frame: l.frame ?? "none", qty: l.qty },
+        l.bf
+          ? { bf: l.bf, qty: l.qty }
+          : l.kind === "bundle"
+            ? { slug: l.slug, qty: l.qty }
+            : l.kind === "display"
+              ? { slug: l.slug, variant: l.variantId, qty: l.qty }
+              : { slug: l.slug, format: l.format, frame: l.frame ?? "none", qty: l.qty },
       ),
     [priced],
   )
+
+  // A cart holding a Blessed Friday line checks out through /api/bf/order, which
+  // prices the sale lines from the config and everything else from the
+  // database. Discount codes don't combine with sale prices, so the coupon
+  // field goes away rather than inviting a code the server would refuse.
+  const hasBf = lines.some((l) => l.bf)
+  useEffect(() => {
+    if (hasBf) {
+      setCoupon(null)
+      setCouponError(null)
+      setCouponOpen(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasBf])
 
   const [couponInput, setCouponInput] = useState("")
   const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null)
@@ -384,7 +446,7 @@ export default function CheckoutView({
     setBusy(true)
     setError(null)
     try {
-      const res = await fetch("/api/orders", {
+      const res = await fetch(hasBf ? "/api/bf/order" : "/api/orders", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -560,7 +622,11 @@ export default function CheckoutView({
   // It sits inside the checkout form, so Enter in the code field would place
   // the order — applyCoupon cancels that, because Enter here should price a
   // code. Rendered in both the phone and the wide layout; only one is shown.
-  const couponBlock = (
+  const couponBlock = hasBf ? (
+    <p className="rounded-xl bg-[var(--surface-2)] p-3 text-xs text-[var(--muted)]">
+      Blessed Friday prices are already discounted — codes don&rsquo;t combine with them.
+    </p>
+  ) : (
     <div>
       {coupon ? (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/5 px-3 py-2.5">

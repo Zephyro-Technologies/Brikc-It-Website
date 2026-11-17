@@ -13,6 +13,7 @@ import {
   type Variant,
 } from "./data"
 import { productImage } from "./lib/product-view"
+import { describeBf, type BfSelection } from "./lib/black-friday"
 
 export type CartLine = {
   key: string
@@ -29,6 +30,13 @@ export type CartLine = {
   variantId?: string
   /** Set for a display line — the size label, for the drawer and the summary. */
   variantLabel?: string
+  /**
+   * Set for a Blessed Friday line — the offer and, for the pick-your-own
+   * bundle, which cars were chosen. A line carrying this is priced from the
+   * sale config and checked out through /api/bf/order; everything else about
+   * it (drawer, quantities, totals) is an ordinary line.
+   */
+  bf?: BfSelection
   unitPrice: number
   qty: number
 }
@@ -53,6 +61,9 @@ type CartChoice =
  * wrong.
  */
 export function lineLabel(line: CartLine): string {
+  // A Blessed Friday line says what is in it — for the pick-your-own bundle
+  // that is the cars chosen, which nothing else records on screen.
+  if (line.bf) return describeBf(line.bf)
   if (line.kind === "display") return line.variantLabel ?? ""
   // A bundle's own line says nothing about options; the drawer shows what is
   // in it underneath, which is the useful thing to read.
@@ -75,6 +86,13 @@ type CartCtx = {
    * the chip confirms itself instead.
    */
   add: (product: Product, choice: CartChoice, qty?: number, opts?: { open?: boolean }) => void
+  /**
+   * Adds a Blessed Friday line the page has already built — key, picks and sale
+   * price included. Kept apart from add() because a BF line is not a choice on
+   * a product: it is an offer, priced by the sale config rather than the
+   * catalogue. Two identical selections merge into a quantity, like any line.
+   */
+  addBfLine: (line: CartLine, opts?: { open?: boolean }) => void
   remove: (key: string) => void
   setQty: (key: string, qty: number) => void
   clear: () => void
@@ -94,6 +112,10 @@ const Ctx = createContext<CartCtx | null>(null)
 // checkout. A lost cart is better than one that fails at the last step.
 //
 // (v2 did the same when display lines started carrying a variant.)
+//
+// Blessed Friday: when the sale code is deleted after 30 Nov, bump this to v5.
+// A saved sale line (the `bf` field) must not reach a checkout that no longer
+// knows what it is.
 const STORAGE_KEY = "brikc.cart.v4"
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -183,6 +205,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (opts?.open !== false) setOpen(true)
   }
 
+  const addBfLine: CartCtx["addBfLine"] = (line, opts) => {
+    setLines((prev) => {
+      const existing = prev.find((l) => l.key === line.key)
+      if (existing) {
+        return prev.map((l) => (l.key === line.key ? { ...l, qty: l.qty + line.qty } : l))
+      }
+      return [...prev, line]
+    })
+    track("AddToCart", {
+      ...lineParams([{ slug: line.slug, qty: line.qty }]),
+      content_name: line.name,
+      value: line.unitPrice * line.qty,
+      currency: CURRENCY,
+    })
+    if (opts?.open !== false) setOpen(true)
+  }
+
   const remove: CartCtx["remove"] = (key) => setLines((prev) => prev.filter((l) => l.key !== key))
   const setQty: CartCtx["setQty"] = (key, qty) =>
     setLines((prev) =>
@@ -193,7 +232,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const value = useMemo<CartCtx>(() => {
     const count = lines.reduce((n, l) => n + l.qty, 0)
     const subtotal = lines.reduce((n, l) => n + l.qty * l.unitPrice, 0)
-    return { lines, count, subtotal, open, setOpen, add, remove, setQty, clear }
+    return { lines, count, subtotal, open, setOpen, add, addBfLine, remove, setQty, clear }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lines, open])
 

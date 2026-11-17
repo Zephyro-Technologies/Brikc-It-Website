@@ -2,6 +2,8 @@ import { Suspense, type ReactNode } from "react"
 import type { Metadata } from "next"
 import { CartProvider } from "../cart"
 import { Nav, Footer, CartDrawer } from "../components/Layout"
+import BlackFridayBar from "../components/BlackFridayBar"
+import { bfLive } from "../lib/black-friday"
 import { ScrollToTop } from "../components/ScrollToTop"
 import MetaPixel from "../components/MetaPixel"
 import { getDisplays, getSettings } from "../lib/shop"
@@ -47,6 +49,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               <ScrollToTop />
             </Suspense>
             <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+              {/* Rendered only inside the sale window, so pages built after
+                  30 Nov never carry it. The component's own effect still takes
+                  it down at midnight on HTML rendered before the end — an open
+                  tab, or a prerendered page waiting on its rebuild. */}
+              {bfLive() && <BlackFridayBar />}
               <Nav banner={settings.banner} hasDisplays={hasDisplays} />
               <CartDrawer />
               <main>{children}</main>
